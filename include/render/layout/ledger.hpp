@@ -9,7 +9,7 @@
 
 namespace render::layout {
 
-    class Cache {
+    class Ledger {
     public:
         struct Key {
             const typography::Font* font{nullptr};
@@ -25,7 +25,7 @@ namespace render::layout {
             bool occupied{false};
         };
 
-        explicit Cache(memory::Arena& arena, std::size_t limit = 2048) noexcept;
+        explicit Ledger(memory::Arena& arena, std::size_t limit = 2048) noexcept;
 
         [[nodiscard]] memory::Slice<Node*> find(const Key& key) const noexcept;
         void insert(const Key& key, memory::Slice<Node*> nodes) noexcept;
