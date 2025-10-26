@@ -1,21 +1,23 @@
 #pragma once
 
 #include "syntax/catcodes.hpp"
-#include "semantics/registers.hpp"
-#include "semantics/scope.hpp"
+#include "syntax/semantics/registers.hpp"
+#include "syntax/semantics/scope.hpp"
 
-namespace semantics {
+namespace syntax::semantics {
 
     class Union {
     public:
         void push(const Scope::Type type = Scope::Type::Group) {
             scopes.push(type);
             registers_.push();
+            catcodes_.push();
         }
 
         void pop() {
             scopes.pop();
             registers_.pop();
+            catcodes_.pop();
         }
 
         [[nodiscard]] syntax::CatCodes& catcodes() noexcept { return catcodes_; }

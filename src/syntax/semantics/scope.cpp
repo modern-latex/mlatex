@@ -1,7 +1,7 @@
-#include "semantics/scope.hpp"
+#include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
 
-namespace semantics {
+namespace syntax::semantics {
 
     void Scope::push(const Type type) {
         stack.push_back(Layer{type, stack.size() + 1uz});
