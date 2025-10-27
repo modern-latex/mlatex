@@ -1,9 +1,9 @@
-#include "semantics/registers.hpp"
+#include "syntax/semantics/registers.hpp"
 #include "logger.hpp"
 
 #include <utility>
 
-namespace semantics {
+namespace syntax::semantics {
 
     void Registers::push() {
         marks.push_back(entries.size());

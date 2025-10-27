@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-namespace semantics {
+namespace syntax::semantics {
 
     class Registers {
     public:

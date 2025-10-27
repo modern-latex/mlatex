@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace semantics {
+namespace syntax::semantics {
 
     class Scope {
     public:
