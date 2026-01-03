@@ -1,4 +1,4 @@
-#include "render/primitives/glue.hpp"
+#include "render/primitives/structure/glue.hpp"
 #include "render/primitives/directive.hpp"
 
 #include "render/layout/node.hpp"
@@ -6,9 +6,9 @@
 #include "syntax/node.hpp"
 #include "syntax/number.hpp"
 
-namespace render::primitives::glue {
+namespace render::primitives::structure {
 
-    void ingest(syntax::Parser& parser, syntax::semantics::Registers& registers) {
+    void glue(syntax::Parser& parser, syntax::semantics::Registers& registers) {
         const syntax::Symbol identifier = parser.mouth().lexicon().intern("\\count");
         const syntax::Symbol dimension = parser.mouth().lexicon().intern("\\dimen");
 

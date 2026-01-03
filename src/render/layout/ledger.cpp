@@ -1,14 +1,14 @@
-#include "layout/cache.hpp"
+#include "layout/ledger.hpp"
 
 #include <functional>
 
 namespace render::layout {
 
-    bool Cache::Key::operator==(const Key& target) const noexcept {
+    bool Ledger::Key::operator==(const Key& target) const noexcept {
         return font == target.font && text == target.text && size == target.size;
     }
 
-    Cache::Cache(memory::Arena& arena, const std::size_t limit) noexcept
+    Ledger::Ledger(memory::Arena& arena, const std::size_t limit) noexcept
         : arena(arena), limit(limit) {
         slots = arena.allocate<Entry>(limit);
         for (std::size_t step = 0; step < limit; ++step) {
@@ -16,7 +16,7 @@ namespace render::layout {
         }
     }
 
-    memory::Slice<Node*> Cache::find(const Key& key) const noexcept {
+    memory::Slice<Node*> Ledger::find(const Key& key) const noexcept {
         if (limit == 0 || count == 0) return {};
 
         const std::size_t slot = hash(key) % limit;
@@ -28,7 +28,7 @@ namespace render::layout {
         return {};
     }
 
-    void Cache::insert(const Key& key, const memory::Slice<Node*> nodes) noexcept {
+    void Ledger::insert(const Key& key, const memory::Slice<Node*> nodes) noexcept {
         if (limit == 0) return;
 
         const std::size_t slot = hash(key) % limit;
@@ -50,14 +50,14 @@ namespace render::layout {
         slots[slot] = Entry{ .key = key, .nodes = nodes, .occupied = true };
     }
 
-    void Cache::dispose() noexcept {
+    void Ledger::dispose() noexcept {
         for (std::size_t step = 0; step < limit; ++step) {
             slots[step].occupied = false;
         }
         count = 0;
     }
 
-    std::size_t Cache::hash(const Key& key) noexcept {
+    std::size_t Ledger::hash(const Key& key) noexcept {
         const std::size_t head = std::hash<const void*>{}(key.font);
         const std::size_t body = std::hash<std::string_view>{}(key.text);
         const std::size_t tail = std::hash<float>{}(key.size);

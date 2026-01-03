@@ -1,10 +1,10 @@
-#include "render/primitives/fonts.hpp"
+#include "render/primitives/configuration/typeface.hpp"
 
 #include "syntax/number.hpp"
 
 #include <span>
 
-namespace render::primitives::fonts {
+namespace render::primitives::configuration {
 
     const typography::Font* Selection::font() const noexcept {
         return current;
@@ -14,18 +14,18 @@ namespace render::primitives::fonts {
         current = value;
     }
 
-    void ingest(
+    void font(
         syntax::Mouth& mouth,
         syntax::semantics::Registers& registers,
         typography::Registry& registry,
-        typography::FontConfig& configuration,
-        memory::Arena& scratch,
+        typography::FontConfig& options,
+        memory::Arena& arena,
         Selection& selection
     ) {
         const syntax::Symbol identifier = mouth.lexicon().intern("\\count");
         const syntax::Symbol dimension = mouth.lexicon().intern("\\dimen");
 
-        mouth.bind("\\font", [&registers, &registry, &configuration, &scratch, &selection, identifier, dimension](syntax::Mouth& mouth) {
+        mouth.bind("\\font", [&registers, &registry, &options, &arena, &selection, identifier, dimension](syntax::Mouth& mouth) {
             const syntax::Token target = mouth.read();
 
             syntax::Token equals = mouth.read();
@@ -43,7 +43,7 @@ namespace render::primitives::fonts {
                 mouth.inject(std::span{&at, 1});
             }
 
-            const auto path = configuration.find(scratch, family.values);
+            const auto path = options.find(arena, family.values);
             if (!path) return;
 
             const typography::Registry::Spec specification{ .family = family.values, .size = size };
