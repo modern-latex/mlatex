@@ -1,4 +1,4 @@
-#include "render/primitives/rules.hpp"
+#include "render/primitives/structure/rule.hpp"
 #include "render/primitives/directive.hpp"
 
 #include "render/layout/node.hpp"
@@ -6,9 +6,9 @@
 #include "syntax/node.hpp"
 #include "syntax/number.hpp"
 
-namespace render::primitives::rules {
+namespace render::primitives::structure {
 
-    void ingest(syntax::Parser& parser, syntax::semantics::Registers& registers) {
+    void rules(syntax::Parser& parser, syntax::semantics::Registers& registers) {
         const syntax::Symbol identifier = parser.mouth().lexicon().intern("\\count");
         const syntax::Symbol dimension = parser.mouth().lexicon().intern("\\dimen");
 

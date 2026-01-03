@@ -1,13 +1,13 @@
-#include "render/primitives/penalties.hpp"
+#include "render/primitives/structure/penalty.hpp"
 #include "render/primitives/directive.hpp"
 
 #include "render/layout/node.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/node.hpp"
 
-namespace render::primitives::penalties {
+namespace render::primitives::structure {
 
-    void ingest(syntax::Parser& parser, syntax::semantics::Registers& registers) {
+    void penalties(syntax::Parser& parser, syntax::semantics::Registers& registers) {
         const syntax::Symbol identifier = parser.mouth().lexicon().intern("\\count");
 
         parser.bind("\\penalty", [&registers, identifier](syntax::Parser& parser) -> syntax::Node* {

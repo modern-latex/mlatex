@@ -1,12 +1,11 @@
 #pragma once
 
+#include "memory/arena.hpp"
 #include "syntax/mouth.hpp"
-#include "syntax/semantics/registers.hpp"
 #include "typography/fontconfig.hpp"
 #include "typography/registry.hpp"
-#include "memory/arena.hpp"
 
-namespace render::primitives::fonts {
+namespace render::primitives::configuration {
 
     class Selection {
     public:
@@ -17,12 +16,12 @@ namespace render::primitives::fonts {
         const typography::Font* current{nullptr};
     };
 
-    void ingest(
+    void font(
         syntax::Mouth& mouth,
         syntax::semantics::Registers& registers,
         typography::Registry& registry,
-        typography::FontConfig& configuration,
-        memory::Arena& scratch,
+        typography::FontConfig& options,
+        memory::Arena& arena,
         Selection& selection
     );
 
