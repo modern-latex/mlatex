@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace render::primitives::pictures {
+namespace render::primitives::figures {
     /// @brief pgfplots: an axis in a TikZ picture, and the plots drawn in it
     ///        -- from points, from a table, or from a function of x.
     ///

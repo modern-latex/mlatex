@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-namespace render::primitives::notation {
+namespace render::primitives::mathematics {
     /// @brief Mathematics: where an expression starts, and what is an operator.
     ///
     /// @par Language
