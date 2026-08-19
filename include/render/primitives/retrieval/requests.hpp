@@ -6,7 +6,7 @@
 
 #include <vector>
 
-namespace render::primitives::network {
+namespace render::primitives::retrieval {
     /// @brief HTTP requests, read straight into the document: `\\httpget`,
     ///        `\\httppost`.
     ///
