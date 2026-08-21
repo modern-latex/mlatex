@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace render::primitives::text {
+namespace render::primitives::typesetting {
     /// @brief Text set as it was typed: `\\verb`, the `verbatim` block, and
     ///        the listings package's `lstlisting`, `\\lstinline` and
     ///        `\\lstinputlisting`.
