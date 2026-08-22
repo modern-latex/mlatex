@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-namespace syntax::primitives::control {
+namespace syntax::primitives::logic {
     /// @brief Named block structure: `\\begin{name}` ... `\\end{name}`.
     ///
     /// The document's outermost block is `\\begin{document}`. A block opens a

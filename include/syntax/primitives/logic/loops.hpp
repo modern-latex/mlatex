@@ -8,7 +8,7 @@
 
 #include <cstddef>
 
-namespace syntax::primitives::control {
+namespace syntax::primitives::logic {
     /// @brief Iteration and explicit grouping.
     ///
     /// @par Language
