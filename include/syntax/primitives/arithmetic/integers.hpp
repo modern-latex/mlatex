@@ -10,8 +10,8 @@
 #include <cstdint>
 #include <optional>
 
-namespace syntax::primitives::calculations {
-    /// @brief Arithmetic: `\\evaluate` and the comparison it enables.
+namespace syntax::primitives::arithmetic {
+    /// @brief Integer arithmetic: `\\evaluate` and the comparison it enables.
     ///
     /// This is what lets the language calculate on its own rather than only
     /// storing numbers. `\\evaluate` expands to its result as digits, so it
@@ -51,11 +51,11 @@ namespace syntax::primitives::calculations {
     /// Arithmetic runs in std::int64_t and is clamped to the 32-bit range a
     /// register holds; overflow, division by zero and malformed input are
     /// reported and yield 0 rather than propagating nonsense.
-    class Arithmetic {
+    class Integers {
     public:
         /// @brief Interns the control sequences this module binds.
         /// @param lexicon Interning table, shared with the expander.
-        explicit Arithmetic(Lexicon &lexicon) noexcept;
+        explicit Integers(Lexicon &lexicon) noexcept;
 
         /// @brief Installs `\\evaluate`.
         /// @param mouth   Expander to bind into.
@@ -82,7 +82,7 @@ namespace syntax::primitives::calculations {
             Cursor &cursor; ///< Tokens of the expression.
             const semantics::Registers &registers; ///< Resolves register operands.
             Symbol integer{}; ///< Interned `\\integer`.
-            const Arithmetic &owner; ///< Records errors on this module.
+            const Integers &owner; ///< Records errors on this module.
             Symbol modulo{}; ///< Interned `\\mod`.
             std::size_t level = 0; ///< Current parenthesis depth.
             bool sound = true; ///< Cleared by malformed input; result becomes 0.

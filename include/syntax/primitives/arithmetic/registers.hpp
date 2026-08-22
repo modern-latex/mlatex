@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace syntax::primitives::calculations {
+namespace syntax::primitives::arithmetic {
     /// @brief Register primitives: typed storage and arithmetic on it.
     ///
     /// @par Language
