@@ -1,6 +1,6 @@
 /// @file
 /// @brief Requests implementation: `\\httpget`, `\\httppost`.
-#include "render/primitives/network/requests.hpp"
+#include "render/primitives/retrieval/requests.hpp"
 #include "protocols/http.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
@@ -8,7 +8,7 @@
 #include <format>
 #include <string>
 
-namespace render::primitives::network {
+namespace render::primitives::retrieval {
     Requests::Requests(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\httpget");
         lexicon.intern("\\httppost");
