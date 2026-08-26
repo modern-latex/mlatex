@@ -5,7 +5,7 @@
 /// bound from one table. The text is returned as a node rather than pushed
 /// back through the lexer, which is what keeps a `%` from being read as the
 /// comment it would otherwise start.
-#include "render/primitives/text/characters.hpp"
+#include "render/primitives/typesetting/characters.hpp"
 #include "logger.hpp"
 #include "syntax/argument.hpp"
 
@@ -16,7 +16,7 @@
 #include <string_view>
 #include <utility>
 
-namespace render::primitives::text {
+namespace render::primitives::typesetting {
 
     /// The accent commands' own characters, `\\'` through `\\t`, in the order
     /// their rows of #composed are kept.
