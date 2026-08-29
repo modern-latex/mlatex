@@ -1,7 +1,7 @@
 /// @file
 /// @brief Strings implementation: xstring's tests and functions, each one
 ///        native command over the expanded text.
-#include "syntax/primitives/data/strings.hpp"
+#include "syntax/primitives/bookkeeping/strings.hpp"
 #include "syntax/argument.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace syntax::primitives::data {
+namespace syntax::primitives::bookkeeping {
     Strings::Strings(Lexicon &lexicon) noexcept {
         static constexpr std::array<std::string_view, 21> names{
             "\\IfSubStr", "\\IfBeginWith", "\\IfEndWith", "\\IfStrEq", "\\IfEq", "\\IfInteger", "\\IfDecimal",
