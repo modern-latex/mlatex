@@ -14,7 +14,7 @@
 #include <string_view>
 #include <utility>
 
-// The Arithmetic primitive: \evaluate, integer arithmetic with the usual
+// The Integers primitive: \evaluate, integer arithmetic with the usual
 // precedence, brackets, powers and remainders, over numerals written in
 // any of TeX's bases.
 
