@@ -874,6 +874,10 @@ page's text goes.
   `modern-latex/workspace`; the npm package is `mlatex`, and
   `@modern-latex/mlatex` on GitHub Packages, which takes only the owner's scope;
   every link, badge, workflow and package names them so.
+- **asmjit is a dependency.** vcpkg's `asmjit` is found and linked into the
+  engine, for the JIT to write machine code with, and the README's and the
+  Build workflow's vcpkg lists name it. The WebAssembly build goes without
+  it: a module cannot run the x86 or ARM code it writes.
 
 ### For programs
 

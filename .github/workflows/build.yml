@@ -112,7 +112,7 @@ jobs:
           for i in {1..5}; do
             echo "Attempt $i to install libraries via vcpkg..."
             if "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet ${{ matrix.triplet }} "${overlay[@]}" \
-                harfbuzz libpng libjpeg-turbo libwebp zlib gperf; then
+                harfbuzz libpng libjpeg-turbo libwebp zlib asmjit gperf; then
               break
             fi
           
