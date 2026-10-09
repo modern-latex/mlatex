@@ -683,6 +683,57 @@ namespace render::primitives::composition {
             });
         }
 
+        // \@setplain{name}{text}: the variable `name` holds what the text says,
+        // read as a heading's title is and kept as its words alone -- an
+        // accent as its letter, `--` and `---` as their dashes, its spaces
+        // single and none before a comma -- which is what a PDF's title and
+        // author are: hyperref's pdfusetitle gives \title and \author this way.
+        parser.bind("\\@setplain", [&context](syntax::Parser &parser) -> syntax::Node * {
+            syntax::Mouth &mouth = parser.mouth;
+            const std::string name = syntax::Argument::text(mouth);
+            syntax::Token open = mouth.read();
+            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            if (!open.is(syntax::Catcodes::Category::Group, '{')) {
+                if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
+                return nullptr;
+            }
+            mouth.push(syntax::semantics::Scope::Type::Group);
+            const memory::Slice<syntax::Node *> said = parser.parse('}');
+            mouth.pop(syntax::semantics::Scope::Type::Group);
+
+            std::string words;
+            [&words](this const auto &self, const memory::Slice<syntax::Node *> children) -> void {
+                for (const syntax::Node *child: children) {
+                    if (child && child->type == syntax::Node::Type::Text) words += child->value;
+                    else if (child && child->type == syntax::Node::Type::Group) self(child->nodes);
+                }
+            }(said);
+
+            std::string plain;
+            const std::string_view written = words;
+            for (std::size_t at = 0; at < written.size();) {
+                const std::string_view rest = written.substr(at);
+                if (rest.starts_with("---")) {
+                    plain += "—";
+                    at += 3;
+                } else if (rest.starts_with("--")) {
+                    plain += "–";
+                    at += 2;
+                } else if (rest.starts_with(" ") || rest.front() == ' ' || rest.front() == '\t' ||
+                           rest.front() == '\n') {
+                    if (!plain.empty() && !plain.ends_with(' ')) plain += ' ';
+                    at += rest.starts_with(" ") ? std::string_view{" "}.size() : 1;
+                } else {
+                    if (rest.front() == ',' && plain.ends_with(' ')) plain.pop_back();
+                    plain += rest.front();
+                    ++at;
+                }
+            }
+            if (plain.ends_with(' ')) plain.pop_back();
+            context.variables.define(name, plain);
+            return nullptr;
+        });
+
         // \addcontentsline{toc}{section}{text}: a line of a list's own, for a
         // heading that makes none -- an unnumbered one -- set where it is
         // written, so its page is the one it lands on.
