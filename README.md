@@ -354,8 +354,19 @@ public issue.
 
 ## License
 
-mLaTeX is free software, licensed under the
-[GNU Affero General Public License v3.0](LICENSE).
+Copyright (C) 2026 Andres Hernandez.
+
+mLaTeX is dual-licensed. It is free software under the
+[GNU Affero General Public License v3.0](LICENSE), and is also available under
+a commercial license for use the AGPL does not allow, such as in
+closed-source products: see [LICENSING.md](LICENSING.md) and
+[LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md). Contributions are accepted
+under the [Contributor License Agreement](CLA.md) described in
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+The fonts, hyphenation patterns and libraries mLaTeX ships keep their own
+licenses: see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The mLaTeX
+name and logo are covered by [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Acknowledgements
 
