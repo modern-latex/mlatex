@@ -267,7 +267,7 @@ jobs:
             cp stage/lib/liblatex_ffi.* bindings/python/mlatex
           fi
           cp -R stage/assets bindings/python/mlatex
-          cp LICENSE bindings/python
+          cp LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/python
           python -m pip install build wheel
           MLATEX_VERSION="$version" python -m build --wheel --outdir wheel bindings/python
           python -m wheel tags --platform-tag ${{ matrix.wheel }} --remove wheel/*.whl
@@ -398,7 +398,7 @@ jobs:
         shell: bash
         run: |
           version=$(head -n 1 VERSION | tr -d '[:space:]')
-          cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE bindings/javascript
+          cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/javascript
           (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
           cd "$RUNNER_TEMP"
