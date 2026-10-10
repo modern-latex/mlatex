@@ -97,7 +97,7 @@ will include:
 | macOS    | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
 | Linux    | `.deb`, `.rpm`                       | `/opt/mlatex`                                       |
 | Linux    | `.tar.gz`, `.zip`                    | wherever it is unpacked                             |
-| Web      | `-wasm.zip`: `latex.js`, `latex.wasm`, `latex.data` | beside the page or script that loads it |
+| Web      | `-wasm.zip`: `mlatex.js`, `mlatex.wasm`, `mlatex.data` | beside the page or script that loads it |
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
@@ -287,13 +287,13 @@ The library ships in every package: `latex_ffi.dll` on Windows,
 `liblatex_ffi.dylib` on macOS and `liblatex_ffi.so` on Linux, with
 `include/latex/ffi.hpp`.
 
-**JavaScript**, through the WebAssembly module: `latex.js`, `latex.wasm` and
-`latex.data` (the fonts), from the `mlatex-<version>-wasm.zip` of a release
+**JavaScript**, through the WebAssembly module: `mlatex.js`, `mlatex.wasm` and
+`mlatex.data` (the fonts), from the `mlatex-<version>-wasm.zip` of a release
 or built with the `wasm` preset (see `include/render/wasm.hpp`). It runs in a
 web page, a worker or Node:
 
 ```js
-const engine = await Latex();
+const engine = await mLatex();
 const session = new engine.Session();
 session.set("customer", "Acme Ltd.");
 if (!session.typeset(source)) console.error(session.error());
