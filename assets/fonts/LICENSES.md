@@ -2,7 +2,7 @@
 
 mLaTeX ships the fonts in this folder unmodified, as separate files that the
 engine reads at run time (or, in the WebAssembly build, packs into
-`latex.data`). None of them is covered by mLaTeX's own license: each keeps
+`mlatex.data`). None of them is covered by mLaTeX's own license: each keeps
 the license its authors gave it, listed below, and its full text is in this
 folder. Embedding one of these fonts (or a subset of it) in a PDF that
 mLaTeX produces is permitted by every license here.
