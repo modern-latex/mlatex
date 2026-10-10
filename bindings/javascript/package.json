@@ -13,17 +13,17 @@
   "license": "AGPL-3.0-only",
   "author": "Andres Hernandez",
   "main": "node.js",
-  "types": "latex.d.ts",
+  "types": "mlatex.d.ts",
   "exports": {
     ".": {
-      "types": "./latex.d.ts",
+      "types": "./mlatex.d.ts",
       "node": "./node.js",
-      "default": "./latex.js"
+      "default": "./mlatex.js"
     },
-    "./latex.js": "./latex.js",
-    "./latex.wasm": "./latex.wasm",
-    "./latex.data": "./latex.data",
+    "./mlatex.js": "./mlatex.js",
+    "./mlatex.wasm": "./mlatex.wasm",
+    "./mlatex.data": "./mlatex.data",
     "./package.json": "./package.json"
   },
-  "files": ["node.js", "latex.js", "latex.wasm", "latex.data", "latex.d.ts", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
+  "files": ["node.js", "mlatex.js", "mlatex.wasm", "mlatex.data", "mlatex.d.ts", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
 }
