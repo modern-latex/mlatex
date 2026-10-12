@@ -661,14 +661,14 @@ namespace render {
             };
 
             for (std::size_t index = 0; index < objects.size(); ++index) {
-                const graphics::Drawing::Object &object = objects[index];
-                if (object.streamed) {
+                const auto &[value, stream, streamed] = objects[index];
+                if (streamed) {
                     std::string extra;
-                    write(extra, object.value, true);
-                    file.stream(numbers[index], extra, object.stream);
+                    write(extra, value, true);
+                    file.stream(numbers[index], extra, stream);
                 } else {
                     file.open(numbers[index]);
-                    write(file.bytes, object.value);
+                    write(file.bytes, value);
                     file.close();
                 }
             }
@@ -763,17 +763,17 @@ namespace render {
         const std::vector<std::vector<Composer::Link> > &links = composer.links;
         std::vector<std::vector<std::size_t> > annotations(sheets.size());
         for (std::size_t sheet = 0; sheet < sheets.size() && sheet < links.size(); ++sheet) {
-            for (const Composer::Link &link: links[sheet]) {
+            for (const auto &[target, anchor, border, areas]: links[sheet]) {
                 std::string action;
-                if (!link.target.empty()) {
+                if (!target.empty()) {
                     action = "/A <</S /URI /URI ";
-                    text(action, link.target);
+                    text(action, target);
                     action += ">>";
                 } else {
                     action = "/Dest ";
-                    if (!destination(action, link.anchor)) continue;
+                    if (!destination(action, anchor)) continue;
                 }
-                for (const auto &[left, top, right, bottom]: link.areas) {
+                for (const auto &[left, top, right, bottom]: areas) {
                     const std::size_t made = file.reserve();
                     file.open(made);
                     file.bytes += "<</Type /Annot /Subtype /Link /F 4 /Rect [";
@@ -784,9 +784,9 @@ namespace render {
                         file.bytes += ' ';
                     }
                     file.bytes += "] /Border [0 0 ";
-                    file.bytes += link.border.alpha > 0.0f ? "1" : "0";
+                    file.bytes += border.alpha > 0.0f ? "1" : "0";
                     file.bytes += "] /C [";
-                    for (const float value: {link.border.red, link.border.green, link.border.blue}) {
+                    for (const float value: {border.red, border.green, border.blue}) {
                         fraction(file.bytes, value);
                         file.bytes += ' ';
                     }
@@ -948,8 +948,7 @@ namespace render {
                     number(file.bytes, children[index].size());
                     file.bytes += ' ';
                 }
-                std::string where;
-                if (destination(where, marks[index].anchor)) file.bytes += "/Dest " + where;
+                if (std::string where; destination(where, marks[index].anchor)) file.bytes += "/Dest " + where;
                 file.bytes += ">>";
                 file.close();
             }
