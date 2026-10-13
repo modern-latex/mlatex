@@ -80,6 +80,8 @@ int main() {
     assert((kept && kept->pixels.empty() && kept->encoded.size() == jpeg.size() && kept->components == 3) &&
            "and its bytes kept as they came, undecoded, for a PDF to decode");
     assert((kept && kept->resolution == 144.0f) && "with its JFIF density");
+    assert((kept && kept->raster().size() == 2 * 1 * 3) && "and decoded to its pixels when a screen asks for them");
+    assert((decoded && decoded->raster() == decoded->pixels) && "a picture already decoded handed over as it is");
 
     const std::string noise = "not a picture";
     assert((!graphics::Image::decode(std::as_bytes(std::span{noise})).has_value()) &&
