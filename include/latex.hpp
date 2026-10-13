@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/screen.hpp"
 #include "syntax/primitives/context.hpp"
 
 #include <cstddef>
@@ -162,6 +163,11 @@ namespace latex {
         /// Each page of the last PDF made, as its text: what a reader copying
         /// it would get, a line of the page to a line.
         std::vector<std::string> pages{};
+
+        /// The pages of the last PDF made, kept to draw on a screen -- a
+        /// canvas -- at any size, with no PDF reader between: see
+        /// render::Screen. Empty when none could be made.
+        render::Screen screen{};
     };
 
     /// @brief Finds the engine's assets directory from where a binary lives.
@@ -224,6 +230,7 @@ namespace latex {
     /// @param texts    Receives each page's text, as a reader copying it would
     ///                 get it, or null for none: for a program to search, index
     ///                 or check what it made without reading the PDF back.
+    /// @param screen   Receives the pages to draw on a screen, or null for none.
     /// @return True when the document compiled with nothing left broken. A
     ///         PDF may still have been made when some part of it was not.
     [[nodiscard]] bool typeset(
@@ -232,6 +239,7 @@ namespace latex {
         std::string &pdf,
         const Host &host,
         std::ostream &errors,
-        std::vector<std::string> *texts = nullptr
+        std::vector<std::string> *texts = nullptr,
+        render::Screen *screen = nullptr
     );
 }
