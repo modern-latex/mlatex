@@ -42,6 +42,12 @@ namespace render::graphics {
               components(components), resolution(resolution) {
         }
 
+        /// @brief Its pixels, three bytes each, top row first: #pixels, or a
+        ///        kept JPEG decoded, for a screen to draw.
+        /// @return The pixels; empty when a kept JPEG will not decode.
+        /// @complexity O(n) in the pixels.
+        [[nodiscard]] std::vector<std::uint8_t> raster() const;
+
         int width; ///< Pixels across.
         int height; ///< Pixels down.
         std::vector<std::uint8_t> pixels; ///< Row-major, top row first, three bytes each; empty when kept #encoded.
