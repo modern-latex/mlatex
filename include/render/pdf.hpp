@@ -4,6 +4,7 @@
 #include "memory/slice.hpp"
 #include "render/composer.hpp"
 #include "render/graphics/image.hpp"
+#include "render/screen.hpp"
 
 #include <harfbuzz/hb.h>
 
@@ -59,10 +60,14 @@ namespace render {
         ///
         /// @param composer Composer holding the document; it describes each page.
         /// @param pages  The pages, as the typesetter laid them out.
+        /// @param screen Handed each page's description as it is drawn, and
+        ///               what the descriptions name once all are, to draw the
+        ///               pages on a screen; null for none.
         /// @return The whole file, or nothing when there were no pages or the
         ///         page has no size.
         /// @complexity O(n) in the marks on the pages, plus the fonts embedded.
-        [[nodiscard]] static std::string render(Composer &composer, memory::Slice<layout::Pager::Page> pages);
+        [[nodiscard]] static std::string render(Composer &composer, memory::Slice<layout::Pager::Page> pages,
+                                                Screen *screen = nullptr);
 
         /// @brief Draws every page and writes the file.
         /// @param composer Composer holding the document; it describes each page.

@@ -36,9 +36,27 @@ namespace render {
     /// session.delete();                                  // as every bound object is
     /// @endcode
     ///
+    /// The pages come back drawable as well: `screen()` hands over a Screen,
+    /// a copy of latex::Session::screen, which draws a page on a canvas's 2D
+    /// context -- the page's own, or a worker's OffscreenCanvas -- at any
+    /// size, with no PDF reader in between:
+    ///
+    /// @code
+    /// session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]");
+    /// const screen = session.screen();
+    /// const scale = 2;                                   // pixels to the point
+    /// const canvas = new OffscreenCanvas(screen.width(0) * scale, screen.height(0) * scale);
+    /// screen.draw(canvas.getContext("2d"), 0, scale);
+    /// screen.delete();
+    /// @endcode
+    ///
+    /// It also says what the pages link to, `links(page)`, each area from
+    /// the page's top left in points, and what the document says of itself,
+    /// `about()`.
+    ///
     /// Every operation is latex::Session's, under the same name, and does
     /// the same thing: `set`/`unset`, `define`/`forget`, `provide`/`withdraw`,
-    /// `typeset`, `snippet`, `pdf` and `error`. Only what JavaScript hands over differs:
+    /// `typeset`, `snippet`, `pdf`, `error` and `screen`. Only what JavaScript hands over differs:
     /// a command is a JavaScript function, called with the arguments' text
     /// and turned back into text with `String()`; a file is a Uint8Array or a
     /// string; and the PDF comes back as a Uint8Array that owns its bytes,
