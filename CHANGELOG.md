@@ -911,6 +911,19 @@ page's text goes.
   `snippet`, last in its struct so a program built against an older header
   finds everything else where it was, and the WebAssembly module as
   `session.snippet(text)`.
+- **Pages drawn on a canvas, with no PDF reader.** `render::Screen` keeps the
+  pages the PDF writer draws -- each page's description, the outline of every
+  glyph it drew from HarfBuzz, its pictures decoded, its links and what the
+  document says of itself -- and replays a page onto a `Screen::Target` at
+  any scale, operator by operator, as a canvas's 2D context draws it.
+  `Pdf::render` hands it each page as it draws it, so the pages are drawn
+  once for both. `latex::Session::screen` holds the last document's, and
+  `latex::typeset` takes one to fill. The WebAssembly module hands it over as
+  `session.screen()`, whose `draw(context, page, scale)` draws onto a page's
+  canvas or a worker's `OffscreenCanvas`, a snippet as well as a document;
+  `width`, `height`, `links` and `about` say the rest. A page of another PDF
+  shows as a shaded box, which only a PDF reader can draw.
+  `graphics::Image::raster` decodes a JPEG kept for the PDF, for a screen.
 - **The WebAssembly module is built and released.** The workflow builds it
   with Emscripten 6.0.10 against vcpkg's `wasm32-emscripten` libraries, sets
   a snippet and a document with it in Node through its own JavaScript, and
