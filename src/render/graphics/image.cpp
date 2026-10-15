@@ -84,7 +84,9 @@ namespace render::graphics {
 #pragma warning(disable: 4324 4611)
 #endif
 
-    [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes) {
+    /// @param keep Whether a JPEG in grey or in colour keeps its bytes for a
+    ///             PDF to decode, rather than being decoded here.
+    [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes, const bool keep = true) {
         // libjpeg's own error path: a longjmp back out of the callback it
         // insists on calling rather than returning from.
         struct Failure {
@@ -121,8 +123,8 @@ namespace render::graphics {
         // all that needs reading here, and the bytes are kept as they came.
         // CMYK and YCCK files, which PDF readers disagree about, are decoded.
         const J_COLOR_SPACE space = info.jpeg_color_space;
-        if ((space == JCS_GRAYSCALE && info.num_components == 1) ||
-            ((space == JCS_YCbCr || space == JCS_RGB) && info.num_components == 3)) {
+        if (keep && ((space == JCS_GRAYSCALE && info.num_components == 1) ||
+                     ((space == JCS_YCbCr || space == JCS_RGB) && info.num_components == 3))) {
             const int width = static_cast<int>(info.image_width);
             const int height = static_cast<int>(info.image_height);
             const int components = info.num_components;
@@ -171,6 +173,12 @@ namespace render::graphics {
         WebPFree(decoded);
 
         return Image(width, height, std::move(pixels));
+    }
+
+    std::vector<std::uint8_t> Image::raster() const {
+        if (!pixels.empty() || encoded.empty()) return pixels;
+        std::optional<Image> decoded = jpeg(std::as_bytes(std::span(encoded)), false);
+        return decoded ? std::move(decoded->pixels) : std::vector<std::uint8_t>{};
     }
 
     std::optional<Image> Image::decode(const std::span<const std::byte> bytes) {

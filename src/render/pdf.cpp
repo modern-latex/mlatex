@@ -137,7 +137,7 @@ namespace render {
     }
 
 
-    std::string Pdf::render(Composer &composer, const memory::Slice<layout::Pager::Page> pages) {
+    std::string Pdf::render(Composer &composer, const memory::Slice<layout::Pager::Page> pages, Screen *screen) {
         if (pages.empty()) return {};
 
         const layout::Document::Configuration &page = composer.document.configuration;
@@ -172,7 +172,10 @@ namespace render {
             file.stream(body, "", content);
             bodies.push_back(body);
             extents.push_back(composer.extent);
+            if (screen) screen->keep(content, composer.extent, page);
         }
+        // Every page drawn, so every face, picture and link they name known.
+        if (screen) screen->take(composer);
 
         // Cut in parallel, written in order; see the class notes. A face goes
         // to whichever thread claims it first, and the writing thread claims
