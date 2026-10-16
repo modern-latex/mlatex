@@ -63,9 +63,9 @@ once, in compiled code.
   pictures; beamer slides with overlays and themes; BibTeX bibliographies in
   the standard, natbib and biblatex styles; right-to-left and CJK text;
   PNG, JPEG, WebP, EPS and SVG pictures; PDF/A.
-- **Embeddable.** The same engine is available as a C++ library, a C library
-  that any language with a foreign-function interface can bind, and a
-  WebAssembly module. Programs can supply values, commands they implement,
+- **Embeddable.** The same engine is available as a C++ library and a C
+  library that any language with a foreign-function interface can bind.
+  Programs can supply values, commands they implement,
   and files from memory, then get the PDF back as bytes.
 - **Safe by design.** A document cannot run shell commands (`\write18` does
   not exist), cannot write files, and never loads `.sty` or `.cls` code from
@@ -75,9 +75,8 @@ once, in compiled code.
 ## Status
 
 mLaTeX is pre-release software (version 0.1.0). The `aot` target, which
-writes the PDF directly, is complete. The `jit` and `wasm` targets of the
-command line are accepted but not yet implemented; the just-in-time target
-is reserved in [`src/jit`](src/jit/implementation.md). See
+writes the PDF directly, is complete. The `jit` target of the command line
+is accepted but not yet implemented, and reserved in [`src/jit`](src/jit/implementation.md). See
 [CHANGELOG.md](CHANGELOG.md) for what has been done and what is
 intentionally left out.
 
@@ -137,7 +136,7 @@ cmake --build cmake-build-release
 ctest --test-dir cmake-build-release --output-on-failure
 ```
 
-On Windows, the `debug`, `release` and `wasm` presets in
+On Windows, the `debug` and `release` presets in
 `CMakePresets.json` set all of this up (`cmake --preset release`). If you
 leave out the toolchain file, the build looks for vcpkg in `VCPKG_ROOT` and
 then in `C:/vcpkg`.
@@ -260,16 +259,6 @@ if (!table->typeset(session, source, strlen(source), &pdf, &size)) {
     fprintf(stderr, "%s", table->error(session));
 }
 table->dispose(session);
-```
-
-**JavaScript**, through the WebAssembly module built with the `wasm` preset (see `include/render/wasm.hpp`):
-
-```js
-const engine = await Latex();
-const session = new engine.Session();
-session.set("customer", "Acme Ltd.");
-if (!session.typeset(source)) console.error(session.error());
-const pdf = session.pdf();
 ```
 
 ## Documentation

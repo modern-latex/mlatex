@@ -87,8 +87,7 @@ int main() {
     assert(
         (run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) &&
         "--target=jit is taken, and does nothing yet");
-    assert((run(document, "--target=wasm") == 0 && !std::filesystem::exists(pdf)) &&
-           "--target=wasm is taken, and does nothing yet");
+    assert((run(document, "--target=wasm") == 2) && "WebAssembly is no target here");
     assert((run(document, "--target=fortran") == 2) && "a target there is none of");
 
     assert((run(document, "--draftmode -q") == 0 && !std::filesystem::exists(pdf)) && "--draftmode writes no PDF");

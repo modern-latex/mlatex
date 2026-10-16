@@ -5,9 +5,7 @@
 /// writes one table entry per font file, holding the path and no contents.
 /// get() turns an entry's path into bytes the first time it is asked -- by
 /// mapping the file, or reading it where it will not map -- and keeps them,
-/// so every later request for that family is a table lookup. WebAssembly is
-/// always read: its file system is memory already, and a mapping there would
-/// only be a copy made a slower way.
+/// so every later request for that family is a table lookup.
 #include "typography/collection.hpp"
 #include "logger.hpp"
 
@@ -26,7 +24,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -90,7 +88,7 @@ namespace render::typography {
         for (const View &view: views) {
 #if defined(_WIN32)
             UnmapViewOfFile(view.data);
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
             munmap(const_cast<void *>(view.data), view.size);
 #endif
         }
@@ -298,7 +296,7 @@ namespace render::typography {
         folders = {"/System/Library/Fonts", "/Library/Fonts"};
         if (const char *home = std::getenv("HOME")) folders.emplace_back(
             std::filesystem::path(home) / "Library" / "Fonts");
-#elif defined(__unix__) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__)
         folders = {"/usr/share/fonts", "/usr/local/share/fonts"};
         if (const char *home = std::getenv("HOME")) {
             folders.emplace_back(std::filesystem::path(home) / ".local" / "share" / "fonts");
@@ -395,7 +393,7 @@ namespace render::typography {
             }
             CloseHandle(file);
         }
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
         if (const int file = open(entry->path.data(), O_RDONLY | O_CLOEXEC); file >= 0) {
             struct stat status{};
             if (fstat(file, &status) == 0 && status.st_size > 0) {

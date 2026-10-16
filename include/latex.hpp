@@ -68,9 +68,8 @@ namespace latex {
     ///
     /// This is the one interface every binding shares. The C library in
     /// `protocols/ffi.hpp` is these same functions in a struct, under the same
-    /// names; the WebAssembly module in `render/wasm.hpp` is this class, bound
-    /// for JavaScript under the same names again. Whatever a document can be
-    /// handed from one language, it can be handed from all three.
+    /// names. Whatever a document can be handed from one language, it can be
+    /// handed from the other.
     ///
     /// @code
     /// latex::Session session(latex::locate(program));

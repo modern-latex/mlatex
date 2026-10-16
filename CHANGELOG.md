@@ -696,7 +696,7 @@ folder the document's inputs are read from, the engine's
 `latex::Host::directories`) and `--time-statistics` (the engine's own
 report); a value after `=` or as the next argument, and `--` ending the
 options. `-t`/`--target` says what the document is made into: `aot`, a PDF
-ahead of time, the default; `jit` and `wasm` are taken and do nothing yet.
+ahead of time, the default; `jit` is taken and does nothing yet.
 `--assets=DIR` names the engine's assets for a program installed away from
 them. A run says what it wrote as TeX does -- `Output written on paper.pdf
 (11 pages, 423495 bytes).` -- and a document named without an extension is
@@ -808,8 +808,13 @@ page's text goes.
 - `latex::Session`: values, commands, packages and pictures handed in once
   and kept across documents; `set`, `define`, `provide`, their undoing verbs,
   `typeset`, `pdf`, `error`, and `pages()` for each page's text.
-- The same interface as a C library (`protocols/ffi.hpp`) and as a WebAssembly
-  module (`render/wasm.hpp`).
+- The same interface as a C library (`protocols/ffi.hpp`).
+- **Native only.** This line of the engine builds for Windows, Linux and
+  macOS and nothing else: the WebAssembly module, its Emscripten build and
+  preset, the `--target=wasm` the command line reserved for it, and the
+  Emscripten branches in the arena, the font collection and the PDF writer
+  are gone. The WebAssembly module and `snippet` live on the `wasm` branch
+  and on `main`.
 - **The engine is `namespace latex`**, in `latex.hpp` and `latex.cpp` (was
   `engine`, in `engine.hpp`): `latex::Session`, `latex::Host`,
   `latex::compose`, `latex::locate`. The command line is the CMake target

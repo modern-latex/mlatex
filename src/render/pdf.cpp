@@ -255,15 +255,7 @@ namespace render {
         {
             // One helper fewer than the faces, because the writing thread is
             // one of them; none at all for a document in a single face.
-            //
-            // A WebAssembly module built without threads has none to start,
-            // and starting one there throws; the writing thread cuts every
-            // face itself, which is the same work in the same order.
-#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
-            const std::size_t cores = 1;
-#else
             const std::size_t cores = std::max(1u, std::thread::hardware_concurrency());
-#endif
             const std::size_t helpers = faces.empty() ? 0 : std::min(faces.size(), cores) - 1;
 
 #if defined(_WIN32)

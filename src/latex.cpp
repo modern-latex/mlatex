@@ -151,8 +151,6 @@ namespace latex {
                 const_cast<void *>(static_cast<const void *>(&warm)), nullptr)
         };
         if (worker.work) SubmitThreadpoolWork(worker.work);
-#elif defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
-        // No thread to spare: each face opens when it is first asked for.
 #else
         const std::jthread worker(warm);
 #endif

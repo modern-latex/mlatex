@@ -19,7 +19,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
 #include <sys/mman.h>
 #endif
 
@@ -32,7 +32,7 @@ namespace memory {
         for (const Block &block: blocks) {
 #if defined(_WIN32)
             VirtualFree(block.data, 0, MEM_RELEASE);
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
             munmap(block.data, block.capacity);
 #else
             std::free(block.data);
@@ -48,7 +48,7 @@ namespace memory {
 #if defined(_WIN32)
         auto *data = static_cast<std::byte *>(
             VirtualAlloc(nullptr, capacity, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-#elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
+#elif defined(__unix__) || defined(__APPLE__)
         void *mapped = mmap(nullptr, capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         auto *data = mapped == MAP_FAILED ? nullptr : static_cast<std::byte *>(mapped);
 #else

@@ -5,10 +5,9 @@
 ///
 /// Requests go through WinHTTP on Windows, which every Windows machine
 /// already has, and through libcurl on Linux and macOS when the build found
-/// it. Without either -- a WebAssembly module above all, whose page fetches
-/// for it -- a request is refused the way one that could not be sent is, and
-/// everything that reads a file, which is most of what `\\includegraphics`
-/// does, works the same on every platform.
+/// it. Without either, a request is refused the way one that could not be
+/// sent is, and everything that reads a file, which is most of what
+/// `\\includegraphics` does, works the same on every platform.
 #include "protocols/http.hpp"
 
 #include <filesystem>

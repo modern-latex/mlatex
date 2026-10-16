@@ -78,8 +78,7 @@ engine's own language.
 - **Network access.** A document can make HTTP and HTTPS requests from the
   machine that compiles it: `\includegraphics{https://...}`, `\httpget{url}`
   and `\httppost{url}{body}`. These use WinHTTP on Windows and libcurl on
-  Linux and macOS when the build found it. The WebAssembly module makes no
-  requests. When compiling documents you do not trust, turn the network
+  Linux and macOS when the build found it. When compiling documents you do not trust, turn the network
   off: `mlatex --offline`, `latex::Host::offline` in C++, or
   `offline(session, 1)` in the C library. Each request is then refused and
   reported as an error before anything is sent, so a document cannot reach
@@ -90,8 +89,7 @@ engine's own language.
   compiles untrusted documents should enforce its own timeout and memory
   limit (a job object on Windows, cgroups or `ulimit` elsewhere).
 - **Commands a host program implements.** A command defined with
-  `latex::Session::define`, or `define` in the C library or the WebAssembly
-  module, runs with the host program's privileges, and the document chooses
+  `latex::Session::define`, or `define` in the C library, runs with the host program's privileges, and the document chooses
   its arguments. Validate them as you would any other untrusted input.
 - **Third-party libraries.** Fonts and pictures are parsed by HarfBuzz,
   FreeType, libpng, libjpeg-turbo, libwebp and zlib. Keep them up to date (through your vcpkg baseline, or the system's
@@ -101,7 +99,7 @@ engine's own language.
 
 ## Scope
 
-In scope: the engine (`core`), the `mlatex` command line, the C library (`latex_ffi`), the WebAssembly module, the
+In scope: the engine (`core`), the `mlatex` command line, the C library (`latex_ffi`), the
 packages under `src/modules`, and
 the build and packaging scripts in this repository.
 

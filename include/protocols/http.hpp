@@ -21,8 +21,8 @@ namespace protocols {
     /// @brief Sends an HTTP or HTTPS request and composes the response.
     ///
     /// Sent with the client the platform already has: WinHTTP on Windows,
-    /// libcurl on Linux and macOS when it is installed. Without either, as in
-    /// a WebAssembly module, nothing is sent and nothing comes back.
+    /// libcurl on Linux and macOS when it is installed. Without either,
+    /// nothing is sent and nothing comes back.
     ///
     /// @par Safety
     /// A method or a URL holding a carriage return or a line feed is

@@ -132,16 +132,10 @@ endif ()
 # whole engine is optimised as a single program rather than a file at a time.
 # logger.hpp does the same for the engine's own tracing: below Informative it
 # is compiled out of a release build entirely, where NDEBUG is defined.
-#
-# Emscripten strips a release module itself -- names, debug information and
-# the runtime's own assertions all go at -O3 -- and reads `-s` as the start
-# of one of its settings, so it is left to do that its own way.
 if (MSVC)
     add_compile_options($<$<CONFIG:Release>:/Gy> $<$<CONFIG:Release>:/Gw>)
     add_link_options($<$<CONFIG:Release>:/DEBUG:NONE> $<$<CONFIG:Release>:/OPT:REF>
             $<$<CONFIG:Release>:/OPT:ICF>)
-elseif (EMSCRIPTEN)
-    add_link_options($<$<CONFIG:Release>:-sASSERTIONS=0>)
 else ()
     add_compile_options($<$<CONFIG:Release>:-ffunction-sections> $<$<CONFIG:Release>:-fdata-sections>)
     if (APPLE)
@@ -341,7 +335,7 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS
 )
 
 set(engine "${sources}")
-list(REMOVE_ITEM engine "${source}/src/main.cpp" "${source}/src/protocols/ffi.cpp" "${source}/src/render/wasm.cpp")
+list(REMOVE_ITEM engine "${source}/src/main.cpp" "${source}/src/protocols/ffi.cpp")
 
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS
         "${source}/include/*.hpp"
@@ -393,17 +387,14 @@ set_source_files_properties("${source}/src/syntax/glossary.cpp" PROPERTIES
         COMPILE_OPTIONS "${evaluation}")
 
 # The engine, compiled once, as the target core: the command line -- the
-# target latex, the program an IDE runs -- the foreign-function library, the
-# WebAssembly module and every test link this rather than each compiling
-# all of it again, which is what used to make a full build take twenty
-# minutes for ten small tests. Position independent, because the
-# foreign-function library is a shared one and has to be able to carry it --
-# except under Emscripten, which links everything into one module.
+# target latex, the program an IDE runs -- the foreign-function library and
+# every test link this rather than each compiling all of it again, which is
+# what used to make a full build take twenty minutes for ten small tests.
+# Position independent, because the foreign-function library is a shared
+# one and has to be able to carry it.
 add_library(core STATIC ${engine} ${headers} ${output})
 add_dependencies(core lookup)
-if (NOT EMSCRIPTEN)
-    set_target_properties(core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-endif ()
+set_target_properties(core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(core PUBLIC ${includes})
 
@@ -418,8 +409,7 @@ endif ()
 # zlib recompresses them for the PDF. An https:// source is fetched by the
 # HTTP client each platform already has: WinHTTP on Windows, and libcurl on
 # Linux and macOS when it is installed. Without one, protocols/http.cpp reads
-# files alone -- which is also the case in a browser, where the page fetches
-# a picture and hands it in.
+# files alone.
 target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
 
 # Whether this is a release build, told to everything that links the engine:
@@ -428,7 +418,7 @@ target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
 target_compile_definitions(core PUBLIC $<$<NOT:$<CONFIG:Debug>>:LATEX_RELEASE>)
 if (WIN32)
     target_link_libraries(core PUBLIC winhttp)
-elseif (NOT EMSCRIPTEN)
+else ()
     find_package(CURL QUIET)
     if (CURL_FOUND)
         target_link_libraries(core PUBLIC CURL::libcurl)
@@ -436,208 +426,189 @@ elseif (NOT EMSCRIPTEN)
     endif ()
 endif ()
 
-if (EMSCRIPTEN)
-    # The engine as a WebAssembly module, for a web page, a worker or Node:
-    # see include/render/wasm.hpp. Configure with the `wasm` preset, which
-    # builds every library for the wasm32-emscripten triplet, and the build
-    # leaves latex.js, latex.wasm and latex.data -- the fonts, packed into
-    # the module's own file system where the engine looks for them.
-    set(fonts "${source}/assets/fonts" CACHE PATH "The fonts packed into the WebAssembly module")
+add_executable(latex "${source}/src/main.cpp")
+target_link_libraries(latex PRIVATE core)
+# The program a person runs is `mlatex`: `latex` is the command a TeX
+# distribution installs, and the two could stand on one PATH. The
+# target keeps its name, which is what an IDE's run configuration names.
+set_target_properties(latex PROPERTIES OUTPUT_NAME mlatex)
+# What `mlatex --version` prints.
+target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
 
-    add_executable(wasm "${source}/src/render/wasm.cpp" "${source}/include/render/wasm.hpp")
-    target_link_libraries(wasm PRIVATE core)
-    target_link_options(wasm PRIVATE
-            -lembind
-            -sMODULARIZE=1
-            -sEXPORT_NAME=Latex
-            -sALLOW_MEMORY_GROWTH=1
-            -sENVIRONMENT=web,worker,node
-            "SHELL:--preload-file ${fonts}@/assets/fonts")
-    set_target_properties(wasm PROPERTIES OUTPUT_NAME latex)
-else ()
-    add_executable(latex "${source}/src/main.cpp")
-    target_link_libraries(latex PRIVATE core)
-    # The program a person runs is `mlatex`: `latex` is the command a TeX
-    # distribution installs, and the two could stand on one PATH. The
-    # target keeps its name, which is what an IDE's run configuration names.
-    set_target_properties(latex PROPERTIES OUTPUT_NAME mlatex)
-    # What `mlatex --version` prints.
-    target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
+# The engine as a C library, for a program that wants documents made
+# without running a second process: see include/protocols/ffi.hpp. Named
+# latex_ffi so that its import library does not collide with the one the
+# executable leaves behind. It finds its assets from where it was loaded,
+# which on Linux and macOS takes dladdr and so the dynamic-loading library.
+add_library(ffi SHARED "${source}/src/protocols/ffi.cpp" "${source}/include/protocols/ffi.hpp")
+target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
+target_compile_definitions(ffi PRIVATE EXPORTING)
+set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
 
-    # The engine as a C library, for a program that wants documents made
-    # without running a second process: see include/protocols/ffi.hpp. Named
-    # latex_ffi so that its import library does not collide with the one the
-    # executable leaves behind. It finds its assets from where it was loaded,
-    # which on Linux and macOS takes dladdr and so the dynamic-loading library.
-    add_library(ffi SHARED "${source}/src/protocols/ffi.cpp" "${source}/include/protocols/ffi.hpp")
-    target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
-    target_compile_definitions(ffi PRIVATE EXPORTING)
-    set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
+# Loaded the first time a document needs them rather than when the program
+# starts: most documents draw no JPEG or WebP picture and fetch nothing
+# over HTTP, and every library loaded at start-up is paid for by all.
+if (WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    foreach (target latex ffi)
+        target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
+                /DELAYLOAD:winhttp.dll)
+        target_link_libraries(${target} PRIVATE delayimp)
+    endforeach ()
+endif ()
 
-    # Loaded the first time a document needs them rather than when the program
-    # starts: most documents draw no JPEG or WebP picture and fetch nothing
-    # over HTTP, and every library loaded at start-up is paid for by all.
-    if (WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-        foreach (target latex ffi)
-            target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
-                    /DELAYLOAD:winhttp.dll)
-            target_link_libraries(${target} PRIVATE delayimp)
-        endforeach ()
+# After vcpkg's copy, not instead of it: see `dependencies` above.
+if (dependencies)
+    foreach (target latex ffi)
+        add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dependencies} "$<TARGET_FILE_DIR:${target}>"
+                VERBATIM)
+    endforeach ()
+endif ()
+
+enable_testing()
+add_subdirectory(tests)
+
+# What an installed copy holds, laid out the way the engine looks for it:
+# the program in bin/ and assets/ beside bin/. latex::locate walks up from
+# the executable to the first folder holding assets/fonts, so the tree
+# works wherever it is put. The C library and its header go with it, for
+# a program that links the engine instead of running it. English
+# hyphenation and every package are compiled in; the other languages'
+# patterns and the fonts are read from assets/ at run time.
+install(TARGETS latex ffi
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
+install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
+if (WIN32)
+    # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
+    # program -- HarfBuzz, FreeType, the image libraries, zlib, the
+    # delay-loaded ones included -- goes beside it again, so an installed
+    # copy runs on a machine with no vcpkg. The C and C++ runtimes are
+    # linked in (CMAKE_MSVC_RUNTIME_LIBRARY above): no redistributable.
+    install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:latex>/*.dll\")
+        file(INSTALL \${libraries} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")")
+endif ()
+
+# A release build packages itself: `cpack` in the build tree -- or the
+# `package` target -- leaves every package in the source tree's bin/
+# folder: an MSI and a .zip on Windows; a disk image, a .pkg installer,
+# a .tar.gz and a .zip on macOS; a .deb, an .rpm, a .tar.gz and a .zip
+# on Linux. A
+# build is for one architecture, and its packages are named for it --
+# mlatex-0.1.0-windows-arm64.msi, mlatex_0.1.0_amd64.deb -- so another is
+# another build: clang-cl for ARM64 with the arm64-windows triplet, an
+# aarch64 compiler, or on macOS CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+# with universal libraries for a single disk image that runs on both.
+if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
+    if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
+        set(processor "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
+    else ()
+        set(processor "${CMAKE_SYSTEM_PROCESSOR}")
     endif ()
-
-    # After vcpkg's copy, not instead of it: see `dependencies` above.
-    if (dependencies)
-        foreach (target latex ffi)
-            add_custom_command(TARGET ${target} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dependencies} "$<TARGET_FILE_DIR:${target}>"
-                    VERBATIM)
-        endforeach ()
+    list(LENGTH CMAKE_OSX_ARCHITECTURES slices)
+    if (APPLE AND slices EQUAL 1)
+        set(processor "${CMAKE_OSX_ARCHITECTURES}")
     endif ()
-
-    enable_testing()
-    add_subdirectory(tests)
-
-    # What an installed copy holds, laid out the way the engine looks for it:
-    # the program in bin/ and assets/ beside bin/. latex::locate walks up from
-    # the executable to the first folder holding assets/fonts, so the tree
-    # works wherever it is put. The C library and its header go with it, for
-    # a program that links the engine instead of running it. English
-    # hyphenation and every package are compiled in; the other languages'
-    # patterns and the fonts are read from assets/ at run time.
-    install(TARGETS latex ffi
-            RUNTIME DESTINATION bin
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib)
-    install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
-    install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
+    string(TOLOWER "${processor}" processor)
+    if (APPLE AND slices GREATER 1)
+        set(architecture universal)
+    elseif (processor MATCHES "^(x64|x86_64|amd64)$")
+        set(architecture x64)
+    elseif (processor MATCHES "^(arm64|arm64ec|aarch64)$")
+        set(architecture arm64)
+    elseif (processor MATCHES "^(x86|i[3-6]86)$")
+        set(architecture x86)
+    else ()
+        set(architecture "${processor}")
+    endif ()
     if (WIN32)
-        # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
-        # program -- HarfBuzz, FreeType, the image libraries, zlib, the
-        # delay-loaded ones included -- goes beside it again, so an installed
-        # copy runs on a machine with no vcpkg. The C and C++ runtimes are
-        # linked in (CMAKE_MSVC_RUNTIME_LIBRARY above): no redistributable.
-        install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:latex>/*.dll\")
-            file(INSTALL \${libraries} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")")
+        set(platform windows)
+    elseif (APPLE)
+        set(platform macos)
+    else ()
+        set(platform linux)
     endif ()
 
-    # A release build packages itself: `cpack` in the build tree -- or the
-    # `package` target -- leaves every package in the source tree's bin/
-    # folder: an MSI and a .zip on Windows; a disk image, a .pkg installer,
-    # a .tar.gz and a .zip on macOS; a .deb, an .rpm, a .tar.gz and a .zip
-    # on Linux. A
-    # build is for one architecture, and its packages are named for it --
-    # mlatex-0.1.0-windows-arm64.msi, mlatex_0.1.0_amd64.deb -- so another is
-    # another build: clang-cl for ARM64 with the arm64-windows triplet, an
-    # aarch64 compiler, or on macOS CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
-    # with universal libraries for a single disk image that runs on both.
-    if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_CONFIGURATION_TYPES)
-        if (CMAKE_CXX_COMPILER_ARCHITECTURE_ID)
-            set(processor "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
-        else ()
-            set(processor "${CMAKE_SYSTEM_PROCESSOR}")
-        endif ()
-        list(LENGTH CMAKE_OSX_ARCHITECTURES slices)
-        if (APPLE AND slices EQUAL 1)
-            set(processor "${CMAKE_OSX_ARCHITECTURES}")
-        endif ()
-        string(TOLOWER "${processor}" processor)
-        if (APPLE AND slices GREATER 1)
-            set(architecture universal)
-        elseif (processor MATCHES "^(x64|x86_64|amd64)$")
-            set(architecture x64)
-        elseif (processor MATCHES "^(arm64|arm64ec|aarch64)$")
-            set(architecture arm64)
-        elseif (processor MATCHES "^(x86|i[3-6]86)$")
-            set(architecture x86)
-        else ()
-            set(architecture "${processor}")
-        endif ()
-        if (WIN32)
-            set(platform windows)
-        elseif (APPLE)
-            set(platform macos)
-        else ()
-            set(platform linux)
-        endif ()
+    set(CPACK_PACKAGE_NAME mlatex)
+    set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
+    set(CPACK_PACKAGE_CONTACT "Andres Hernandez <andromedeyz@hotmail.com>")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typesets LaTeX into PDF: one program, no TeX installation behind it")
+    set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ApaxPhoenix/latex")
+    set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
+    set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
+    set(CPACK_STRIP_FILES ON)
+    # The packages themselves in bin/, beside the sources; what CPack
+    # stages to make them stays in the build tree.
+    set(CPACK_OUTPUT_FILE_PREFIX "${source}/bin")
+    # WiX takes a license as .txt or .rtf only.
+    configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
+    set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")
 
-        set(CPACK_PACKAGE_NAME mlatex)
-        set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
-        set(CPACK_PACKAGE_CONTACT "Andres Hernandez <andromedeyz@hotmail.com>")
-        set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typesets LaTeX into PDF: one program, no TeX installation behind it")
-        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ApaxPhoenix/latex")
-        set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-        set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
-        set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
-        set(CPACK_STRIP_FILES ON)
-        # The packages themselves in bin/, beside the sources; what CPack
-        # stages to make them stays in the build tree.
-        set(CPACK_OUTPUT_FILE_PREFIX "${source}/bin")
-        # WiX takes a license as .txt or .rtf only.
-        configure_file("${source}/LICENSE" "${binary}/LICENSE.txt" COPYONLY)
-        set(CPACK_RESOURCE_FILE_LICENSE "${binary}/LICENSE.txt")
-
-        if (WIN32)
-            # An MSI when WiX is installed -- the .NET tool `wix`, version 4
-            # or later, or version 3's candle and light -- and a .zip always.
-            # WiX 7 runs only once its EULA is accepted, which is the
-            # person's to do, once per machine: `wix eula accept wix7`.
-            # The upgrade code never changes, so a newer MSI replaces an
-            # older one rather than installing beside it.
-            set(CPACK_GENERATOR ZIP)
-            find_program(toolset wix)
-            find_program(candle candle HINTS "$ENV{WIX}/bin")
-            if (toolset)
-                list(APPEND CPACK_GENERATOR WIX)
-                set(CPACK_WIX_VERSION 4)
-            elseif (candle)
-                list(APPEND CPACK_GENERATOR WIX)
-            else ()
-                message(STATUS "No WiX found: packaging a .zip and no .msi")
-            endif ()
-            set(CPACK_WIX_UPGRADE_GUID "AA871061-E247-40FB-A13C-CBA1467E7954")
-            set(CPACK_WIX_ARCHITECTURE "${architecture}")
-        elseif (APPLE)
-            # A disk image holding an mLaTeX folder and a link to
-            # Applications to drag it onto; a .pkg installer that puts the
-            # same folder in /Applications itself; and two archives.
-            set(CPACK_GENERATOR DragNDrop productbuild TGZ ZIP)
-            set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
-            set(CPACK_PRODUCTBUILD_IDENTIFIER io.github.apaxphoenix.mlatex)
+    if (WIN32)
+        # An MSI when WiX is installed -- the .NET tool `wix`, version 4
+        # or later, or version 3's candle and light -- and a .zip always.
+        # WiX 7 runs only once its EULA is accepted, which is the
+        # person's to do, once per machine: `wix eula accept wix7`.
+        # The upgrade code never changes, so a newer MSI replaces an
+        # older one rather than installing beside it.
+        set(CPACK_GENERATOR ZIP)
+        find_program(toolset wix)
+        find_program(candle candle HINTS "$ENV{WIX}/bin")
+        if (toolset)
+            list(APPEND CPACK_GENERATOR WIX)
+            set(CPACK_WIX_VERSION 4)
+        elseif (candle)
+            list(APPEND CPACK_GENERATOR WIX)
         else ()
-            # Debian's and Red Hat's packages, named as each names its own,
-            # and two archives for everything else. An .rpm needs rpmbuild.
-            set(CPACK_GENERATOR DEB TGZ ZIP)
-            find_program(builder rpmbuild)
-            if (builder)
-                list(APPEND CPACK_GENERATOR RPM)
-            endif ()
-            set(debian ${architecture})
-            set(redhat ${architecture})
-            if (architecture STREQUAL "x64")
-                set(debian amd64)
-                set(redhat x86_64)
-            elseif (architecture STREQUAL "arm64")
-                set(redhat aarch64)
-            elseif (architecture STREQUAL "x86")
-                set(debian i386)
-                set(redhat i686)
-            endif ()
-            set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${debian})
-            set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
-            set(CPACK_DEBIAN_PACKAGE_SECTION tex)
-            set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-            set(CPACK_RPM_PACKAGE_ARCHITECTURE ${redhat})
-            set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
-            set(CPACK_RPM_PACKAGE_LICENSE AGPL-3.0-only)
-            set(CPACK_RPM_PACKAGE_GROUP Applications/Publishing)
-            set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /opt)
+            message(STATUS "No WiX found: packaging a .zip and no .msi")
         endif ()
+        set(CPACK_WIX_UPGRADE_GUID "AA871061-E247-40FB-A13C-CBA1467E7954")
+        set(CPACK_WIX_ARCHITECTURE "${architecture}")
+    elseif (APPLE)
+        # A disk image holding an mLaTeX folder and a link to
+        # Applications to drag it onto; a .pkg installer that puts the
+        # same folder in /Applications itself; and two archives.
+        set(CPACK_GENERATOR DragNDrop productbuild TGZ ZIP)
+        set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
+        set(CPACK_PRODUCTBUILD_IDENTIFIER io.github.apaxphoenix.mlatex)
+    else ()
+        # Debian's and Red Hat's packages, named as each names its own,
+        # and two archives for everything else. An .rpm needs rpmbuild.
+        set(CPACK_GENERATOR DEB TGZ ZIP)
+        find_program(builder rpmbuild)
+        if (builder)
+            list(APPEND CPACK_GENERATOR RPM)
+        endif ()
+        set(debian ${architecture})
+        set(redhat ${architecture})
+        if (architecture STREQUAL "x64")
+            set(debian amd64)
+            set(redhat x86_64)
+        elseif (architecture STREQUAL "arm64")
+            set(redhat aarch64)
+        elseif (architecture STREQUAL "x86")
+            set(debian i386)
+            set(redhat i686)
+        endif ()
+        set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${debian})
+        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+        set(CPACK_DEBIAN_PACKAGE_SECTION tex)
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+        set(CPACK_RPM_PACKAGE_ARCHITECTURE ${redhat})
+        set(CPACK_RPM_FILE_NAME RPM-DEFAULT)
+        set(CPACK_RPM_PACKAGE_LICENSE AGPL-3.0-only)
+        set(CPACK_RPM_PACKAGE_GROUP Applications/Publishing)
+        set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /opt)
+    endif ()
 
-        # Where each package puts the tree: an mLaTeX folder in the disk
-        # image, /Applications/mLaTeX from the .pkg, and /opt/mlatex for
-        # Debian and Red Hat -- whose own `latex` is TeX Live's, in /usr/bin,
-        # and is left alone.
-        file(CONFIGURE OUTPUT "${binary}/packaging.cmake" CONTENT [[
+    # Where each package puts the tree: an mLaTeX folder in the disk
+    # image, /Applications/mLaTeX from the .pkg, and /opt/mlatex for
+    # Debian and Red Hat -- whose own `latex` is TeX Live's, in /usr/bin,
+    # and is left alone.
+    file(CONFIGURE OUTPUT "${binary}/packaging.cmake" CONTENT [[
 if(CPACK_GENERATOR STREQUAL "DragNDrop")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/mLaTeX")
 elseif(CPACK_GENERATOR STREQUAL "productbuild")
@@ -646,7 +617,6 @@ elseif(CPACK_GENERATOR STREQUAL "DEB" OR CPACK_GENERATOR STREQUAL "RPM")
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/mlatex")
 endif()
 ]] @ONLY)
-        set(CPACK_PROJECT_CONFIG_FILE "${binary}/packaging.cmake")
-        include(CPack)
-    endif ()
+    set(CPACK_PROJECT_CONFIG_FILE "${binary}/packaging.cmake")
+    include(CPack)
 endif ()
