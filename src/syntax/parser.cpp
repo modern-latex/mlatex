@@ -216,8 +216,22 @@ namespace syntax {
             }
 
             // A face changed since the run began -- inside the expander, where
-            // the parser never saw it happen -- ends the run here.
-            if (changes && *changes != seen) flush();
+            // the parser never saw it happen -- ends the run here. So does the
+            // next line of a file the document is written in, so a run says
+            // the line it was written on, for an editor to jump between its
+            // pages and its source by. Only after a space: a word is shaped,
+            // kerned and spaced whole, though a macro's part of it -- a
+            // glossary's term before its comma -- was written elsewhere, and
+            // the spaces that end one line and open the next go with the line
+            // before, so they are still one space. Text no file holds -- what
+            // the engine's own modules expand to -- carries on the run it
+            // stands in.
+            if ((changes && *changes != seen) ||
+                (token.location.file != 0 && token.category != Catcodes::Category::Space &&
+                 (buffer.ends_with(' ') || buffer.ends_with('\n') || buffer.ends_with('\t')) &&
+                 (token.location.line != position.line || token.location.file != position.file))) {
+                flush();
+            }
             if (buffer.empty()) {
                 position = token.location;
                 text = arena.compose<Node>(Node::Type::Text, std::string_view{}, position, memory::Slice<Node *>{});
