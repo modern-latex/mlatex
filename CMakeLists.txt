@@ -449,6 +449,14 @@ elseif (NOT EMSCRIPTEN)
     endif ()
 endif ()
 
+# asmjit writes machine code at run time, for the JIT (src/jit) to build on.
+# What it writes is x86 or ARM, which a WebAssembly module cannot run, so the
+# wasm build goes without it.
+if (NOT EMSCRIPTEN)
+    find_package(asmjit CONFIG REQUIRED)
+    target_link_libraries(core PUBLIC asmjit::asmjit)
+endif ()
+
 if (EMSCRIPTEN)
     # The engine as a WebAssembly module, for a web page, a worker or Node:
     # see include/render/wasm.hpp. Configure with the `wasm` preset, which

@@ -114,8 +114,9 @@ the `latex` a TeX distribution installs.
   Windows, use the `clang-cl` that Visual Studio installs under
   `VC/Tools/Llvm`. The build selects it automatically if your IDE profile
   names MSVC (`cl`) or MinGW.
-- [vcpkg](https://vcpkg.io) with HarfBuzz, libpng, libjpeg-turbo, libwebp
-  and zlib installed for your target triplet.
+- [vcpkg](https://vcpkg.io) with HarfBuzz, libpng, libjpeg-turbo, libwebp,
+  zlib and asmjit installed for your target triplet. The WebAssembly build
+  doesn't need asmjit.
 - [gperf](https://www.gnu.org/software/gperf/).
 - Optional: libcurl on Linux and macOS for `\includegraphics` of `https://`
   sources (Windows uses WinHTTP); Doxygen for the API reference; WiX (version 3, or the `wix` .NET tool, version 4 or
@@ -125,7 +126,7 @@ the `latex` a TeX distribution installs.
   [WiX's maintenance fee](https://docs.firegiant.com/wix/osmf/).
 
 ```bash
-vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib
+vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib asmjit
 ```
 
 ### Build and test
