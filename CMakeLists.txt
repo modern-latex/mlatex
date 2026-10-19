@@ -465,6 +465,12 @@ if (EMSCRIPTEN)
     # the module's own file system where the engine looks for them.
     set(fonts "${source}/assets/fonts" CACHE PATH "The fonts packed into the WebAssembly module")
 
+    #
+    # A document that asks for a page -- a \pageref, a table of contents --
+    # is set twice, the second pass called from inside the first, so two of
+    # the pipeline's frames stand on the stack at once. Emscripten gives a
+    # program 64 KB of it, which that overruns, and the module aborts; the
+    # 8 MB here is about what a native thread starts with.
     add_executable(wasm "${source}/src/render/wasm.cpp" "${source}/include/render/wasm.hpp")
     target_link_libraries(wasm PRIVATE core)
     target_link_options(wasm PRIVATE
@@ -472,6 +478,7 @@ if (EMSCRIPTEN)
             -sMODULARIZE=1
             -sEXPORT_NAME=Latex
             -sALLOW_MEMORY_GROWTH=1
+            -sSTACK_SIZE=8MB
             -sENVIRONMENT=web,worker,node
             "SHELL:--preload-file ${fonts}@/assets/fonts")
     set_target_properties(wasm PROPERTIES OUTPUT_NAME latex)
