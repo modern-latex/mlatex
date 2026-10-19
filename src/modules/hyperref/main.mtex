@@ -22,4 +22,17 @@
 
 \@define\hypersetup[1]{\@setkeys{hyperref}{#1}}
 
+% pdfusetitle: the title and authors \title and \author gave are the file's
+% own too, where \hypersetup gave none -- read as the document begins, as
+% hyperref reads them, and kept as plain words: \and a comma, \\ a space,
+% a \thanks left out, and the logos spelled as hyperref spells them.
+\@define\@usetitle{%
+\begingroup
+\@define\thanks[1]{}\@define\and{, }\@define\\{ }%
+\@define\TeX{TeX}\@define\LaTeX{LaTeX}\@define\LaTeXe{LaTeX2e}%
+\@ifvariable{hyperref.pdftitle}{}{\@setplain{hyperref.pdftitle}{\thetitle}}%
+\@ifvariable{hyperref.pdfauthor}{}{\@setplain{hyperref.pdfauthor}{\theauthor}}%
+\endgroup}
+\AtBeginDocument{\@ifvariable{hyperref.pdfusetitle}{\@usetitle}{}}
+
 \@define\autoref{\Cref}

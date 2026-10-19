@@ -150,6 +150,27 @@ int main() {
                 holds(result.pdf, "A Title</rdf:li>")) &&
                "the title and author hyperref gave, in the file's information and its XMP alike");
     }
+    {
+        const Result result = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
+            "\\title{On \\emph{Flows}}\\author{A. Writer\\thanks{Funded.} \\and B. Writer}"
+            "\\begin{document}\\maketitle Read.\\end{document}");
+        assert((result.clean && holds(result.pdf, "/Title (On Flows)") &&
+                holds(result.pdf, "/Author (A. Writer, B. Writer)")) &&
+               "pdfusetitle: \\title and \\author are the file's own, as plain words");
+    }
+    {
+        const Result result = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
+            "\\title{A--B}\\begin{document}Read.\\end{document}");
+        assert((holds(result.pdf, "/Title <FEFF004120130042>")) && "its dash as the dash it sets");
+    }
+    {
+        const Result given = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
+            "\\hypersetup{pdftitle={Given}}\\title{Written}\\begin{document}Read.\\end{document}");
+        const Result unasked = typeset("\\documentclass{article}\\usepackage{hyperref}"
+            "\\title{Written}\\begin{document}Read.\\end{document}");
+        assert((holds(given.pdf, "/Title (Given)") && !holds(unasked.pdf, "/Title")) &&
+               "what \\hypersetup gave comes first, and without pdfusetitle \\title stays the page's");
+    }
 
     return 0;
 }
