@@ -523,6 +523,11 @@ else ()
             ARCHIVE DESTINATION lib)
     install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
     install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
+    # The licenses travel with every installed tree: mLaTeX's own, and the
+    # notices of the libraries linked in. The fonts' and the patterns' are in
+    # their folders above.
+    install(FILES "${source}/LICENSE" "${source}/LICENSING.md" "${source}/THIRD-PARTY-NOTICES.md"
+            DESTINATION share/doc/mlatex)
     if (WIN32)
         # vcpkg's Windows libraries are DLLs. Whatever it copied beside the
         # program -- HarfBuzz, FreeType, the image libraries, zlib, the
@@ -577,7 +582,7 @@ else ()
         set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
         set(CPACK_PACKAGE_CONTACT "Andres Hernandez <andromedeyz@hotmail.com>")
         set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typesets LaTeX into PDF: one program, no TeX installation behind it")
-        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/ApaxPhoenix/latex")
+        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/modern-latex/mlatex")
         set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
         set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
         set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
