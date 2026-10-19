@@ -25,5 +25,5 @@
     "./latex.data": "./latex.data",
     "./package.json": "./package.json"
   },
-  "files": ["node.js", "latex.js", "latex.wasm", "latex.data", "latex.d.ts"]
+  "files": ["node.js", "latex.js", "latex.wasm", "latex.data", "latex.d.ts", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
 }

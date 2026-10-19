@@ -12,7 +12,7 @@ dynamic = ["version"]
 description = "Typesets LaTeX into PDF from Python: mLaTeX's C library and its fonts, for ctypes."
 readme = "README.md"
 license = "AGPL-3.0-only"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
 requires-python = ">=3.9"
 authors = [{ name = "Andres Hernandez" }]
 keywords = ["latex", "pdf", "typesetting"]
