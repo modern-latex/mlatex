@@ -924,6 +924,16 @@ page's text goes.
   `width`, `height`, `links` and `about` say the rest. A page of another PDF
   shows as a shaded box, which only a PDF reader can draw.
   `graphics::Image::raster` decodes a JPEG kept for the PDF, for a screen.
+- **Where each line of the source was drawn.** A run of text now ends at the
+  end of each line of a file it is written in, and each run, formula and box
+  carries the line it was written on to the page in a
+  `Node::Directive::Command::Source`, which the line breaker opens every line
+  of a paragraph with. The composer records the area each line's glyphs and
+  pictures cover on each line of the page, `Composer::spots`, which
+  `render::Screen` keeps with the names of the files, and the WebAssembly
+  module hands over as `screen.spots(page)`: `left`, `top`, `right`,
+  `bottom`, `line` and `file`. An editor jumps by them, from a click on a page
+  to its line and from a line to its place on the pages. Nothing drawn moves.
 - **The WebAssembly module is built and released.** The workflow builds it
   with Emscripten 6.0.10 against vcpkg's `wasm32-emscripten` libraries, sets
   a snippet and a document with it in Node through its own JavaScript, and

@@ -57,6 +57,19 @@ declare namespace mLatex {
 		down?: number;
 	}
 
+	/**
+	 * Where a line of the source was drawn: its area in points from the page's
+	 * top left, on one line of the page, the line from 1, and the file's name.
+	 */
+	interface Spot {
+		left: number;
+		top: number;
+		right: number;
+		bottom: number;
+		line: number;
+		file: string;
+	}
+
 	/** Pages drawn by the engine itself onto a canvas, at any size, with no PDF reader. */
 	interface Screen {
 		/** How many pages there are. */
@@ -68,6 +81,8 @@ declare namespace mLatex {
 		/** Draws a page, from 0, at so many pixels to the point. */
 		draw(context: Context, page: number, scale: number): void;
 		links(page: number): Link[];
+		/** Where each line of the source was drawn on a page, for an editor to jump by. */
+		spots(page: number): Spot[];
 		/** What the document says of itself. */
 		about(): { title: string; author: string; subject: string; keywords: string };
 		delete(): void;
