@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/composer.hpp"
 #include "render/layout/document.hpp"
 
 #include <array>
@@ -10,8 +11,6 @@
 #include <vector>
 
 namespace render {
-    class Composer;
-
     /// @brief Laid-out pages kept to be drawn on a screen: a canvas, with
     ///        nothing between the engine and the pixels.
     ///
@@ -167,6 +166,13 @@ namespace render {
         std::vector<float> opacities{}; ///< Every opacity, as a page names it: entry `n` is `/GS<n>`.
         std::vector<Picture> pictures{}; ///< Every picture, as a page names it: entry `n` is `/Im<n>`.
         std::vector<std::vector<Link> > links{}; ///< Every link, by page.
+        /// Where each line of the source was drawn, by page: what an editor
+        /// jumps by, from a click on a page to its line and back. Areas are
+        /// measured as the sheet is, from its top left, not #Sheet::box's.
+        std::vector<std::vector<Composer::Spot> > spots{};
+        /// The name of each file a spot's origin numbers, as
+        /// syntax::Mouth::files gives them: the document's own first.
+        std::vector<std::string> files{};
         layout::Document::Metadata about{}; ///< What the document says of itself.
     };
 }

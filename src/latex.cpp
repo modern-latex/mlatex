@@ -450,6 +450,8 @@ namespace latex {
                 // read, and whatever is selected now for text that was never
                 // claimed.
                 const auto *face = static_cast<const render::typography::Font *>(node->face);
+                // Where it was written, which it carries to the page.
+                composer.document.origin = node->location;
 
                 switch (node->type) {
                     case syntax::Node::Type::Group:
@@ -490,6 +492,7 @@ namespace latex {
         composer.document.hyphenate(
             {.command = render::layout::Node::Directive::Command::Language, .hyphenator = &hyphenator});
         post(post, outputs);
+        composer.document.origin = {};
 
         // What the file says of itself, as hyperref's \hypersetup gave it, and
         // whether it keeps to PDF/A-2b: pdfx's `a-2b` and its kin, or
@@ -542,6 +545,7 @@ namespace latex {
         } else if (pdf) {
             if (screen) *screen = {};
             *pdf = render::Pdf::render(composer, pages, screen);
+            if (screen) screen->files = mouth.files;
             if (pdf->empty()) {
                 errors << "Failed to make a PDF: the document has no pages\n";
                 return false;

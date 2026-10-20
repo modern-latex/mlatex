@@ -51,8 +51,10 @@ namespace render {
     /// @endcode
     ///
     /// It also says what the pages link to, `links(page)`, each area from
-    /// the page's top left in points, and what the document says of itself,
-    /// `about()`.
+    /// the page's top left in points; where each line of the source was
+    /// drawn, `spots(page)`, the same way with the line and its file's name,
+    /// for an editor to jump between the two by; and what the document says
+    /// of itself, `about()`.
     ///
     /// Every operation is latex::Session's, under the same name, and does
     /// the same thing: `set`/`unset`, `define`/`forget`, `provide`/`withdraw`,
