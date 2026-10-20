@@ -243,6 +243,26 @@ namespace render {
                     }
                     return list;
                 }))
+                .function("spots", emscripten::optional_override([](const Screen &self, const std::size_t page) {
+                    emscripten::val list = emscripten::val::array();
+                    if (page >= self.spots.size() || page >= self.sheets.size()) return list;
+                    // Each area from the top left of what is shown, as a link's
+                    // is, with the line and the file it was written in.
+                    const std::array<float, 4> &box = self.sheets[page].box;
+                    for (const Composer::Spot &spot: self.spots[page]) {
+                        emscripten::val made = emscripten::val::object();
+                        made.set("left", spot.area[0] - box[0]);
+                        made.set("top", spot.area[1] - box[1]);
+                        made.set("right", spot.area[2] - box[0]);
+                        made.set("bottom", spot.area[3] - box[1]);
+                        made.set("line", spot.origin.line);
+                        made.set("file", spot.origin.file < self.files.size()
+                                             ? self.files[spot.origin.file]
+                                             : std::string{});
+                        list.call<void>("push", made);
+                    }
+                    return list;
+                }))
                 .function("about", emscripten::optional_override([](const Screen &self) {
                     emscripten::val made = emscripten::val::object();
                     made.set("title", self.about.title);

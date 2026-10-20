@@ -105,15 +105,16 @@ namespace render::layout {
             known.remove_prefix(first == std::string_view::npos ? known.size() : first);
         }
         const Ledger::Key key{.font = &font, .text = known, .size = size};
+        const std::size_t start = pending.size();
         if (const memory::Slice<Node *> cached = ledger.get(key); !cached.empty()) {
             pending.insert(pending.end(), cached.begin(), cached.end());
             if (const std::size_t end = text.find_last_not_of(" \t\n"); end != std::string_view::npos) {
                 factor = weigh(text.substr(0, end + 1), factor);
             }
+            trace(start);
             return;
         }
 
-        const std::size_t start = pending.size();
         divide(pending, text, font, pending.empty());
 
         // Remembered only when this run began a paragraph, because otherwise
@@ -125,6 +126,23 @@ namespace render::layout {
                       shaped.begin());
             ledger.set(key, shaped);
         }
+        trace(start);
+    }
+
+    void Document::trace(std::size_t start) {
+        if (origin.file == 0) return;
+        // Before the first thing drawn, past any space, kern or penalty that
+        // opens the run: a space is a place a line may end only after
+        // something drawn, and a mark ahead of it would take that away.
+        while (start < pending.size() && pending[start] &&
+               (pending[start]->type == Node::Type::Glue || pending[start]->type == Node::Type::Kern ||
+                pending[start]->type == Node::Type::Penalty || pending[start]->type == Node::Type::Directive)) {
+            ++start;
+        }
+        if (start == pending.size()) return;
+        auto *mark = arena.compose<Node>(Node::Type::Directive);
+        mark->directive({.command = Node::Directive::Command::Source, .file = origin.file, .index = origin.line});
+        pending.insert(pending.begin() + static_cast<std::ptrdiff_t>(start), mark);
     }
 
     memory::Slice<Node *> Document::set(const std::string_view text, const typography::Font &font, const bool opening,
@@ -687,7 +705,9 @@ namespace render::layout {
             if (color) {
                 for (Node *piece: pieces) Typesetter::paint(piece, *color);
             }
+            const std::size_t start = pending.size();
             pending.insert(pending.end(), pieces.begin(), pieces.end());
+            trace(start);
             return;
         }
 
@@ -781,6 +801,7 @@ namespace render::layout {
                     break;
                 case Node::Directive::Command::Mark:
                 case Node::Directive::Command::Anchor:
+                case Node::Directive::Command::Source:
                     // In the line when there is one, so it lands where the
                     // words around it do; between blocks otherwise, where it
                     // must not open a paragraph of nothing.
@@ -817,6 +838,7 @@ namespace render::layout {
 
         if (!block) {
             pending.push_back(node);
+            trace(pending.size() - 1);
             return;
         }
 
@@ -863,6 +885,18 @@ namespace render::layout {
             row[filled++] = centred || !right ? fill() : kern(0.0f);
             row[filled++] = kern(gutter);
             node = Line::horizontal(arena, memory::Slice{row.data, filled}, column());
+        }
+
+        // Where a box was written, as trace() marks a paragraph's: first in
+        // it, where it marks what the box draws and nothing after it.
+        if (origin.file != 0 && node->type == Node::Type::Box) {
+            Node::Box shape = node->box();
+            const memory::Slice<Node *> list = arena.allocate<Node *>(shape.list.count + 1);
+            list[0] = arena.compose<Node>(Node::Type::Directive);
+            list[0]->directive({.command = Node::Directive::Command::Source, .file = origin.file, .index = origin.line});
+            std::ranges::copy(shape.list, list.begin() + 1);
+            shape.list = list;
+            node->box(shape);
         }
 
         auto *element = arena.compose<Element>();
