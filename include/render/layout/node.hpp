@@ -268,7 +268,10 @@ namespace render::layout {
                 Mark,
                 ///< What a head or a foot shows from here on, #note set: the left mark for an
                             ///< #index of 0, the right for 1 -- `\\markboth`, `\\markright`, a slide's section.
-                Marked ///< The page's mark, #index's, drawn here: `\\leftmark`, `\\rightmark`.
+                Marked, ///< The page's mark, #index's, drawn here: `\\leftmark`, `\\rightmark`.
+                Source
+                ///< What is drawn from here to the end of the box it stands in was written on
+                            ///< line #index of #file: what an editor's reader jumps between.
             };
 
             /// @brief Where a float may go, as LaTeX's `[htbp!]` says: a bit
@@ -301,6 +304,9 @@ namespace render::layout {
             Command command{Command::Indent}; ///< What to do.
             Justification justification{Justification::Full}; ///< For Command::Align.
             float width{0.0f}; ///< For Command::Margin, in points; for Command::Number, the room it takes.
+            /// For Command::Source: the file, by the number syntax::Mouth::files
+            /// gives its name. Kept here, beside #width, where it costs no room.
+            std::uint32_t file{0};
             bool trailing{false}; ///< For Command::Margin: false moves the left edge, true the right.
             const typography::Font *font{nullptr}; ///< For Command::Number: the face it is set in.
             Style style{Style::Keep}; ///< For Command::Page.
@@ -338,7 +344,7 @@ namespace render::layout {
                                                      ///< for Command::Columns, how many columns; for Command::Hold,
                                                      ///< its kind, the floats of one kind keeping their order; for
                                                      ///< Command::Page, one more than the number the page it lands
-                                                     ///< on takes, or 0 to count on.
+                                                     ///< on takes, or 0 to count on; for Command::Source, the line.
         };
 
         explicit Node(const Type type = Type::Box) noexcept : type(type) {
