@@ -5,6 +5,7 @@
 #include "layout/pager.hpp"
 #include "layout/paragraph.hpp"
 #include "memory/arena.hpp"
+#include "memory/location.hpp"
 #include "memory/slice.hpp"
 #include "syntax/expression/node.hpp"
 #include "typography/font.hpp"
@@ -308,7 +309,20 @@ namespace render::layout {
         /// more. The character is set at the size this face was loaded at.
         const typography::Font *fallback{nullptr};
 
+        /// Where what is appended next was written, as latex::run says before
+        /// each part of the document: each run of text, formula and box
+        /// carries it to the page in a Command::Source before its first node,
+        /// for an editor to jump between the pages and the source by. One of
+        /// no file's, file 0, marks nothing.
+        memory::Location origin{};
+
     private:
+        /// @brief Marks the nodes pending from @p start as written at #origin,
+        ///        once they are there: a mark before any material would open
+        ///        a paragraph of nothing.
+        /// @param start Where they begin in the paragraph being built.
+        void trace(std::size_t start);
+
         /// @brief Links a freshly built block onto the end of the list.
         /// @param element The block.
         void attach(Element *element) noexcept;

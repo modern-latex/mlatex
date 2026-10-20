@@ -4,6 +4,7 @@
 #include "layout/node.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
+#include "memory/location.hpp"
 #include "memory/slice.hpp"
 #include "typography/font.hpp"
 #include "typography/shaper.hpp"
@@ -150,6 +151,16 @@ namespace render {
         std::vector<Place> places{};
 
         std::vector<std::vector<Link> > links{}; ///< Every link drawn, by the page it was drawn on.
+        /// @brief Where a line of the source was drawn: the area its glyphs
+        ///        and pictures cover on one line of the page, as a
+        ///        Command::Source before them said -- what an editor's reader
+        ///        jumps between, a click on the page to its line and its line
+        ///        to the page.
+        struct Spot {
+            memory::Location origin{}; ///< The line, and its file; its column is not kept.
+            std::array<float, 4> area{}; ///< Left, top, right and bottom, from the page's top left.
+        };
+        std::vector<std::vector<Spot> > spots{}; ///< Every spot drawn, by the page it was drawn on.
 
         /// Every page drawn so far, as its text: what a reader copying it
         /// would get -- a ligature as its letters, a word space as a space,
@@ -279,6 +290,17 @@ namespace render {
         /// @param right  Its right edge.
         /// @param bottom Its bottom.
         void cover(float left, float top, float right, float bottom);
+        /// Where what is being drawn was written, as the last Command::Source
+        /// in the box being drawn said; of no file's, file 0, outside any.
+        memory::Location origin{};
+        /// @brief Takes in what was just drawn into the page's #spots, as
+        ///        written at #origin: the last spot's area while it is the
+        ///        same line on the same line of the page, a new one otherwise.
+        /// @param left   Its left edge.
+        /// @param top    Its top, from the page's top.
+        /// @param right  Its right edge.
+        /// @param bottom Its bottom.
+        void spot(float left, float top, float right, float bottom);
 
         /// @brief Takes in what was just drawn into the page's #extent.
         /// @param left   Its left edge.
