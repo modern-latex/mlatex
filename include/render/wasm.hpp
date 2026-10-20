@@ -15,13 +15,13 @@ namespace render {
     ///        Node: latex::Session, bound for JavaScript under its own names.
     ///
     /// Built by the `wasm` target when CMake runs under Emscripten; see the
-    /// top-level CMakeLists.txt. The build leaves `latex.js`, `latex.wasm`
-    /// and `latex.data` side by side -- the last holding the fonts, packed
-    /// into the module's own file system at #root -- and `latex.js` is a
+    /// top-level CMakeLists.txt. The build leaves `mlatex.js`, `mlatex.wasm`
+    /// and `mlatex.data` side by side -- the last holding the fonts, packed
+    /// into the module's own file system at #root -- and `mlatex.js` is a
     /// factory that loads the other two:
     ///
     /// @code
-    /// const engine = await Latex();                    // latex.js's factory
+    /// const engine = await mLatex();                   // mlatex.js's factory
     /// const session = new engine.Session();
     ///
     /// session.set("customer", "Acme Ltd.");

@@ -11,7 +11,7 @@
 /// `--interaction=batch-mode`; TeX's own run-together spellings, `-jobname`,
 /// `batchmode`, are taken too, so a script that runs pdflatex runs this the
 /// same way. Values and commands a program hands a document are the
-/// bindings' (latex::Session, the C library, latex.js), not this.
+/// bindings' (latex::Session, the C library, mlatex.js), not this.
 ///
 /// @code
 /// mlatex paper                                  # paper.mtex, or paper.tex, into paper.pdf

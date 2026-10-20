@@ -1,15 +1,15 @@
 /**
- * Loads the engine: latex.wasm, and latex.data with the fonts, from beside
- * latex.js unless `locateFile` says where they are.
+ * Loads the engine: mlatex.wasm, and mlatex.data with the fonts, from beside
+ * mlatex.js unless `locateFile` says where they are.
  */
-declare function Latex(options?: Latex.Options): Promise<Latex.Engine>;
+declare function mLatex(options?: mLatex.Options): Promise<mLatex.Engine>;
 
-declare namespace Latex {
+declare namespace mLatex {
 	/** The package's version, as the engine's VERSION file says. In Node only. */
 	const version: string;
 
 	interface Options {
-		/** The address of latex.wasm or latex.data, given its name and latex.js's folder. */
+		/** The address of mlatex.wasm or mlatex.data, given its name and mlatex.js's folder. */
 		locateFile?: (path: string, prefix: string) => string;
 	}
 
@@ -40,4 +40,4 @@ declare namespace Latex {
 	}
 }
 
-export = Latex;
+export = mLatex;

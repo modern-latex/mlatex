@@ -914,7 +914,7 @@ page's text goes.
 - **The WebAssembly module is built and released.** The workflow builds it
   with Emscripten 6.0.10 against vcpkg's `wasm32-emscripten` libraries, sets
   a snippet and a document with it in Node through its own JavaScript, and
-  packs `latex.js`, `latex.wasm` and `latex.data` into
+  packs `mlatex.js`, `mlatex.wasm` and `mlatex.data` into
   `mlatex-<version>-wasm.zip`, which a tagged release carries beside the
   other packages.
 - **An error names the file it is in.** Each line of `Session::error`, and
@@ -934,10 +934,17 @@ page's text goes.
   Session's methods, and the C and WebAssembly ones, are the same.
 - **The WebAssembly module is the npm package `mlatex`.** `bindings/javascript`
   holds the package: the three files the build leaves, types for the factory
-  and the session in `latex.d.ts`, and `node.js`, Node's entry, which finds
-  `latex.wasm` and `latex.data` beside itself. A page, a worker or a bundler
-  takes `latex.js` itself. The workflow packs it, installs it in a folder of
+  and the session in `mlatex.d.ts`, and `node.js`, Node's entry, which finds
+  `mlatex.wasm` and `mlatex.data` beside itself. A page, a worker or a bundler
+  takes `mlatex.js` itself. The workflow packs it, installs it in a folder of
   its own and sets a snippet from there.
+- **The module is named as its package is.** The build leaves `mlatex.js`,
+  `mlatex.wasm` and `mlatex.data`, and the factory they export is `mLatex`,
+  so a program writes `import mLatex from "mlatex"` and
+  `const engine = await mLatex()` (were `latex.js`, `latex.wasm`,
+  `latex.data`, `latex.d.ts` and `Latex`, as 0.1.1 shipped them). A page or
+  worker that loads the files itself loads `mlatex.js`; the release's
+  `-wasm.zip` and the npm package hold the new names.
 - **The C library is the Python package `mlatex`.** `bindings/python` holds
   it: a wheel per system and architecture carrying `latex_ffi`, vcpkg's DLLs
   beside it on Windows, and the fonts and hyphenation patterns, laid out the

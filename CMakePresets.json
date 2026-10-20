@@ -47,7 +47,7 @@
     {
       "name": "wasm",
       "displayName": "WebAssembly (Emscripten)",
-      "description": "The engine as latex.js, latex.wasm and latex.data. Needs EMSDK and VCPKG_ROOT set, and the libraries installed for the wasm32-emscripten triplet: vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib --triplet wasm32-emscripten",
+      "description": "The engine as mlatex.js, mlatex.wasm and mlatex.data. Needs EMSDK and VCPKG_ROOT set, and the libraries installed for the wasm32-emscripten triplet: vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib --triplet wasm32-emscripten",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/cmake-build-wasm",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
