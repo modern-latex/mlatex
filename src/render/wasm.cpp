@@ -11,6 +11,8 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -192,6 +194,19 @@ namespace render {
                 }))
                 .function("withdraw", emscripten::optional_override(
                               [](Wasm &self, const std::string &name) { self.withdraw(name); }))
+                // A face to draw what the engine carries no face for -- the
+                // system's faces a browser lends no page -- as a font file's
+                // bytes and its file name: `NotoSerifCJK-Regular.otf` is the
+                // face for Chinese. Every document after looks there.
+                .function("font", emscripten::optional_override([](Wasm &, const std::string &name,
+                                                                   const std::string &bytes) {
+                    if (name.empty() || name.find_first_of("/\\") != std::string::npos) return false;
+                    std::error_code failure;
+                    std::filesystem::create_directories("/fonts", failure);
+                    std::ofstream file("/fonts/" + name, std::ios::binary | std::ios::trunc);
+                    file.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+                    return static_cast<bool>(file);
+                }))
                 .function("typeset", emscripten::optional_override(
                               [](Wasm &self, const std::string &document) { return self.typeset(document); }))
                 .function("snippet", emscripten::optional_override(

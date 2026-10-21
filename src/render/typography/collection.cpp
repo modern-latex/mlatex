@@ -305,6 +305,11 @@ namespace render::typography {
             folders.emplace_back(std::filesystem::path(home) / ".local" / "share" / "fonts");
             folders.emplace_back(std::filesystem::path(home) / ".fonts");
         }
+#elif defined(__EMSCRIPTEN__)
+        // A browser lends a page none of its faces: those a page hands the
+        // module for a script the engine carries no face of -- Chinese, say,
+        // with session.font -- are in a folder of the module's own instead.
+        folders = {"/fonts"};
 #endif
 
         std::size_t indexed = 0;
