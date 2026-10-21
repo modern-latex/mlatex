@@ -195,6 +195,7 @@ namespace render {
             }
         }
 
+        spots = composer.spots;
         about = composer.document.metadata;
     }
 
