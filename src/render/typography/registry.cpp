@@ -198,32 +198,35 @@ namespace render::typography {
         // each system's own names for them -- Amiri and Noto's where they
         // are installed, Times New Roman by Windows' name for it and the
         // Mac's, then the faces every system has of some script or other,
-        // Chinese, then the symbols' faces, last. Listed now, if they never
+        // Chinese -- a Song face, as Chinese text is set, before a sans --
+        // then the symbols' faces, last. Listed now, if they never
         // were.
-        static constexpr std::array<std::array<std::string_view, 15>, 4> systems{
+        static constexpr std::array<std::array<std::string_view, 16>, 4> systems{
             {
                 {
                     "amiri-regular", "notonaskharabic-regular", "times", "times new roman", "notoserif-regular",
                     "freeserif",
-                    "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "msyh", "notosanscjk-regular", "seguisym",
-                    "notosanssymbols2-regular"
+                    "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "notoserifcjk-regular", "msyh",
+                    "notosanscjk-regular",
+                    "seguisym", "notosanssymbols2-regular"
                 },
                 {
                     "amiri-bold", "notonaskharabic-bold", "timesbd", "times new roman bold", "notoserif-bold",
                     "freeserifbold",
-                    "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "msyhbd", "notosanscjk-bold",
-                    "seguisym",
+                    "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "notoserifcjk-bold", "msyhbd",
+                    "notosanscjk-bold", "seguisym",
                     "notosanssymbols2-regular"
                 },
                 {
                     "amiri-slanted", "notonaskharabic-regular", "timesi", "times new roman italic", "notoserif-italic",
-                    "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma", "msyh",
-                    "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"
+                    "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma",
+                    "notoserifcjk-regular", "msyh", "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"
                 },
                 {
                     "amiri-boldslanted", "notonaskharabic-bold", "timesbi", "times new roman bold italic",
                     "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
-                    "segoeuiz", "tahomabd", "msyhbd", "notosanscjk-bold", "seguisym", "notosanssymbols2-regular"
+                    "segoeuiz", "tahomabd", "notoserifcjk-bold", "msyhbd", "notosanscjk-bold", "seguisym",
+                    "notosanssymbols2-regular"
                 },
             }
         };
