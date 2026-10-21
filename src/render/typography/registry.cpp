@@ -236,6 +236,12 @@ namespace render::typography {
                 if (const Font *found = draws(family)) return remember(found);
             }
         }
+        // Then any face the system lent, in the order its folders listed
+        // them: in a browser, the faces a page handed over for a script none
+        // of those above is named for -- Thai, Bengali, Ethiopic.
+        for (const std::string_view family: collection.lent) {
+            if (const Font *found = draws(family)) return remember(found);
+        }
         return remember(nullptr);
     }
 }

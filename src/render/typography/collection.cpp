@@ -162,6 +162,7 @@ namespace render::typography {
 
             ++faces;
             ++indexed;
+            if (lending) lent.push_back(entry->family);
 
             // The directory a face sits in becomes a family of its own, so a
             // tree laid out as `fonts/text` answers `text` without anyone
@@ -308,11 +309,13 @@ namespace render::typography {
 
         std::size_t indexed = 0;
         std::error_code failure;
+        lending = true;
         for (const std::filesystem::path &folder: folders) {
             if (!std::filesystem::is_directory(folder, failure) || failure) continue;
             const std::u8string written = folder.u8string();
             indexed += post(std::string_view(reinterpret_cast<const char *>(written.data()), written.size()));
         }
+        lending = false;
         return indexed;
     }
 
