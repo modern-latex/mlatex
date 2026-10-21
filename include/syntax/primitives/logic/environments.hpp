@@ -87,9 +87,16 @@ namespace syntax::primitives::logic {
         ///                    an Equations scope through `\\[`, and a second,
         ///                    Environment one around that would only have to
         ///                    close before it, which nothing here can arrange.
+        /// @param lingering   True when the block's scope is to stay open while
+        ///                    what its closing hooks put in front of the stream
+        ///                    is read, and close after: the document's, whose
+        ///                    `\\AtEndDocument` code sees what the document
+        ///                    defined -- `\\renewcommand{\\headrulewidth}`, a
+        ///                    package loaded part way through -- as LaTeX's
+        ///                    does. Otherwise that code is read once it has closed.
         /// @complexity O(1) amortized.
         void watch(std::string_view name, Handler entering, Handler leaving,
-                   bool transparent = false) const;
+                   bool transparent = false, bool lingering = false) const;
 
         /// @brief Asks to be told when any block opens or closes, whatever
         ///        its name: before a named block's own opening hooks, and
@@ -123,6 +130,7 @@ namespace syntax::primitives::logic {
             Handler leaving{}; ///< Run before the block closes.
             bool transparent{false}; ///< True: no Environment scope of its own.
             bool own{false}; ///< The document defined it: its code is its own two macros.
+            bool lingering{false}; ///< Its scope stays open while its closing hooks' code is read.
         };
 
         /// @brief Reads a `{name}` argument and interns it.
@@ -133,6 +141,7 @@ namespace syntax::primitives::logic {
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
         mutable std::vector<Symbol> open{}; ///< Names of the blocks currently entered.
         mutable std::vector<Symbol> closing{}; ///< A document's blocks whose end code is being read.
+        mutable std::vector<Symbol> lingering{}; ///< Blocks whose closing hooks' code is being read, still open.
         mutable std::vector<Hook> hooks{}; ///< Indexed by interned block name.
         mutable Hook every{}; ///< Told of every block.
         Lexicon *lexicon{nullptr}; ///< For resolving names back to text.

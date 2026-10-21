@@ -49,11 +49,14 @@ namespace syntax::primitives {
         // LaTeX's two document hooks: what \\AtBeginDocument gathered runs as
         // the document's own block opens, and what \\AtEndDocument gathered
         // as it closes -- the one place two modules here meet, which is why
-        // it is wired here rather than in either.
+        // it is wired here rather than in either. The second is read before
+        // the document's block closes, so it sees what the document defined,
+        // as LaTeX's own \\AtEndDocument code does.
         environments.watch(
             "document",
             [this](Mouth &mouth) { hooks.run(mouth, "begindocument"); },
-            [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); });
+            [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); },
+            /*transparent=*/false, /*lingering=*/true);
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Informative,
                     "Core primitives installed");
