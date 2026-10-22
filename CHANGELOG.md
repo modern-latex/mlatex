@@ -966,6 +966,13 @@ font folders are listed only for a script the engine carries no face for.
 
 ### Fixed
 
+- **A document that asks for a page sets in the browser.** A `\pageref`,
+  a table of contents or anything else that needs a page number sets the
+  document twice, the second pass called from inside the first, and in the
+  WebAssembly module the two overran the 64 KB of stack Emscripten gives a
+  program: it aborted with nothing but `Aborted()`. The module now has 8 MB
+  of stack (`-sSTACK_SIZE`), about what a native thread starts with, and
+  the sample document sets in it.
 - A primitive that bound another while it ran — `\newif` making its switch —
   could grow the expander's handler table under itself and run on from freed
   memory. Each handler, in the expander and in the parser, now lives in an
