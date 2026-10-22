@@ -545,7 +545,10 @@ namespace latex {
         } else if (pdf) {
             if (screen) *screen = {};
             *pdf = render::Pdf::render(composer, pages, screen);
-            if (screen) screen->files = mouth.files;
+            if (screen) {
+                screen->files = mouth.files;
+                screen->missing = registry.missing;
+            }
             if (pdf->empty()) {
                 errors << "Failed to make a PDF: the document has no pages\n";
                 return false;

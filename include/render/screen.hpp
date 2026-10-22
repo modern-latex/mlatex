@@ -173,6 +173,9 @@ namespace render {
         /// The name of each file a spot's origin numbers, as
         /// syntax::Mouth::files gives them: the document's own first.
         std::vector<std::string> files{};
+        /// Every character the pages lack because no face drew it, once each:
+        /// what a page in a browser fetches a face for, then sets them again.
+        std::vector<std::uint32_t> missing{};
         layout::Document::Metadata about{}; ///< What the document says of itself.
     };
 }

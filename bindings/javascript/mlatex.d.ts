@@ -90,6 +90,12 @@ declare namespace mLatex {
 		links(page: number): Link[];
 		/** Where each line of the source was drawn on a page, for an editor to jump by. */
 		spots(page: number): Spot[];
+		/**
+		 * Every character the pages lack because no face drew it, as code
+		 * points: what to fetch a face from `fallback/` for, by what
+		 * `fallback/fonts.json` says each draws, before setting them again.
+		 */
+		missing(): number[];
 		/** What the document says of itself. */
 		about(): { title: string; author: string; subject: string; keywords: string };
 		delete(): void;
