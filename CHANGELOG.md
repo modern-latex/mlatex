@@ -691,6 +691,13 @@ sees, newest work last within each group.
 - **The file's information**: `/Producer`, and the `pdftitle`, `pdfauthor`,
   `pdfsubject` and `pdfkeywords` `\hypersetup` gives; an `/ID` made from the
   file's own bytes, the same for the same document every time.
+- **`pdfusetitle`**: with `\usepackage[pdfusetitle]{hyperref}`, the
+  file's title and author are what `\title` and `\author` gave, where
+  `\hypersetup` gave none -- as plain words, the way hyperref keeps them:
+  `\and` a comma, a `\thanks` left out, an accent as its letter, `--`
+  and `---` as their dashes and `\LaTeX` spelled out. A title read so
+  goes through `\@setplain`, which keeps a text's words as a heading's
+  title is read.
 - **PDF/A-2b**, the archival standard, for pdfx's `a-2b` (and its kin) or
   `\DocumentMetadata{pdfstandard=A-2b}`: the file's information again as XMP,
   and an output intent with an sRGB ICC profile made by the engine; every
