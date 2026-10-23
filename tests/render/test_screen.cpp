@@ -206,6 +206,13 @@ int main() {
                 })) && "and nothing for lines that draw nothing");
     }
     {
+        // A character no face draws, U+0378, which no script has, is named
+        // with the pages, for a page in a browser to fetch a face for.
+        const Result result = typeset("\\documentclass{article}\\begin{document}A\xcd\xb8 B\\end{document}");
+        assert((std::ranges::contains(result.screen.missing, 0x378u)) && "a character no face draws, named");
+        assert((!std::ranges::contains(result.screen.missing, std::uint32_t{'A'})) && "and none that is drawn");
+    }
+    {
         latex::Session session(latex::locate(__FILE__));
         assert((session.snippet("$\\int_0^1 x\\,dx$") && session.screen.sheets.size() == 1) &&
                "a session keeps its last PDF's pages for a screen");

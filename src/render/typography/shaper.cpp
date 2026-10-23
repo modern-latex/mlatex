@@ -244,7 +244,12 @@ namespace render::typography {
                     if (offered && offered != primary && offered->handle() && offered->index(code) != 0) face = offered;
                 }
                 if (!face && registry) face = registry->cover(*primary, code, true);
-                if (!face) face = primary;
+                if (!face) {
+                    face = primary;
+                    if (registry && !std::ranges::contains(registry->missing, code)) {
+                        registry->missing.push_back(code);
+                    }
+                }
             }
 
             if (starts.empty() || starts.back().second != face) starts.emplace_back(at, face);
