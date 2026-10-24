@@ -23,7 +23,8 @@
     "./mlatex.js": "./mlatex.js",
     "./mlatex.wasm": "./mlatex.wasm",
     "./mlatex.data": "./mlatex.data",
+    "./fallback/*": "./fallback/*",
     "./package.json": "./package.json"
   },
-  "files": ["node.js", "mlatex.js", "mlatex.wasm", "mlatex.data", "mlatex.d.ts", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
+  "files": ["node.js", "mlatex.js", "mlatex.wasm", "mlatex.data", "fallback", "mlatex.d.ts", "LICENSING.md", "THIRD-PARTY-NOTICES.md"]
 }
