@@ -31,10 +31,11 @@ Portions of this software are copyright (C) The FreeType Project
 
 ## Fonts and hyphenation patterns
 
-The fonts in `assets/fonts` and the hyphenation patterns in `assets/hyphens`
-are distributed unmodified alongside mLaTeX, each under its own license.
-Their copyrights and licenses are listed in
-[assets/fonts/LICENSES.md](assets/fonts/LICENSES.md) and
+The fonts in `assets/fonts` and `assets/fallback` and the hyphenation
+patterns in `assets/hyphens` are distributed unmodified alongside mLaTeX,
+each under its own license. Their copyrights and licenses are listed in
+[assets/fonts/LICENSES.md](assets/fonts/LICENSES.md),
+[assets/fallback/LICENSES.md](assets/fallback/LICENSES.md) and
 [assets/hyphens/LICENSES.md](assets/hyphens/LICENSES.md), with the full
 license texts beside them.
 
