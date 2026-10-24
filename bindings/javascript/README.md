@@ -9,9 +9,9 @@ npm install mlatex
 ## A document
 
 ```js
-import Latex from "mlatex";
+import mLatex from "mlatex";
 
-const engine = await Latex();
+const engine = await mLatex();
 const session = new engine.Session();
 
 const made = session.typeset(String.raw`\documentclass{article}
@@ -24,7 +24,7 @@ const pdf = session.pdf(); // a Uint8Array of its own
 session.delete();
 ```
 
-CommonJS works the same way: `const Latex = require("mlatex")`.
+CommonJS works the same way: `const mLatex = require("mlatex")`.
 
 ## A session
 
@@ -52,14 +52,14 @@ A package is a folder holding one file, `main.mtex`, written in the same languag
 
 ## Where it runs
 
-The package holds three files: `latex.js`, which loads the engine, `latex.wasm`, the engine itself, and `latex.data`, the fonts, packed into the engine's own file system.
+The package holds three files: `mlatex.js`, which loads the engine, `mlatex.wasm`, the engine itself, and `mlatex.data`, the fonts, packed into the engine's own file system.
 
-- **Node** takes the package's own entry, which finds `latex.wasm` and `latex.data` beside it.
-- **A worker or a page** loads `latex.js` with the other two files beside it, served from the same folder: `importScripts("/engine/latex.js")` in a classic worker, then `Latex()`.
-- **A bundler** that moves `latex.js` away from the other two says where they are:
+- **Node** takes the package's own entry, which finds `mlatex.wasm` and `mlatex.data` beside it.
+- **A worker or a page** loads `mlatex.js` with the other two files beside it, served from the same folder: `importScripts("/engine/mlatex.js")` in a classic worker, then `mLatex()`.
+- **A bundler** that moves `mlatex.js` away from the other two says where they are:
 
 ```js
-const engine = await Latex({ locateFile: (name) => `/engine/${name}` });
+const engine = await mLatex({ locateFile: (name) => `/engine/${name}` });
 ```
 
 The engine starts no threads and makes no network requests: a picture from a URL is fetched by your code and handed in with `provide`.
