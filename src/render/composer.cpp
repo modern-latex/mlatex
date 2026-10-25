@@ -861,19 +861,19 @@ namespace render {
         // straight onto the page, so anything still open goes first.
         flush();
 
-        const layout::Node::Rule &bar = item->rule();
-        if (bar.width <= 0.0f || bar.height + bar.depth <= 0.0f) return;
-        reach(position, baseline - bar.height, position + bar.width, baseline + bar.depth);
+        const auto &[width, height, depth, color] = item->rule();
+        if (width <= 0.0f || height + depth <= 0.0f) return;
+        reach(position, baseline - height, position + width, baseline + depth);
 
-        fill(bar.color);
+        fill(color);
 
         number(content, position);
         content += ' ';
-        number(content, baseline - bar.height);
+        number(content, baseline - height);
         content += ' ';
-        number(content, bar.width);
+        number(content, width);
         content += ' ';
-        number(content, bar.height + bar.depth);
+        number(content, height + depth);
         content += " re f\n";
     }
 
