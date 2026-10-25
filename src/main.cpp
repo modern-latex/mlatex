@@ -89,23 +89,23 @@ int main(int count, char *arguments[]) {
 
     static constexpr std::array options{
         Option{
-            't', "target", "", "TARGET", "Target",
-            "How the document is made: aot, a PDF now (the\n"
+            .letter = 't', .name = "target", .alias = "", .value = "TARGET", .group = "Target",
+            .summary = "How the document is made: aot, a PDF now (the\n"
             "default); jit, just in time, which is taken and\n"
             "does nothing yet."
         },
         Option{
-            'o', "output-directory", "", "DIR", "Output",
-            "Write the PDF into DIR, made if it is not there;\n"
+            .letter = 'o', .name = "output-directory", .alias = "", .value = "DIR", .group = "Output",
+            .summary = "Write the PDF into DIR, made if it is not there;\n"
             "beside the document otherwise."
         },
-        Option{'j', "job-name", "jobname", "NAME", "Output", "Name the PDF NAME.pdf, not after the document."},
-        Option{'n', "draft-mode", "draftmode", "", "Output", "Read and set the document; write no PDF."},
-        Option{'\0', "halt-on-error", "", "", "Output", "Leave no PDF when the document has an error."},
-        Option{'O', "open", "", "", "Output", "Show the PDF in the system's viewer once written."},
+        Option{.letter = 'j', .name = "job-name", .alias = "jobname", .value = "NAME", .group = "Output", .summary = "Name the PDF NAME.pdf, not after the document."},
+        Option{.letter = 'n', .name = "draft-mode", .alias = "draftmode", .value = "", .group = "Output", .summary = "Read and set the document; write no PDF."},
+        Option{.letter = '\0', .name = "halt-on-error", .alias = "", .value = "", .group = "Output", .summary = "Leave no PDF when the document has an error."},
+        Option{.letter = 'O', .name = "open", .alias = "", .value = "", .group = "Output", .summary = "Show the PDF in the system's viewer once written."},
         Option{
-            'I', "include-directory", "", "DIR", "Input",
-            "Look in DIR, after the document's own folder,\n"
+            .letter = 'I', .name = "include-directory", .alias = "", .value = "DIR", .group = "Input",
+            .summary = "Look in DIR, after the document's own folder,\n"
             "for what it inputs: \\input, \\include,\n"
             "\\usepackage, \\includegraphics, a bibliography.\n"
             "Give it again for another folder."
@@ -133,26 +133,26 @@ int main(int count, char *arguments[]) {
             "non-stop-mode, scroll-mode and error-stop-mode\n"
             "print what was done."
         },
-        Option{'q', "quiet", "", "", "Messages", "The same as --interaction=batch-mode."},
-        Option{'\0', "file-line-error", "", "", "Messages", "Print each error as file:line:column: message."},
-        Option{'T', "time", "", "", "Messages", "Print how long each part of the run took."},
+        Option{.letter = 'q', .name = "quiet", .alias = "", .value = "", .group = "Messages", .summary = "The same as --interaction=batch-mode."},
+        Option{.letter = '\0', .name = "file-line-error", .alias = "", .value = "", .group = "Messages", .summary = "Print each error as file:line:column: message."},
+        Option{.letter = 'T', .name = "time", .alias = "", .value = "", .group = "Messages", .summary = "Print how long each part of the run took."},
         Option{
-            '\0', "time-statistics", "", "", "Messages",
-            "Print every step the engine took, what it made\n"
+            .letter = '\0', .name = "time-statistics", .alias = "", .value = "", .group = "Messages",
+            .summary = "Print every step the engine took, what it made\n"
             "and how long each step took."
         },
-        Option{'h', "help", "", "", "Messages", "Print this help and exit."},
-        Option{'v', "version", "", "", "Messages", "Print the version and exit."},
+        Option{.letter = 'h', .name = "help", .alias = "", .value = "", .group = "Messages", .summary = "Print this help and exit."},
+        Option{.letter = 'v', .name = "version", .alias = "", .value = "", .group = "Messages", .summary = "Print the version and exit."},
         Option{
-            'd', "debug", "", "[PARTS]", "Diagnostics",
-            "Log the engine's steps: every part, or those\n"
+            .letter = 'd', .name = "debug", .alias = "", .value = "[PARTS]", .group = "Diagnostics",
+            .summary = "Log the engine's steps: every part, or those\n"
             "named -- lexer, mouth, parser, layout, memory,\n"
             "semantics."
         },
-        Option{'\0', "trace", "", "", "Diagnostics", "Log every step, in full."},
-        Option{'\0', "log-level", "", "LEVEL", "Diagnostics", "traceback, debug, info, warn, error or silent."},
-        Option{'\0', "log-file", "", "FILE", "Diagnostics", "Write the log to FILE."},
-        Option{'\0', "no-color", "", "", "Diagnostics", "Log without colour."},
+        Option{.letter = '\0', .name = "trace", .alias = "", .value = "", .group = "Diagnostics", .summary = "Log every step, in full."},
+        Option{.letter = '\0', .name = "log-level", .alias = "", .value = "LEVEL", .group = "Diagnostics", .summary = "traceback, debug, info, warn, error or silent."},
+        Option{.letter = '\0', .name = "log-file", .alias = "", .value = "FILE", .group = "Diagnostics", .summary = "Write the log to FILE."},
+        Option{.letter = '\0', .name = "no-color", .alias = "", .value = "", .group = "Diagnostics", .summary = "Log without colour."},
     };
 
     // The logger's file, closed on every way out.
