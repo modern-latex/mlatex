@@ -289,12 +289,12 @@ jobs:
             bin/*.pdf
           if-no-files-found: error
 
-  # The engine as a WebAssembly module -- latex.js, latex.wasm and latex.data,
-  # the last the fonts -- for a web page, a worker or Node: one build, whatever
-  # runs it, and the stage after the platforms', once every one of them has
-  # passed. Emscripten is pinned to the release the module was built and
-  # checked with, and kept between runs as vcpkg's builds are; gperf is a
-  # tool the build runs, so it is the runner's own.
+  # The engine as a WebAssembly module -- mlatex.js, mlatex.wasm and
+  # mlatex.data, the last the fonts -- for a web page, a worker or Node: one
+  # build, whatever runs it, and the stage after the platforms', once every
+  # one of them has passed. Emscripten is pinned to the release the module
+  # was built and checked with, and kept between runs as vcpkg's builds are;
+  # gperf is a tool the build runs, so it is the runner's own.
   wasm:
     name: WebAssembly
     needs: build
@@ -366,7 +366,7 @@ jobs:
         working-directory: ${{ env.TREE }}
         run: |
           node -e '
-            require("./latex.js")().then((engine) => {
+            require("./mlatex.js")().then((engine) => {
               const session = new engine.Session();
               const check = (made, pdf, sheet, what) => {
                 const text = Buffer.from(pdf).toString("latin1");
@@ -388,17 +388,17 @@ jobs:
         run: |
           version=$(head -n 1 VERSION | tr -d '[:space:]')
           mkdir -p bin
-          (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" latex.js latex.wasm latex.data)
+          (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" mlatex.js mlatex.wasm mlatex.data)
 
       # The same three files as the npm package mlatex, with its Node entry
       # and types, versioned like the wheels. It is installed somewhere else
-      # and run from there, since in Node the module finds latex.data from
+      # and run from there, since in Node the module finds mlatex.data from
       # where the program runs unless the package's entry says otherwise.
       - name: Pack the npm package
         shell: bash
         run: |
           version=$(head -n 1 VERSION | tr -d '[:space:]')
-          cp "$TREE/latex.js" "$TREE/latex.wasm" "$TREE/latex.data" LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/javascript
+          cp "$TREE/mlatex.js" "$TREE/mlatex.wasm" "$TREE/mlatex.data" LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/javascript
           (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
           cd "$RUNNER_TEMP"

@@ -461,8 +461,9 @@ if (EMSCRIPTEN)
     # The engine as a WebAssembly module, for a web page, a worker or Node:
     # see include/render/wasm.hpp. Configure with the `wasm` preset, which
     # builds every library for the wasm32-emscripten triplet, and the build
-    # leaves latex.js, latex.wasm and latex.data -- the fonts, packed into
-    # the module's own file system where the engine looks for them.
+    # leaves mlatex.js, mlatex.wasm and mlatex.data -- the fonts, packed into
+    # the module's own file system where the engine looks for them -- named
+    # as the npm package is, its factory mLatex.
     set(fonts "${source}/assets/fonts" CACHE PATH "The fonts packed into the WebAssembly module")
 
     #
@@ -476,12 +477,12 @@ if (EMSCRIPTEN)
     target_link_options(wasm PRIVATE
             -lembind
             -sMODULARIZE=1
-            -sEXPORT_NAME=Latex
+            -sEXPORT_NAME=mLatex
             -sALLOW_MEMORY_GROWTH=1
             -sSTACK_SIZE=8MB
             -sENVIRONMENT=web,worker,node
             "SHELL:--preload-file ${fonts}@/assets/fonts")
-    set_target_properties(wasm PROPERTIES OUTPUT_NAME latex)
+    set_target_properties(wasm PROPERTIES OUTPUT_NAME mlatex)
 else ()
     add_executable(latex "${source}/src/main.cpp")
     target_link_libraries(latex PRIVATE core)
