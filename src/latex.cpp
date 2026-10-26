@@ -69,6 +69,8 @@ namespace latex {
     /// @param destination Where to write the PDF, or null when @p pdf is to hold it.
     /// @param pdf         Receives the PDF, when @p destination is null.
     /// @param texts       Receives each page's text, or null for none.
+    /// @param screen      Receives the pages to draw on a screen, when @p pdf
+    ///                    holds the PDF; null for none.
     /// @param host        Values, commands and files the calling program hands in.
     /// @param report      Where the statistics and timings go, or null for nowhere.
     /// @param errors      Where every error goes.
@@ -82,6 +84,7 @@ namespace latex {
         const std::filesystem::path *destination,
         std::string *pdf,
         std::vector<std::string> *texts,
+        render::Screen *screen,
         const Host &host,
         std::ostream *report,
         std::ostream &errors,
@@ -527,7 +530,8 @@ namespace latex {
             for (const render::layout::Pager::Page &sheet: pages) {
                 static_cast<void>(composer.draw(sheet.nodes, sheet.notes, page.left, page.top));
             }
-            return run(assets, source, text, destination, pdf, texts, host, report, errors, &composer.anchors);
+            return run(assets, source, text, destination, pdf, texts, screen, host, report, errors,
+                       &composer.anchors);
         }
 
         if (destination) {
@@ -536,7 +540,8 @@ namespace latex {
                 return false;
             }
         } else if (pdf) {
-            *pdf = render::Pdf::render(composer, pages);
+            if (screen) *screen = {};
+            *pdf = render::Pdf::render(composer, pages, screen);
             if (pdf->empty()) {
                 errors << "Failed to make a PDF: the document has no pages\n";
                 return false;
@@ -638,7 +643,7 @@ namespace latex {
 
     bool Session::typeset(const std::string_view document) {
         std::ostringstream errors;
-        const bool made = latex::typeset(assets, document, pdf, host, errors, &pages);
+        const bool made = latex::typeset(assets, document, pdf, host, errors, &pages, &screen);
         error = errors.str();
         return made;
     }
@@ -675,8 +680,8 @@ namespace latex {
         std::vector<std::string> *texts
     ) {
         if (texts) texts->clear();
-        return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, texts, host,
-                   report, errors);
+        return run(assets, &source, {}, destination.empty() ? nullptr : &destination, nullptr, texts, nullptr,
+                   host, report, errors);
     }
 
     bool typeset(
@@ -685,10 +690,12 @@ namespace latex {
         std::string &pdf,
         const Host &host,
         std::ostream &errors,
-        std::vector<std::string> *texts
+        std::vector<std::string> *texts,
+        render::Screen *screen
     ) {
         pdf.clear();
         if (texts) texts->clear();
-        return run(assets, nullptr, document, nullptr, &pdf, texts, host, nullptr, errors);
+        if (screen) *screen = {};
+        return run(assets, nullptr, document, nullptr, &pdf, texts, screen, host, nullptr, errors);
     }
 }

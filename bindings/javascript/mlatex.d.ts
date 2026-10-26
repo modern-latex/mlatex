@@ -36,6 +36,40 @@ declare namespace mLatex {
 		pdf(): Uint8Array;
 		/** What went wrong, one error per line. */
 		error(): string;
+		/** The last PDF's pages, to draw on a canvas; a copy, deleted when done with. */
+		screen(): Screen;
+		delete(): void;
+	}
+
+	/** A canvas's 2D context, a page's or an OffscreenCanvas's. */
+	type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+	/** A link on a page, its area in points from the page's top left. */
+	interface Link {
+		left: number;
+		top: number;
+		right: number;
+		bottom: number;
+		/** The address it goes to. */
+		target?: string;
+		/** Or the page it goes to, from 0, and how far down it in points. */
+		page?: number;
+		down?: number;
+	}
+
+	/** Pages drawn by the engine itself onto a canvas, at any size, with no PDF reader. */
+	interface Screen {
+		/** How many pages there are. */
+		count(): number;
+		/** A page's width in points. */
+		width(page: number): number;
+		/** A page's height in points. */
+		height(page: number): number;
+		/** Draws a page, from 0, at so many pixels to the point. */
+		draw(context: Context, page: number, scale: number): void;
+		links(page: number): Link[];
+		/** What the document says of itself. */
+		about(): { title: string; author: string; subject: string; keywords: string };
 		delete(): void;
 	}
 }
