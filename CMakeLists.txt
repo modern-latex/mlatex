@@ -483,6 +483,14 @@ if (EMSCRIPTEN)
             -sENVIRONMENT=web,worker,node
             "SHELL:--preload-file ${fonts}@/assets/fonts")
     set_target_properties(wasm PROPERTIES OUTPUT_NAME mlatex)
+    # Beside them, the faces a page lends the module for a script or symbols
+    # it carries none of -- Chinese, Thai, emoji -- and fonts.json, which
+    # says what each draws. None is packed: a page fetches one only when a
+    # document needs it, from what screen.missing() names, and hands it over
+    # with session.font.
+    add_custom_command(TARGET wasm POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${source}/assets/fallback" "$<TARGET_FILE_DIR:wasm>/fallback"
+            VERBATIM)
 else ()
     add_executable(latex "${source}/src/main.cpp")
     target_link_libraries(latex PRIVATE core)

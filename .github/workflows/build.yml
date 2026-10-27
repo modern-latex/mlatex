@@ -388,7 +388,8 @@ jobs:
         run: |
           version=$(head -n 1 VERSION | tr -d '[:space:]')
           mkdir -p bin
-          (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" mlatex.js mlatex.wasm mlatex.data)
+          (cd "$TREE" && zip -j "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" mlatex.js mlatex.wasm mlatex.data &&
+            zip -r "$GITHUB_WORKSPACE/bin/mlatex-$version-wasm.zip" fallback)
 
       # The same three files as the npm package mlatex, with its Node entry
       # and types, versioned like the wheels. It is installed somewhere else
@@ -399,6 +400,7 @@ jobs:
         run: |
           version=$(head -n 1 VERSION | tr -d '[:space:]')
           cp "$TREE/mlatex.js" "$TREE/mlatex.wasm" "$TREE/mlatex.data" LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/javascript
+          cp -r "$TREE/fallback" bindings/javascript
           (cd bindings/javascript && npm version "$version" --no-git-tag-version --allow-same-version &&
             npm pack --pack-destination "$GITHUB_WORKSPACE/bin")
           cd "$RUNNER_TEMP"
