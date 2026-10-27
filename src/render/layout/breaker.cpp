@@ -268,6 +268,14 @@ namespace render::layout {
         // lines can be written straight into their final places.
         const memory::Slice<Node *> lines = arena.allocate<Node *>(last->line);
 
+        // Where the words were written, when the paragraph says: each line
+        // opens with the last Command::Source before it, so one that starts
+        // part way through a run still says which line of the source it is.
+        const bool marked = std::ranges::any_of(input, [](const Node *node) {
+            return node && node->type == Node::Type::Directive &&
+                   node->directive().command == Node::Directive::Command::Source;
+        });
+
         for (const Candidate *current = last; current && current->link; current = current->link) {
             std::size_t start = current->link->index;
             const std::size_t mark = current->index - 1;
@@ -323,11 +331,20 @@ namespace render::layout {
                                             border->pause().penalty.value <= -10000));
             const bool natural = !ragged && (current == last || forced);
 
-            const std::size_t length = stop - start + (preceding ? 1 : 0) +
+            Node *origin = nullptr;
+            for (std::size_t index = start; marked && index-- > 0 && !origin;) {
+                if (input[index] && input[index]->type == Node::Type::Directive &&
+                    input[index]->directive().command == Node::Directive::Command::Source) {
+                    origin = input[index];
+                }
+            }
+
+            const std::size_t length = stop - start + (origin ? 1 : 0) + (preceding ? 1 : 0) +
                                        (leading ? 1 : 0) + (trailing ? 1 : 0) + (natural ? 1 : 0);
             const memory::Slice<Node *> row = arena.allocate<Node *>(length);
             std::size_t filled = 0;
 
+            if (origin) row[filled++] = origin;
             if (leading) {
                 auto *fill = arena.compose<Node>(Node::Type::Glue);
                 fill->glue({.stretch = 1.0f, .expand = Node::Order::Fil});

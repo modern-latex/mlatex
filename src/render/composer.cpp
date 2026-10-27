@@ -130,6 +130,8 @@ namespace render {
         content.clear();
         transcript.clear();
         links.emplace_back();
+        spots.emplace_back();
+        origin = {};
 
         // The page is flipped once, here, so every coordinate below runs down
         // from the top left the way the layout engine measures.
@@ -316,6 +318,20 @@ namespace render {
         areas.push_back({left, top, right, bottom});
     }
 
+    void Composer::spot(const float left, const float top, const float right, const float bottom) {
+        if (origin.file == 0) return;
+        std::vector<Spot> &page = spots.back();
+        if (!page.empty() && page.back().origin.line == origin.line && page.back().origin.file == origin.file &&
+            top < page.back().area[3] && bottom > page.back().area[1]) {
+            std::array<float, 4> &area = page.back().area;
+            area = {
+                std::min(area[0], left), std::min(area[1], top), std::max(area[2], right), std::max(area[3], bottom)
+            };
+            return;
+        }
+        page.push_back({.origin = origin, .area = {left, top, right, bottom}});
+    }
+
     void Composer::reach(const float left, const float top, const float right, const float bottom) noexcept {
         extent = {
             std::min(extent[0], left), std::min(extent[1], top), std::max(extent[2], right),
@@ -407,7 +423,12 @@ namespace render {
         if (!item) return;
 
         switch (item->type) {
-            case layout::Node::Type::Box:
+            case layout::Node::Type::Box: {
+                // A Command::Source in the box says where what follows it in
+                // the box was written, and no further: what comes after the
+                // box was written where the box's own surroundings say.
+                const memory::Location kept = origin;
+
                 // The box's own displacement is applied here, once, so that
                 // inside() only ever deals with its contents. An anchored
                 // box ignores the pen entirely and places itself where it
@@ -440,9 +461,15 @@ namespace render {
                     // What the contents draw is measured in the map's own
                     // space, not the page's: the box's four corners, carried
                     // through the map, are what it covers instead.
+                    // So is where the source it holds was drawn: one spot
+                    // over all of it, for the line its first came from.
                     const std::array<float, 4> before = extent;
+                    const std::size_t made = spots.back().size();
                     inside(item, 0.0f, 0.0f);
-                    extent = before;
+                    extent = {
+                        std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                        std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()
+                    };
                     const layout::Node::Box &shape = item->box();
                     for (const float side: {0.0f, shape.width}) {
                         for (const float edge: {-shape.height, shape.depth}) {
@@ -451,6 +478,12 @@ namespace render {
                             reach(right, under, right, under);
                         }
                     }
+                    if (spots.back().size() > made) {
+                        origin = spots.back()[made].origin;
+                        spots.back().resize(made);
+                        spot(extent[0], extent[1], extent[2], extent[3]);
+                    }
+                    reach(before[0], before[1], before[2], before[3]);
                     flush();
                     content += "Q\n";
                     filling = fill;
@@ -459,7 +492,9 @@ namespace render {
                 } else {
                     inside(item, position + item->box().offset, baseline + item->box().shift);
                 }
+                origin = kept;
                 break;
+            }
             case layout::Node::Type::Glyph: {
                 // One glyph onto the open run, opening a new run if need be.
                 const layout::Node::Glyph &mark = item->glyph();
@@ -562,6 +597,7 @@ namespace render {
                 content.append(written, sizeof(written));
                 reach(left, height - mark.height, left + mark.width, height + mark.depth);
                 if (!opened.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
+                spot(left, height - mark.height, left + mark.width, height + mark.depth);
 
                 // What the glyph stands for, onto the page's transcript: a
                 // ligature's letters, or its own character in UTF-8.
@@ -661,6 +697,7 @@ namespace render {
                 if (bitmap.width <= 0.0f || bitmap.height <= 0.0f) return;
                 if (!bitmap.drawing && !bitmap.source) return;
                 reach(position, baseline - bitmap.height, position + bitmap.width, baseline);
+                spot(position, baseline - bitmap.height, position + bitmap.width, baseline);
 
                 // A page of another PDF: its form, clipped to the drawn box
                 // and scaled so the window onto its page fills it. The form's
@@ -737,6 +774,8 @@ namespace render {
                     anchors[slot] = folio();
                     if (slot >= places.size()) places.resize(slot + 1);
                     places[slot] = {.page = texts.size(), .down = baseline};
+                } else if (item->directive().command == layout::Node::Directive::Command::Source) {
+                    origin = {.line = static_cast<std::uint32_t>(item->directive().index), .file = item->directive().file};
                 } else if (item->directive().command == layout::Node::Directive::Command::Link) {
                     opened.push_back({
                         .target = item->directive().target, .anchor = item->directive().index,
