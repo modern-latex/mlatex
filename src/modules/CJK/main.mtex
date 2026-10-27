@@ -1,5 +1,6 @@
 % CJK: Chinese, Japanese and Korean text. The characters are drawn from the
-% system's faces for their scripts; the block's encoding and family are read.
+% system's faces for their scripts -- in a browser, from the face a page
+% hands over from fallback/; the block's encoding and family are read.
 %
 %   \begin{CJK}{UTF8}{gbsn} 中文 \end{CJK}
 
