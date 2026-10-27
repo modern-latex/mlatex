@@ -1,6 +1,8 @@
 #include "latex.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <sstream>
@@ -170,6 +172,38 @@ int main() {
                 links[0][1].page == 0 && links[0][1].down > 0.0f) &&
                "one to its address, one to the place its anchor was drawn");
         assert((result.screen.about.title == "Linked") && "and what the document says of itself");
+    }
+    {
+        // Where each line of the source was drawn, for an editor to jump by.
+        std::string words;
+        for (int count = 0; count < 40; ++count) words += "word ";
+        const Result result = typeset("\\documentclass{article}\n\\begin{document}\n"
+                                      "\\section{Heading}\n"
+                                      "First words\nand more.\n"
+                                      "\n" + words + "\n"
+                                      "\n"
+                                      "A formula $x^2$ here.\n"
+                                      "\\end{document}\n");
+        const auto &spots = result.screen.spots;
+        assert((spots.size() == 1 && !spots[0].empty()) && "spots, by page");
+        const auto find = [&](const std::uint32_t line) {
+            return std::ranges::find_if(spots[0], [line](const render::Composer::Spot &spot) {
+                return spot.origin.line == line;
+            });
+        };
+        assert((find(3) != spots[0].end() && find(4) != spots[0].end() && find(5) != spots[0].end() &&
+                find(7) != spots[0].end() && find(9) != spots[0].end()) &&
+               "the heading, each line of a paragraph, and a line with a formula in it");
+        assert((result.screen.files[find(4)->origin.file] == "main.tex") && "in the file they were written in");
+        assert((find(3)->area[3] <= find(4)->area[1] && find(4)->area[2] <= find(5)->area[0] + 0.5f &&
+                find(4)->area[1] < find(5)->area[3] && find(5)->area[1] < find(4)->area[3]) &&
+               "the heading above, and a paragraph's two lines of source side by side on one line of the page");
+        assert((std::ranges::count_if(spots[0], [](const render::Composer::Spot &spot) {
+                    return spot.origin.line == 7;
+                }) >= 2) && "and a line of the source set on two lines of the page, as two spots");
+        assert((std::ranges::none_of(spots[0], [](const render::Composer::Spot &spot) {
+                    return spot.origin.line == 1 || spot.origin.line == 2 || spot.origin.line > 10;
+                })) && "and nothing for lines that draw nothing");
     }
     {
         latex::Session session(latex::locate(__FILE__));
