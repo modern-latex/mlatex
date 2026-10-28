@@ -32,7 +32,7 @@ namespace syntax::primitives::logic {
     }
 
     void Environments::watch(const std::string_view name, Handler entering, Handler leaving,
-                       const bool transparent) const {
+                       const bool transparent, const bool lingering) const {
         if (!lexicon || name.empty()) return;
 
         // Indexed by the interned name, so dispatch is one bounds check and
@@ -42,7 +42,10 @@ namespace syntax::primitives::logic {
 
         Hook &hook = hooks[slot];
         if (!hook.entering && !hook.leaving) {
-            hook = Hook{.entering = std::move(entering), .leaving = std::move(leaving), .transparent = transparent};
+            hook = Hook{
+                .entering = std::move(entering), .leaving = std::move(leaving), .transparent = transparent,
+                .lingering = lingering
+            };
             return;
         }
 
@@ -60,6 +63,7 @@ namespace syntax::primitives::logic {
             if (earlier) earlier(mouth);
         };
         hook.transparent = hook.transparent || transparent;
+        hook.lingering = hook.lingering || lingering;
     }
 
     void Environments::watch(Handler entering, Handler leaving) const {
@@ -127,7 +131,7 @@ namespace syntax::primitives::logic {
         };
 
         // A block closed, once whatever its end code opened has been.
-        const auto close = [this](Mouth &mouth, const Symbol name) {
+        const auto close = [this, word](Mouth &mouth, const Symbol name) {
             if (open.empty()) {
                 tracebacks.emplace_back(Traceback::Type::Environment,
                                         mouth.lookahead().location,
@@ -151,10 +155,26 @@ namespace syntax::primitives::logic {
 
             // Before the scope closes, so a hook still sees whatever the block
             // established inside it.
+            const std::size_t before = mouth.stream().size();
             if (slot < hooks.size() && hooks[slot].leaving && !own) {
                 hooks[slot].leaving(mouth);
             }
             if (every.leaving) every.leaving(mouth);
+
+            // What a lingering block's hooks put in front of the stream is
+            // read while its scope is still open -- the document's
+            // \\AtEndDocument code, which sees what the document defined --
+            // and the scope closes behind it, at \\end:linger.
+            if (slot < hooks.size() && hooks[slot].lingering && mouth.stream().size() > before) {
+                const std::size_t added = mouth.stream().size() - before;
+                std::vector<Token> code;
+                code.reserve(added + 1);
+                for (std::size_t index = 0; index < added; ++index) code.push_back(mouth.stream().advance());
+                code.push_back(word(mouth, "\\end:linger"));
+                mouth.stream().inject(std::span{code});
+                lingering.push_back(open.back());
+                return;
+            }
 
             open.pop_back();
             if (!transparent) mouth.pop(semantics::Scope::Type::Environment);
@@ -194,6 +214,15 @@ namespace syntax::primitives::logic {
             }
             close(mouth, name);
         };
+        mouth.bind("\\end:linger", [this](Mouth &mouth) {
+            if (lingering.empty() || open.empty() || open.back() != lingering.back()) return;
+            const auto slot = static_cast<std::size_t>(lingering.back());
+            lingering.pop_back();
+            open.pop_back();
+            if (!(slot < hooks.size() && hooks[slot].transparent && !hooks[slot].own)) {
+                mouth.pop(semantics::Scope::Type::Environment);
+            }
+        });
         mouth.bind("\\end:finish", [this, close](Mouth &mouth) {
             if (closing.empty()) return;
             const Symbol name = closing.back();
