@@ -335,8 +335,6 @@ discuss a feature before starting on a large change. Pull requests should:
 
 - build without warnings and pass `ctest`;
 - add a test in the file that mirrors the source file they change;
-- follow the existing style: every identifier is one real word, with no
-  underscores and no camelCase, and every declaration has a Doxygen comment;
 - add an entry to [CHANGELOG.md](CHANGELOG.md).
 
 Everyone taking part is expected to follow the
