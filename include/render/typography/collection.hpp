@@ -170,6 +170,11 @@ namespace render::typography {
         [[nodiscard]] const Entry *get(std::string_view family) const;
 
         std::size_t faces{0}; ///< How many faces are indexed, aliases excluded.
+
+        /// The faces the system's folders added, by family, in the order they
+        /// were listed: where a character no face named for its script draws
+        /// is looked for last -- in a browser, every face a page handed over.
+        std::vector<std::string_view> lent{};
         mutable std::size_t bytes{0}; ///< How many bytes of font data are resident, mapped or read.
 
     private:
@@ -188,6 +193,7 @@ namespace render::typography {
         std::size_t slots{0}; ///< Bucket count, always a power of two.
         Entry **table{nullptr}; ///< Bucket heads.
         bool searched{false}; ///< Whether post() has listed the system's folders.
+        bool lending{false}; ///< Whether the faces being posted are the system's, for #lent.
 
         /// Every file mapped so far, and every one read where it would not
         /// map. Kept on the heap rather than in the arena, and get() taken
