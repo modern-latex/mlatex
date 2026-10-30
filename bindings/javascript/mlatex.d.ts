@@ -28,6 +28,13 @@ declare namespace mLatex {
 		/** A file under the name a document uses for it. */
 		provide(name: string, content: Uint8Array | string): void;
 		withdraw(name: string): void;
+		/**
+		 * Hands over a face to draw what no face mLaTeX carries draws -- a
+		 * browser lends a page none of the system's -- as the font file's name
+		 * and bytes, such as `NotoSerifCJK-Regular.otf` from `fallback/`.
+		 * Every document after looks in it. False for a name with a path in it.
+		 */
+		font(name: string, bytes: Uint8Array): boolean;
 		/** Whether the document was set with nothing reported. */
 		typeset(document: string): boolean;
 		/** Whether a piece of LaTeX alone was set, on a page cropped to it. */
