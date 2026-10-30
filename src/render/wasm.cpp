@@ -278,6 +278,11 @@ namespace render {
                     }
                     return list;
                 }))
+                .function("missing", emscripten::optional_override([](const Screen &self) {
+                    emscripten::val list = emscripten::val::array();
+                    for (const std::uint32_t code: self.missing) list.call<void>("push", code);
+                    return list;
+                }))
                 .function("about", emscripten::optional_override([](const Screen &self) {
                     emscripten::val made = emscripten::val::object();
                     made.set("title", self.about.title);

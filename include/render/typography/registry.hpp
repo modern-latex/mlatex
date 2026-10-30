@@ -107,6 +107,11 @@ namespace render::typography {
 
         std::size_t fonts{0}; ///< How many distinct fonts have been built.
 
+        /// Every character no face drew, once each, in the order the text met
+        /// them: what a page in a browser, with no faces of the system's to
+        /// fall back on, fetches a face for and sets the document again.
+        std::vector<std::uint32_t> missing{};
+
         /// How many distinct faces have been opened: at most one per family
         /// and cut a document actually used, whatever number of sizes it was
         /// asked for at -- the number a writer will later cut exactly that
