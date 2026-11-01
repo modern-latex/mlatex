@@ -924,6 +924,17 @@ page's text goes.
   `width`, `height`, `links` and `about` say the rest. A page of another PDF
   shows as a shaded box, which only a PDF reader can draw.
   `graphics::Image::raster` decodes a JPEG kept for the PDF, for a screen.
+- **Every script on the web.** A browser lends a page none of the system's
+  faces, so Chinese, Thai, emoji and dingbats came out missing there.
+  `render::Screen::missing` now names every character no face drew, and in
+  the WebAssembly module `screen.missing()`; `session.font(name, bytes)`
+  hands over a face, which the module looks in where a system's faces would
+  be. The build leaves `fallback/` beside `mlatex.data`: Noto faces for
+  Chinese, Japanese and Korean, symbols, emoji and twenty other scripts,
+  under the SIL Open Font License, with `fonts.json` naming the characters
+  each draws, so a page fetches only what a document needs. A face the
+  system lends is now also looked in last, past those named for a script,
+  and Chinese is set in a Song face before a sans, as it is printed.
 - **Where each line of the source was drawn.** A run of text now ends at the
   end of each line of a file it is written in, and each run, formula and box
   carries the line it was written on to the page in a
