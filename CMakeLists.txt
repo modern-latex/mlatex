@@ -68,9 +68,12 @@ endif ()
 
 # The version is VERSION's first line: `mlatex --version`, the packages' names
 # and every release take it from there, so a new version is that one line
-# changed. A second line, when there is one, is the release's title.
+# changed. A second line, when there is one, is the release's title. A
+# pre-release, like 0.2.0-beta.2, is its number alone to CMake and to the
+# installers, which take nothing else, and whole everywhere it is shown.
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" version LIMIT_COUNT 1)
-project(latex VERSION ${version} LANGUAGES C CXX)
+string(REGEX MATCH "^[0-9]+[.][0-9]+[.][0-9]+" number "${version}")
+project(latex VERSION ${number} LANGUAGES C CXX)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)
 
 # The npm package's package.json carries the same version, written into it
@@ -174,7 +177,7 @@ find_package(Doxygen)
 
 if (DOXYGEN_FOUND)
     set(DOXYGEN_PROJECT_NAME "mLaTeX")
-    set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
+    set(DOXYGEN_PROJECT_NUMBER "${version}")
     set(DOXYGEN_PROJECT_BRIEF "A LaTeX typesetting engine")
     set(DOXYGEN_OUTPUT_DIRECTORY "${binary}/docs")
     set(DOXYGEN_GENERATE_HTML YES)
@@ -499,7 +502,7 @@ else ()
     # target keeps its name, which is what an IDE's run configuration names.
     set_target_properties(latex PROPERTIES OUTPUT_NAME mlatex)
     # What `mlatex --version` prints.
-    target_compile_definitions(latex PRIVATE LATEX_VERSION="${PROJECT_VERSION}")
+    target_compile_definitions(latex PRIVATE LATEX_VERSION="${version}")
 
     # The engine as a C library, for a program that wants documents made
     # without running a second process: see include/protocols/ffi.hpp. Named
@@ -609,7 +612,7 @@ else ()
         set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/modern-latex/mlatex")
         set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
         set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
-        set(CPACK_PACKAGE_FILE_NAME "mlatex-${PROJECT_VERSION}-${platform}-${architecture}")
+        set(CPACK_PACKAGE_FILE_NAME "mlatex-${version}-${platform}-${architecture}")
         set(CPACK_STRIP_FILES ON)
         # The packages themselves in bin/, beside the sources; what CPack
         # stages to make them stays in the build tree.
@@ -643,7 +646,7 @@ else ()
             # Applications to drag it onto; a .pkg installer that puts the
             # same folder in /Applications itself; and two archives.
             set(CPACK_GENERATOR DragNDrop productbuild TGZ ZIP)
-            set(CPACK_DMG_VOLUME_NAME "mLaTeX ${PROJECT_VERSION}")
+            set(CPACK_DMG_VOLUME_NAME "mLaTeX ${version}")
             set(CPACK_PRODUCTBUILD_IDENTIFIER io.github.apaxphoenix.mlatex)
         else ()
             # Debian's and Red Hat's packages, named as each names its own,

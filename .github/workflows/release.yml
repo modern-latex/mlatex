@@ -137,6 +137,10 @@ jobs:
           body_path: notes.md
           files: bin/*
           generate_release_notes: ${{ steps.notes.outputs.generate }}
+          # A version with a hyphen, like 0.2.0-beta.2, is a pre-release and
+          # never the latest.
+          prerelease: ${{ contains(needs.version.outputs.version, '-') }}
+          make_latest: ${{ !contains(needs.version.outputs.version, '-') }}
 
   # The package bindings/javascript describes -- the WebAssembly module, its
   # Node entry, its types and its README -- as Build packed it, named mlatex
@@ -171,12 +175,16 @@ jobs:
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           tar -xzf ./bin/*.tgz
           cd package
           npm pkg set name=mlatex
           cat package.json
-          npm publish --access public --provenance
+          # A pre-release goes out as `next`, so `npm install mlatex` stays on
+          # the last full release.
+          case "$VERSION" in *-*) tag=next ;; *) tag=latest ;; esac
+          npm publish --access public --provenance --tag "$tag"
 
   # The same package on GitHub Packages, where the repository's page lists
   # it; GitHub's registry takes a package only under its owner's scope.
@@ -217,7 +225,8 @@ jobs:
           tar -xzf ./bin/*.tgz
           cd package
           npm pkg set name=@modern-latex/mlatex
-          npm publish
+          case "$VERSION" in *-*) tag=next ;; *) tag=latest ;; esac
+          npm publish --tag "$tag"
 
   # Tells the docs site, modern-latex/docs, that a version is out, so its Reference
   # workflow writes the package reference from the new tag at once rather
