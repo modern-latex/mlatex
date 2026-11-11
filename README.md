@@ -1,37 +1,6 @@
-<h1 align="center">
-  mLaTeX
-</h1>
+# mLaTeX
 
-<p align="center">
-  <b>A LaTeX typesetting engine, rewritten from the ground up in modern C++.</b>
-</p>
-
-<p align="center">
-  <a href="https://en.cppreference.com/w/cpp/compiler_support">
-    <img alt="C++ Standard" src="https://img.shields.io/badge/C%2B%2B-26-blue?logo=c%2B%2B"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/actions">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/modern-latex/mlatex/build.yml?branch=main&label=build"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex">
-    <img alt="Platforms" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/stargazers">
-    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/modern-latex/mlatex?color=239dad&label=stars"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/issues">
-    <img alt="GitHub Issues" src="https://img.shields.io/github/issues/modern-latex/mlatex?color=5865F2&label=issues"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/pulls">
-    <img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-A561FF"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/commits/main">
-    <img alt="Last Commit" src="https://img.shields.io/github/last-commit/modern-latex/mlatex?color=success"
-  ></a>
-  <a href="https://github.com/modern-latex/mlatex/blob/main/LICENSE">
-    <img alt="AGPL v3 License" src="https://img.shields.io/badge/license-AGPL%20v3-brightgreen"
-  ></a>
-</p>
+**A LaTeX typesetting engine, rewritten from the ground up in modern C++.**
 
 mLaTeX (Modernized LaTeX) reads LaTeX as people already write it and turns it
 into PDF with a single program. There is no TeX distribution behind it, no
@@ -43,6 +12,13 @@ The language stays the same. A document written for pdfLaTeX, its preamble
 included, is meant to compile unchanged. What changes is the machinery
 underneath: the work LaTeX does with thousands of lines of TeX macros is done
 once, in compiled code.
+
+> **Status: pre-release.** mLaTeX is changing quickly. The `aot` target,
+> which writes the PDF directly, is complete; the command line's `jit` target
+> is accepted but does nothing yet, while its pieces are built in
+> [`src/jit`](src/jit/implementation.md). A package that loads is not yet a
+> promise that every feature of it is drawn exactly, so check the PDF before
+> you rely on it.
 
 ## Highlights
 
@@ -57,53 +33,174 @@ once, in compiled code.
   binary. Fonts (New Computer Modern, STIX Two, Fira Math, TeX Gyre and
   others) and hyphenation patterns for 79 languages and variants ship in
   `assets/`.
-- **The parts people use.** Mathematics; tables; floats; cross-references
-  resolved by a second pass in memory; tables of contents and indexes;
-  hyperref links and bookmarks; TikZ, pgfplots, tikz-cd, xy-pic and forest
-  pictures; beamer slides with overlays and themes; BibTeX bibliographies in
-  the standard, natbib and biblatex styles; right-to-left and CJK text;
-  PNG, JPEG, WebP, EPS and SVG pictures; PDF/A.
 - **Embeddable.** The same engine is available as a C++ library, a C library
   that any language with a foreign-function interface can bind, and a
   WebAssembly module. Programs can supply values, commands they implement,
   and files from memory, then get the PDF back as bytes -- a whole document,
-  or a snippet: one formula, table or picture on a page cropped to it, to
-  show inside an app or a web page.
+  or a snippet: one formula, table or picture on a page cropped to it.
 - **Safe by design.** A document cannot run shell commands (`\write18` does
   not exist), cannot write files, and never loads `.sty` or `.cls` code from
-  disk. With `--offline` it cannot reach the network either. See
-  [SECURITY.md](SECURITY.md).
+  disk. With `--offline` it cannot reach the network either.
 
-## Status
+## How it works
 
-mLaTeX is pre-release software (version 0.1.0). The `aot` target, which
-writes the PDF directly, is complete. The command line's `jit` target is
-accepted but not yet implemented; it is reserved in
-[`src/jit`](src/jit/implementation.md). WebAssembly is not a target of the
-command line but a build of the engine itself, for browsers and Node; see
-[Embedding the engine](#embedding-the-engine). See
-[CHANGELOG.md](CHANGELOG.md) for what has been done and what is
-intentionally left out.
+1. **One program reads the whole document.** The lexer reads the source
+   into tokens, the expander runs its macros and the parser builds its
+   structure. Nothing comes from a TeX distribution: each package and class
+   is a folder of the engine's own LaTeX, compiled into the binary, and the
+   commands of about 630 more packages come from a glossary that costs
+   nothing until a document uses one.
+2. **Typesetting is compiled code.** Paragraphs are broken into lines and
+   lines into pages by the engine itself, and text is shaped by HarfBuzz in
+   the fonts the engine carries, hyphenated by patterns for 79 languages and
+   variants.
+3. **Cross-references resolve in memory.** Where LaTeX writes an `.aux` file
+   and needs another run, mLaTeX makes its second pass in memory, so
+   references and tables of contents come out right in one run. A `.bib`
+   file is read directly, with no BibTeX step.
+4. **The PDF is written directly.** Each font is subset to the glyphs the
+   document uses, hyperref's links and bookmarks are kept, and pdfx's
+   PDF/A-2b is written when a document asks for it.
+5. **A document cannot reach outside.** It cannot run a shell command, write
+   a file or load package code from disk, and with `--offline` it makes no
+   network requests. [SECURITY.md](SECURITY.md) has the details.
 
-## Installation
+## Features
 
-Prebuilt packages have not been published yet. When they are, each release
-will include:
+**Documents**
+- 509 packages and 14 document classes, each checked by a sample document of
+  its own; an unknown package or class is a warning, not a failed build.
+- Mathematics, floats, and tables that break across pages with their text
+  kept inside its cells.
+- Cross-references, tables of contents and indexes, resolved in one run.
+- hyperref's links and bookmarks, and PDF/A.
 
-| Platform | Package                              | Installs to                                         |
-|----------|--------------------------------------|-----------------------------------------------------|
-| Windows  | `.msi` installer, `.zip`             | `C:\Program Files\mLaTeX`                           |
-| macOS    | `.pkg` installer                     | `/Applications/mLaTeX`                              |
-| macOS    | `.dmg` disk image, `.tar.gz`, `.zip` | wherever the `mLaTeX` folder is dragged or unpacked |
-| Linux    | `.deb`, `.rpm`                       | `/opt/mlatex`                                       |
-| Linux    | `.tar.gz`, `.zip`                    | wherever it is unpacked                             |
-| Web      | `-wasm.zip`: `mlatex.js`, `mlatex.wasm`, `mlatex.data` | beside the page or script that loads it |
+**Pictures**
+- TikZ, pgfplots, tikz-cd, xy-pic and forest pictures.
+- PNG, JPEG, WebP, EPS and SVG pictures; an EPS picture is drawn by running
+  its PostScript.
+
+**Slides**
+- beamer slides: each slide of a frame, with its overlays, and beamer's
+  themes.
+
+**Bibliographies**
+- BibTeX bibliographies in the standard, natbib and biblatex styles.
+- `\bibliography` and `\addbibresource` read the `.bib` file directly.
+- `mlatex refs.bib` typesets every entry, to check a bibliography before
+  citing it.
+
+**Languages**
+- Hyphenation patterns for 79 languages and variants.
+- Right-to-left text: Arabic and Hebrew paragraphs and tables, mirrored
+  brackets and kashida justification.
+- Chinese and Japanese broken between their characters, and each language's
+  own digits and spacing.
+
+**The command line**
+- TeX's own options, so scripts written for pdfLaTeX keep working.
+- `--watch` sets the document again every time it is saved, and `--open`
+  opens the PDF in the system viewer.
+- Errors as `file:line:column: message`, and `--time-statistics` for every
+  stage of the engine.
+
+**For programs**
+- The engine as a C++ library, a C library and a WebAssembly module, with
+  one interface under the same names.
+- Values, commands and files handed in from memory, and the PDF handed back
+  as bytes.
+- Snippets: a formula, a table or a picture set on its own, on a page
+  cropped to it.
+
+## How it compares
+
+|  | mLaTeX | pdfLaTeX | XeLaTeX | LuaLaTeX | Tectonic |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| No TeX distribution to install | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Works offline from the first run | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Cross-references in one run, no auxiliary files | ✅ | ❌ | ❌ | ❌ | ✅ |
+| OpenType fonts | ✅ | ❌ | ✅ | ✅ | ✅ |
+| Any font installed on the system | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Reads packages from `.sty` files | ❌ | ✅ | ✅ | ✅ | ✅ |
+| No shell commands from a document | ✅ | Restricted | Restricted | Restricted | Off by default |
+| Usable as a library | ✅ C++, C | ❌ | ❌ | ❌ | ✅ Rust |
+| Runs in a web page | ✅ | Third-party | Third-party | Third-party | ❌ |
+
+mLaTeX carries its packages compiled in rather than reading `.sty` files:
+509 of them, each checked by a document of its own, and the commands of
+about 630 more in its glossary. It also has what none of these do together:
+a session that a program hands values, commands and files from memory, and
+snippets, a formula, table or picture set alone on a page cropped to it.
+
+This table is the project's best reading of each engine's documentation and
+may fall out of date. If something in it is wrong, please open an issue.
+
+## Roadmap
+
+**Next**
+- Fonts loaded in the browser as a document asks for them, rather than all
+  of `mlatex.data` before the first page
+- Less memory: blocks committed as they fill, and a session that gives
+  memory back between documents
+- The `jit` target: an engine kept warm between runs, with what it built
+  cached, that sets a document again as its files change
+
+**Later**
+- A `mlatex.Session` for Python, as JavaScript has
+- `\printglossary` printing its list
+- More classes with layouts of their own: Elsevier's `cas-sc` and `cas-dc`,
+  `mdpi`, `siamart`, `apa7`, `exam`, `moderncv`, `tikzposter`, `ctexart`
+  and others, and the NeurIPS, ICML, ACL and CVPR styles
+
+Some things are left out by choice and will not come: `\write18`, reading a
+`.sty` or `.cls` from disk, and a second run's `.aux`. See
+[CHANGELOG.md](CHANGELOG.md) for what is left out and why.
+
+## Platforms
+
+| Platform | Status |
+| --- | --- |
+| Windows | Works, on x64 and ARM64. |
+| macOS | Works, on Apple silicon and Intel. |
+| Linux | Works, on x64 and ARM64. |
+| Web and Node | Works, as a WebAssembly module. |
+| Python | Works, through the C library and `ctypes`. |
+
+Every release on the [Releases](https://github.com/modern-latex/mlatex/releases)
+page carries packages for all of them:
+
+| Platform   | Package                                                | Installs to                                         |
+|------------|--------------------------------------------------------|-----------------------------------------------------|
+| Windows    | `.msi` installer, `.zip`                               | `C:\Program Files\mLaTeX`                           |
+| macOS      | `.pkg` installer                                       | `/Applications/mLaTeX`                              |
+| macOS      | `.dmg` disk image, `.tar.gz`, `.zip`                   | wherever the `mLaTeX` folder is dragged or unpacked |
+| Linux      | `.deb`, `.rpm`                                         | `/opt/mlatex`                                       |
+| Linux      | `.tar.gz`, `.zip`                                      | wherever it is unpacked                             |
+| Web        | `-wasm.zip`: `mlatex.js`, `mlatex.wasm`, `mlatex.data` | beside the page or script that loads it             |
+| JavaScript | `.tgz`, the npm package `@modern-latex/mlatex`         | a project's `node_modules`, with `npm install`      |
+| Python     | `.whl` for each platform and architecture              | a Python environment, with `pip install`            |
 
 Each package is named for its platform and architecture, for example
 `mlatex-0.1.0-windows-x64.msi` or `mlatex_0.1.0_arm64.deb`. The program is
 `bin/mlatex` inside the installed folder. Add that `bin` folder to your `PATH`
 to run it from anywhere. It is named `mlatex` so that it never collides with
-the `latex` a TeX distribution installs.
+the `latex` a TeX distribution installs. The JavaScript package and the
+Python wheels are not on npm or PyPI yet: install them from the files
+attached to a release.
+
+### How releases are made
+
+The Build workflow builds, tests and packages mLaTeX on every push to
+`main`: Windows, macOS and Linux, each on x64 and ARM64, and then the
+WebAssembly module. When it passes and `VERSION` names a version that has no
+release yet, the Release workflow tags that commit and publishes what Build
+packaged. `VERSION` holds the version on its first line and the release's
+title on its second, and `releases/<version>.md` holds that release's notes.
+To ship the next version, raise `VERSION` and add its notes.
+
+Alphas and betas come before each version, named like `0.2.0-beta.2`, and
+are published as pre-releases. Every release's notes say what it added and
+fixed, and what doesn't work yet.
 
 ## Building from source
 
@@ -161,7 +258,7 @@ From a Release build tree:
 cpack --config cmake-build-release/CPackConfig.cmake
 ```
 
-This puts the packages listed under [Installation](#installation) for the
+This puts the packages listed under [Platforms](#platforms) for the
 platform and architecture of the build into the `release/` folder at the
 top of the project. To package another
 architecture, run a separate build for it, for example `clang-cl` targeting
@@ -323,33 +420,34 @@ detail.
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `include/`, `src/` | The engine: `syntax` (lexer, expander, parser), `render` (layout, typography, graphics, PDF), `memory` (arenas, tables), `protocols` (HTTP, the C library) |
 | `src/modules/`     | Packages and classes, one folder each, compiled into the binary                                                                                            |
-| `src/jit/`         | Reserved for the just-in-time target                                                                                                                       |
+| `src/jit/`         | The just-in-time target, being built                                                                                                                       |
 | `assets/`          | Fonts, hyphenation patterns and the command glossary                                                                                                       |
 | `build/`           | The sample paper, `main.mtex`                                                                                                                              |
 | `tests/`           | One test per source file, at the same relative path, and in `tests/packages/` one sample document per package                                              |
 
+## Security
+
+Found a vulnerability? Please don't report it in a public issue. Report it
+privately, with **Report a vulnerability** on the repository's **Security**
+tab or by email to andromedeyz@hotmail.com, and read
+[SECURITY.md](SECURITY.md) before disclosing anything publicly.
+
 ## Contributing
 
-Contributions are welcome. Please open an issue to report a bug or to
+Contributions of every size are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md), which covers the
+[Contributor License Agreement](CLA.md), and please read the
+[Code of Conduct](CODE_OF_CONDUCT.md). Open an issue to report a bug or to
 discuss a feature before starting on a large change. Pull requests should:
 
 - build without warnings and pass `ctest`;
 - add a test in the file that mirrors the source file they change;
 - add an entry to [CHANGELOG.md](CHANGELOG.md).
 
-Everyone taking part is expected to follow the
-[Code of Conduct](CODE_OF_CONDUCT.md).
-
-## Support
-
-The project's Discord server is the place to ask questions, discuss
-contributions and follow its direction:
-[https://discord.gg/UUbPg5YtJF](https://discord.gg/UUbPg5YtJF).
-
-mLaTeX is maintained by Andres Hernandez ([\@ApaxPhoenix](https://github.com/ApaxPhoenix)). For questions about the
-project or its direction, write to andromedeyz@hotmail.com. To report a
-security issue, follow [SECURITY.md](SECURITY.md) instead of opening a
-public issue.
+Questions are welcome on [Discord](https://discord.gg/UUbPg5YtJF) or in an
+issue. mLaTeX is maintained by Andres Hernandez
+([\@ApaxPhoenix](https://github.com/ApaxPhoenix)); for questions about the
+project or its direction, write to andromedeyz@hotmail.com.
 
 ## License
 
