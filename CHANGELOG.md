@@ -1153,6 +1153,12 @@ font folders are listed only for a script the engine carries no face for.
 - vcpkg's bootstrap downloads its tool from GitHub's releases, which answered
   a macOS runner with a 504 and ended its build before anything was built.
   The workflow now tries the bootstrap five times, as it does the install.
+- The npm package is `@modern-latex/mlatex`, on npm as on GitHub Packages,
+  so it can be published at all: npm refused the bare name `mlatex`, and
+  checks no scoped name for being too near a popular one. The scope is the
+  npm organization `modern-latex`, which the release's `NPM_TOKEN` has to be
+  allowed to publish to. A program installs it with
+  `npm install @modern-latex/mlatex` and imports it under the same name.
 
 ### Tests
 

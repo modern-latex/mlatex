@@ -1,6 +1,6 @@
 # Ships what Build made once it has passed on main with a VERSION not yet
 # released: the tag and a GitHub release with every package, then the npm
-# package -- mlatex on npm, @modern-latex/mlatex on GitHub Packages -- and the
+# package, @modern-latex/mlatex on npm and on GitHub Packages, and the
 # Python wheels; and the docs site is told. Build packed and tested them in its own
 # run, versioned as VERSION says, so what is published is what passed, and a
 # new version is VERSION changed on main. A tag pushed by hand releases the
@@ -80,7 +80,7 @@ jobs:
           else
             ship=true
             gh release view "$tag" -R "$GITHUB_REPOSITORY" > /dev/null 2>&1 || github=true
-            npm view "mlatex@$version" version > /dev/null 2>&1 || npm=true
+            npm view "@modern-latex/mlatex@$version" version > /dev/null 2>&1 || npm=true
           fi
           echo "Build run $RUN, $commit: version $version, \"$title\"; shipped: $ship; GitHub release to make: $github; npm to publish: $npm"
           {
@@ -143,11 +143,13 @@ jobs:
           make_latest: ${{ !contains(needs.version.outputs.version, '-') }}
 
   # The package bindings/javascript describes -- the WebAssembly module, its
-  # Node entry, its types and its README -- as Build packed it, named mlatex
-  # whatever name a run packed it under. npm refuses that name as too near
-  # katex and slate until npm's support allows it, and this step fails until
-  # then. The token is the repository's NPM_TOKEN secret; provenance ties the
-  # package to this run.
+  # Node entry, its types and its README -- as Build packed it, named
+  # @modern-latex/mlatex whatever name a run packed it under. npm refused the
+  # bare name mlatex as too near katex and slate, and checks no scoped name
+  # that way. The scope is the npm organization modern-latex, and the token,
+  # the repository's NPM_TOKEN secret, is one allowed to publish to it; a
+  # scoped package is private on npm unless it is published public.
+  # Provenance ties the package to this run.
   npm:
     name: npm
     needs: [ version, github ]
@@ -179,10 +181,10 @@ jobs:
         run: |
           tar -xzf ./bin/*.tgz
           cd package
-          npm pkg set name=mlatex
+          npm pkg set name=@modern-latex/mlatex
           cat package.json
-          # A pre-release goes out as `next`, so `npm install mlatex` stays on
-          # the last full release.
+          # A pre-release goes out as `next`, so `npm install
+          # @modern-latex/mlatex` stays on the last full release.
           case "$VERSION" in *-*) tag=next ;; *) tag=latest ;; esac
           npm publish --access public --provenance --tag "$tag"
 
