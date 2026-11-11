@@ -1142,6 +1142,17 @@ font folders are listed only for a script the engine carries no face for.
   near a popular one, and `mlatex` is too near `katex` and `slate`. The
   package keeps the name `mlatex`, and the release's npm step fails until
   npm's support allows it; on GitHub Packages it is `@modern-latex/mlatex`.
+- On a Mac no character was ever named missing. The system keeps
+  `LastResort.otf`, which draws a box for every character, those Unicode has
+  not assigned included, and it was lent with the rest of the system's
+  faces, so it answered for whatever nothing else drew; the macOS runners'
+  `test_screen` failed on U+0378. Last Resort -- the Mac's, and Unicode's
+  own `LastResort-Regular` and `LastResortHE-Regular` wherever they are
+  installed -- is no longer lent, and a character no other face draws is
+  named in `render::Screen::missing` there as everywhere else.
+- vcpkg's bootstrap downloads its tool from GitHub's releases, which answered
+  a macOS runner with a 504 and ended its build before anything was built.
+  The workflow now tries the bootstrap five times, as it does the install.
 
 ### Tests
 

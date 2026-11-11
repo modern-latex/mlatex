@@ -174,6 +174,7 @@ namespace render::typography {
         /// The faces the system's folders added, by family, in the order they
         /// were listed: where a character no face named for its script draws
         /// is looked for last -- in a browser, every face a page handed over.
+        /// Last Resort, which draws a box for every character, is left out.
         std::vector<std::string_view> lent{};
         mutable std::size_t bytes{0}; ///< How many bytes of font data are resident, mapped or read.
 

@@ -80,13 +80,24 @@ jobs:
           mkdir -p "$VCPKG_DOWNLOADS"
           git clone --depth 1 https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
           
+          # The bootstrap downloads the vcpkg tool from GitHub's releases,
+          # which answer with a 504 now and then: it is tried again, as the
+          # install below is, waiting a little longer each time.
           suffix=""
+          bootstrap="$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh"
           if [ "$RUNNER_OS" = "Windows" ]; then
-            "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
+            bootstrap="$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.bat"
             suffix=".exe"
-          else
-            "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
           fi
+          for i in {1..5}; do
+            "$bootstrap" -disableMetrics && break
+            if [ $i -eq 5 ]; then
+              echo "vcpkg's bootstrap failed after 5 attempts."
+              exit 1
+            fi
+            echo "vcpkg's bootstrap failed. Retrying in $((i * 15)) seconds..."
+            sleep $((i * 15))
+          done
 
           # On macOS the libraries are built for the same 14.0 the engine is,
           # not for the runner's own version: a library built for a newer
@@ -336,7 +347,16 @@ jobs:
 
           mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE" "$VCPKG_DOWNLOADS"
           git clone --depth 1 https://github.com/microsoft/vcpkg "$RUNNER_TEMP/vcpkg"
-          "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+          # Tried again on a failed download, as the native builds' is.
+          for i in {1..5}; do
+            "$RUNNER_TEMP/vcpkg/bootstrap-vcpkg.sh" -disableMetrics && break
+            if [ $i -eq 5 ]; then
+              echo "vcpkg's bootstrap failed after 5 attempts."
+              exit 1
+            fi
+            echo "vcpkg's bootstrap failed. Retrying in $((i * 15)) seconds..."
+            sleep $((i * 15))
+          done
           "$RUNNER_TEMP/vcpkg/vcpkg" install --triplet wasm32-emscripten harfbuzz libpng libjpeg-turbo libwebp zlib
 
           echo "EMSDK=$EMSDK" >> "$GITHUB_ENV"
