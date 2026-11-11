@@ -1239,6 +1239,15 @@ font folders are listed only for a script the engine carries no face for.
 - The root `Doxyfile`, which named a folder that is gone and none of the
   settings the `docs` target uses, is removed: the target is configured in
   `CMakeLists.txt` alone.
+- **The README is laid out as Zephyron's is.** A plain title with the
+  tagline in bold under it and no badges, and the status as a note after the
+  introduction. After the highlights come how the engine works, in five
+  steps; its features, by kind; a table comparing it with pdfLaTeX, XeLaTeX,
+  LuaLaTeX and Tectonic; the roadmap, from Not yet below; and the platforms,
+  with the packages each release carries and how releases are made.
+  Installation, which said no package had been published, is Platforms now,
+  the security policy's address has a section of its own, and Support is
+  part of Contributing.
 
 ### Build
 
