@@ -162,7 +162,15 @@ namespace render::typography {
 
             ++faces;
             ++indexed;
-            if (lending) lent.push_back(entry->family);
+
+            // Every face the system has is lent but Last Resort -- the Mac's,
+            // in /System/Library/Fonts, and Unicode's own, LastResort-Regular
+            // and LastResortHE-Regular. It draws a box for every character
+            // there is and for those there are not yet, so lent it would
+            // answer for whatever no other face draws, and no character would
+            // ever be named missing. It stays indexed, for a document that
+            // asks for it by name.
+            if (lending && !entry->family.starts_with("lastresort")) lent.push_back(entry->family);
 
             // The directory a face sits in becomes a family of its own, so a
             // tree laid out as `fonts/text` answers `text` without anyone
