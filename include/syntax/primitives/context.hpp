@@ -1,12 +1,10 @@
 #pragma once
 
 #include "syntax/mouth.hpp"
-#include "syntax/semantics/registers.hpp"
 #include "memory/dictionary.hpp"
 
 #include <concepts>
 #include <functional>
-#include <map>
 #include <string>
 
 namespace syntax::primitives::logic {

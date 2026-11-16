@@ -12,7 +12,7 @@ namespace syntax::primitives::logic {
     /// @brief Named block structure: `\\begin{name}` ... `\\end{name}`.
     ///
     /// The document's outermost block is `\\begin{document}`. A block opens a
-    /// scope of kind Scope::Type::Environment, so closing one with a bare `}`
+    /// scope of type Scope::Type::Environment, so closing one with a bare `}`
     /// is caught by Mouth::pop(), and closing it under the wrong name is
     /// caught here -- unless it was watched transparent, in which case it
     /// opens no scope of its own and whatever its hooks opened is what a bare
@@ -96,7 +96,7 @@ namespace syntax::primitives::logic {
         ///                    does. Otherwise that code is read once it has closed.
         /// @complexity O(1) amortized.
         void watch(std::string_view name, Handler entering, Handler leaving,
-                   bool transparent = false, bool lingering = false) const;
+                   bool transparent = false, bool persisting = false) const;
 
         /// @brief Asks to be told when any block opens or closes, whatever
         ///        its name: before a named block's own opening hooks, and

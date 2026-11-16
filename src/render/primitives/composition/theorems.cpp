@@ -66,21 +66,21 @@ namespace render::primitives::composition {
             styles[name] = slanted ? Style::Plain : quiet ? Style::Remark : Style::Definition;
         });
 
-        // One hook serves every theorem kind: it looks the kind up by the
-        // name it was watched under, so declaring a kind again replaces what
+        // One hook serves every theorem type: it looks the type up by the
+        // name it was watched under, so declaring a type again replaces what
         // its head and body are, and adds no second hook.
         const auto entering = [this, &context](const std::string &name) {
             return [this, &context, name](syntax::Mouth &mouth) {
-                const auto found = kinds.find(name);
-                if (found == kinds.end()) return;
-                const Kind kind = found->second;
+                const auto found = types.find(name);
+                if (found == types.end()) return;
+                const Type type = found->second;
 
                 std::string number;
-                if (!kind.counter.empty() && context.counters) {
-                    context.counters->step(kind.counter);
-                    number = Counters::print(mouth, kind.counter);
+                if (!type.counter.empty() && context.counters) {
+                    context.counters->step(type.counter);
+                    number = Counters::print(mouth, type.counter);
                     context.anchor = number;
-                    context.kind = name;
+                    context.type = name;
                 }
 
                 const std::vector<syntax::Token> note =
@@ -88,12 +88,12 @@ namespace render::primitives::composition {
 
                 // The head's full stop in the head's own face, then a space
                 // and the body in its face, opened here and closed at \end.
-                const std::string stop = kind.style == Style::Remark ? "{\\itshape .}" : "{\\bfseries .}";
-                const std::string body = kind.style == Style::Plain ? "{\\itshape\\ignorespaces " : "{\\ignorespaces ";
+                const std::string stop = type.style == Style::Remark ? "{\\itshape .}" : "{\\bfseries .}";
+                const std::string body = type.style == Style::Plain ? "{\\itshape\\ignorespaces " : "{\\ignorespaces ";
                 // The head: the name and its number, bold -- italic in the
                 // remark style.
-                const std::string title = number.empty() ? kind.title : std::format("{} {}", kind.title, number);
-                const std::string_view face = kind.style == Style::Remark ? "\\itshape" : "\\bfseries";
+                const std::string title = number.empty() ? type.title : std::format("{} {}", type.title, number);
+                const std::string_view face = type.style == Style::Remark ? "\\itshape" : "\\bfseries";
                 const std::string opening = std::format("{}\\noindent {{{} {}}}", around, face, title);
 
                 // Read in the order written: the head, the note in its
@@ -136,9 +136,9 @@ namespace render::primitives::composition {
                 return;
             }
 
-            Kind kind{.title = title, .style = style};
+            Type type{.title = title, .style = style};
             if (!starred) {
-                kind.counter = shared.empty() ? name : shared;
+                type.counter = shared.empty() ? name : shared;
                 if (shared.empty() && context.counters) context.counters->define(mouth, name, within);
             }
 
@@ -152,8 +152,8 @@ namespace render::primitives::composition {
                 context.variables.define(key, title);
             }
 
-            const bool fresh = !kinds.contains(name);
-            kinds[name] = std::move(kind);
+            const bool fresh = !types.contains(name);
+            types[name] = std::move(type);
             if (fresh) context.environments.watch(name, entering(name), leaving, /*transparent=*/true);
         });
 
@@ -221,9 +221,9 @@ namespace render::primitives::composition {
         // The end of a proof's mark, carried out to the margin by glue of the
         // second infinite order, which outpulls the paragraph's own fill;
         // held to the word before it, and a quad clear of it at the least.
-        parser.bind("\\qed", [&context](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("\\qed", [&context](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
             const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
 
             auto *hold = arena.compose<layout::Node>(layout::Node::Type::Penalty);
@@ -240,7 +240,7 @@ namespace render::primitives::composition {
 
             // The mark itself is read next, so a document's own \qedsymbol
             // is the one set.
-            parser.mouth.ingest("\\qedsymbol ");
+            reader.mouth.ingest("\\qedsymbol ");
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
         });
 

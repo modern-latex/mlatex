@@ -1,0 +1,23 @@
+# How mLaTeX's own sources are laid out. Every project shares this file word for
+# word; HarfBuzz's, FreeType's, the image libraries' and asmjit's sources are theirs and are never formatted.
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: Latest
+ColumnLimit: 120
+IndentWidth: 4
+ContinuationIndentWidth: 8
+NamespaceIndentation: All
+AccessModifierOffset: -4
+PointerAlignment: Right
+ReferenceAlignment: Right
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortFunctionsOnASingleLine: All
+AllowShortLambdasOnASingleLine: All
+AllowShortBlocksOnASingleLine: Empty
+AlignAfterOpenBracket: Align
+BreakBeforeBraces: Attach
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+FixNamespaceComments: false
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+InsertNewlineAtEOF: true

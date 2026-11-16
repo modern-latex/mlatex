@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <ranges>
 #include <span>
 #include <format>
@@ -64,7 +63,7 @@ namespace render::primitives::mathematics {
         /// @brief One operator: what it builds and how tightly it binds.
         struct Rule {
             std::string_view name; ///< What the document writes.
-            Type type; ///< What kind of node it makes.
+            Type type; ///< What type of node it makes.
             int weight; ///< How tightly it binds; 0 for a structure.
             bool structural; ///< True when it takes brace arguments, not operands.
         };
@@ -285,7 +284,7 @@ namespace render::primitives::mathematics {
         context.counters->step("equation");
         numbered = Counters::print(mouth, "equation");
         context.anchor = numbered;
-        context.kind = "equation";
+        context.type = "equation";
     }
 
     void Equations::retract(const Context &context) {
@@ -444,7 +443,7 @@ namespace render::primitives::mathematics {
                                 context.counters->step("equation");
                                 row.number = Counters::print(mouth, "equation");
                                 context.anchor = row.number;
-                                context.kind = "equation";
+                                context.type = "equation";
                             }
                             lines.push_back(std::move(row));
                             break;
@@ -500,18 +499,17 @@ namespace render::primitives::mathematics {
         // number -- or its tag -- flush with the right edge.
         if (shape == Layout::Rows && tree && maths &&
             tree->type == syntax::expression::Node::Type::Matrix) {
-            const memory::Slice<layout::Node *> built = context.typesetter.rows(tree, *maths);
-            if (!built.empty()) {
+            if (const memory::Slice<layout::Node *> built = context.typesetter.rows(tree, *maths); !built.empty()) {
                 const memory::Slice<layout::Node *> labels = arena.allocate<layout::Node *>(built.count);
                 float widest = 0.0f;
                 for (std::size_t index = 0; index < built.count; ++index) {
                     labels[index] = nullptr;
                     if (index >= lines.size()) continue;
-                    const Row &row = lines[index];
-                    const std::string text = !row.tag.empty()
-                                                 ? row.tag
-                                                 : !row.number.empty()
-                                                       ? std::format("({})", row.number)
+                    const auto &[number, tag] = lines[index];
+                    const std::string text = !tag.empty()
+                                                 ? tag
+                                                 : !number.empty()
+                                                       ? std::format("({})", number)
                                                        : std::string{};
                     labels[index] = label(context, arena, text);
                     if (labels[index]) widest = std::max(widest, labels[index]->box().width);
@@ -574,7 +572,7 @@ namespace render::primitives::mathematics {
             }
             if (filled > 0) {
                 const float jot = maths->size() * 0.3f;
-                const memory::Slice<layout::Node *> stacked{.data = set.data, .count = filled};
+                const memory::Slice stacked{.data = set.data, .count = filled};
                 return displayed(context, arena, layout::Line::vertical(arena, stacked, jot), origin);
             }
         }
@@ -606,8 +604,8 @@ namespace render::primitives::mathematics {
     }
 
     void Equations::operator()(syntax::Parser &parser, Context &context) const {
-        parser.bind("$", [this, &context](syntax::Parser &parser) {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("$", [this, &context](syntax::Parser &reader) {
+            syntax::Mouth &mouth = reader.mouth;
 
             // A second dollar makes it displayed; anything else belongs to the
             // formula and goes back.
@@ -615,15 +613,15 @@ namespace render::primitives::mathematics {
             const bool display = next.text == "$";
             if (!display && !next.empty()) mouth.stream().inject(std::span{&next, 1});
 
-            return enter(parser, context, display, '$', syntax::none);
+            return enter(reader, context, display, '$', syntax::none);
         });
 
-        parser.bind("\\(", [this, &context](syntax::Parser &parser) {
-            return enter(parser, context, false, 0, parser.mouth.lexicon.intern("\\)"));
+        parser.bind("\\(", [this, &context](syntax::Parser &reader) {
+            return enter(reader, context, false, 0, reader.mouth.lexicon.intern("\\)"));
         });
 
-        parser.bind("\\[", [this, &context](syntax::Parser &parser) {
-            return enter(parser, context, true, 0, parser.mouth.lexicon.intern("\\]"));
+        parser.bind("\\[", [this, &context](syntax::Parser &reader) {
+            return enter(reader, context, true, 0, reader.mouth.lexicon.intern("\\]"));
         });
 
         // The numbered display and its unnumbered form: each block opens a
@@ -693,16 +691,16 @@ namespace render::primitives::mathematics {
             }
         };
 
-        for (const auto &[name, opening, kind, counted, argued]: displays) {
-            const std::string_view closing = kind == Layout::Single ? "\\)" : "}\\]";
+        for (const auto &[name, opening, type, counted, argued]: displays) {
+            const std::string_view closing = type == Layout::Single ? "\\)" : "}\\]";
             context.environments.watch(
                 name,
-                [this, &context, opening, kind, counted, argued](syntax::Mouth &mouth) {
+                [this, &context, opening, type, counted, argued](syntax::Mouth &mouth) {
                     if (argued) static_cast<void>(syntax::Argument::text(mouth));
-                    setting = kind;
+                    setting = type;
                     counting = counted;
                     // One number for the whole of a `multline`, on its last line.
-                    if (kind == Layout::Multline && counted) count(mouth, context);
+                    if (type == Layout::Multline && counted) count(mouth, context);
                     mouth.ingest(opening);
                 },
                 [closing](syntax::Mouth &mouth) { mouth.ingest(closing); },
@@ -779,7 +777,7 @@ namespace render::primitives::mathematics {
             const std::string text = syntax::Argument::text(mouth);
             const std::string shown = bare ? text : std::format("({})", text);
             context.anchor = text;
-            context.kind = "equation";
+            context.type = "equation";
 
             if (!lines.empty()) {
                 if (!lines.back().number.empty()) retract(context);

@@ -24,7 +24,6 @@
 #include <format>
 #include <limits>
 #include <optional>
-#include <system_error>
 #include <ranges>
 #include <span>
 #include <string>
@@ -655,8 +654,7 @@ namespace render::primitives::composition {
                                 defaults.pop_back();
                             }
                             if (opening) {
-                                const auto [given, past] = overlay(after(end));
-                                if (given) {
+                                if (const auto [given, past] = overlay(after(end)); given) {
                                     count(*given);
                                     if (std::ranges::contains(shown, name)) {
                                         // `\@onslide{2}{` opens what only those slides show;

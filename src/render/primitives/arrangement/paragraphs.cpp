@@ -45,11 +45,11 @@ namespace render::primitives::arrangement {
         };
 
         for (const auto &[name, command, justification]: switches) {
-            parser.bind(name, [command, justification](const syntax::Parser &parser) -> syntax::Node * {
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [command, justification](const syntax::Parser &reader) -> syntax::Node * {
+                memory::Arena &arena = reader.arena;
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 node->directive({.command = command, .justification = justification});
-                return directive(arena, node, parser.mouth.lookahead().location);
+                return directive(arena, node, reader.mouth.lookahead().location);
             });
         }
 
@@ -64,9 +64,9 @@ namespace render::primitives::arrangement {
         };
 
         for (const auto &[name, trailing]: edges) {
-            parser.bind(name, [this, &context, trailing, name](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [this, &context, trailing, name](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // The `=` is noise: read it if it is there, put back what is not.
@@ -142,7 +142,6 @@ namespace render::primitives::arrangement {
         // \\@keywordshead and \\@abstractshape -- the article class's
         // `\\abstractname` centred in bold over the text in `\\small`, set in
         // from both margins -- which a class redefines, as IEEEtran runs its
-        // `Abstract---` in. Watched transparent, because the group that keeps
         // `\\small` to them is their own to close.
         static constexpr std::string_view abstract = "\\par\\@abstractshape ";
         for (const auto &[name, head]: {

@@ -24,7 +24,7 @@ struct Harness {
     }
 };
 
-/// @brief How many nodes of a kind a list holds.
+/// @brief How many nodes of a type a list holds.
 static std::size_t count(const memory::Slice<syntax::Node *> nodes, const syntax::Node::Type type) {
     std::size_t found = 0;
     for (const syntax::Node *node: nodes) found += node && node->type == type;

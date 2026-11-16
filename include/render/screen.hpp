@@ -4,7 +4,6 @@
 #include "render/layout/document.hpp"
 
 #include <array>
-#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>

@@ -76,7 +76,7 @@ int main() {
                                       "\\pmatrix{a & b \\\\ c & d} \\cases{a & b \\\\ c & d} \\]"
                                       "$\\hat{a} \\bar{b} \\vec{c} \\overline{fg} \\mathbb{R} \\mathcal{C} "
                                       "\\alpha \\le \\infty$");
-        assert((result.clean && holds(result.text, "(ab)[x]{y}")) && "fences of every kind, a fraction inside one");
+        assert((result.clean && holds(result.text, "(ab)[x]{y}")) && "fences of every type, a fraction inside one");
         assert((holds(result.text, "(abcd){abcd")) && "a matrix in its parentheses, and cases behind a brace");
         assert((holds(result.text, "fgRC\xCE\xB1\xE2\x89\xA4\xE2\x88\x9E")) &&
                "accents over their letters, the alphabets, and the symbols by name");

@@ -63,7 +63,7 @@
 /// Separate sessions share nothing but the engine's read-only tables and may
 /// run side by side.
 
-#include <cstddef>
+#include <stddef.h>
 
 // How engine() is seen from outside the library: exported while the library
 // itself is built -- its build defines EXPORTING -- imported by a program on
@@ -117,7 +117,7 @@ namespace protocols {
 
         /// @brief Ends a session. NULL is ignored.
         /// @param session The session; not to be used again.
-        void (*dispose)(Session *session);
+        void (*dispose)(const Session *session);
 
         /// @brief Sets a value the document reads with `\\variable{name}`,
         ///        replacing one set before under the same name.

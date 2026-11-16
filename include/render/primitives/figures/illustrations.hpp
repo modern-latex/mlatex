@@ -9,7 +9,6 @@
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
-#include <array>
 #include <cstddef>
 #include <deque>
 #include <string>

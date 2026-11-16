@@ -7,8 +7,6 @@
 #include <array>
 #include <vector>
 
-#include <cstddef>
-
 namespace syntax::primitives::logic {
     /// @brief Conditionals: the `\\if` family, `\\else`, `\\or`, `\\fi`.
     ///

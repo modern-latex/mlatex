@@ -68,7 +68,7 @@ namespace jit {
     ///
     /// @par Guards
     /// asmjit is linked into the engine everywhere but WebAssembly (the
-    /// top-level CMakeLists.txt), and its two compilers each write one kind
+    /// top-level CMakeLists.txt), and its two compilers each write one type
     /// of processor's code, so compose() is three branches:
     /// @code
     /// #if !defined(__EMSCRIPTEN__) && (defined(__x86_64__) || defined(_M_X64))

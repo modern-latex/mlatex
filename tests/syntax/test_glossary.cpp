@@ -81,7 +81,6 @@ static void sets(const std::string_view document, const std::string_view expecte
 }
 
 int main() {
-    // --- The table the compiler builds ----------------------------------------------------
     const auto line = syntax::Glossary::get("\\contour");
     assert((line && *line == "\\contour[3][]{#3}") && "a command is found by its name, its line whole");
     assert((!syntax::Glossary::get("\\cont")) && "a name is found whole, not by a prefix of one");
@@ -90,7 +89,6 @@ int main() {
     const auto helper = syntax::Glossary::get("\\@gobbleoptiontwo");
     assert((helper && helper->ends_with("{}") && !helper->ends_with("\r")) && "a line keeps no line ending");
 
-    // --- Keeping what a command was for, or letting it go ---------------------------------
     sets("\\contour{white}{mot}", "mot", "a command keeps the text it was given");
     sets("\\microtypecontext{spacing=nonfrench}Wort", "Wort", "a setting is read and let go");
     sets("\\microtypesetup{protrusion=true}\\textls[200]{spaced}", "spaced", "one after another");
@@ -100,7 +98,6 @@ int main() {
          "a name, an option, and a list of keys");
     sets("\\declaretheoremstyle[spaceabove=6pt]{plain}x", "x", "an option on the command itself");
 
-    // --- Defined for good, once -----------------------------------------------------------
     sets("\\begin{x}\\textls{a}\\end{x}\\textls{b}", "ab", "defined outside the block it was first met in");
     {
         const auto [text, errors] = expand("\\contour{white}{a\\par b}");
@@ -111,7 +108,6 @@ int main() {
     sets("\\def\\x{a}\\appto\\x{b}\\preto\\x{c}\\x", "cab", "etoolbox's additions to a macro");
     sets("\\csdef{name}{d}\\csuse{name}\\ifcsdef{name}{e}{f}", "de", "etoolbox's names built from text");
 
-    // --- A name no one gives a meaning -------------------------------------------------------
     {
         const auto [text, errors] = expand("\\nosuchcommand x");
         assert((text == "x" && errors.contains("\\nosuchcommand")) && "is still an error");

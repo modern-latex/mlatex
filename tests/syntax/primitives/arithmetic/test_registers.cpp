@@ -116,7 +116,6 @@ static bool near(const std::optional<std::int32_t> value, const std::int64_t exp
 }
 
 int main() {
-    // --- Setting and arithmetic -------------------------------------------------
     sets("\\set\\integer0 = 42 \\evaluate{\\integer0}", "42", "\\set an integer, read it back");
     sets("\\set\\integer0 = 10 \\increase\\integer0 by 5 \\evaluate{\\integer0}", "15", "\\increase");
     sets("\\set\\integer0 = 10 \\reduce\\integer0 by 3 \\evaluate{\\integer0}", "3", "\\reduce divides, truncating");
@@ -127,7 +126,6 @@ int main() {
     sets("\\group\\shared\\set\\integer0 = 5 \\ungroup\\evaluate{\\integer0}", "5", "a shared one outlives it");
     sets("\\set\\integer0 = 123456 \\evaluate{\\integer0}", "123456", "a many-digit number reads whole");
 
-    // --- TeX's own names --------------------------------------------------------
     sets("\\include{core/aliases}\\newcount\\tally \\tally=3 \\advance\\tally by 2 \\the\\tally", "5",
          "\\newcount, \\advance and \\the");
     sets("\\include{core/aliases}\\newdimen\\gap \\gap=2pt \\multiply\\gap by 3 \\the\\gap", "6.0pt",
@@ -140,7 +138,6 @@ int main() {
     sets("\\chardef\\section=167 \\section", "\xC2\xA7", "past ASCII as well");
     sets("\\countdef\\first=5 \\first=7 \\the\\first", "7", "\\countdef names a count register");
 
-    // --- Expressions ------------------------------------------------------------
     sets("\\number\\numexpr 3*(4+5)/2\\relax", "14", "\\numexpr rounds a division, as e-TeX's does");
     sets("\\the\\numexpr 7/2\\relax", "4", "half rounds away from zero");
     sets("\\the\\numexpr 2147483647*2147483647*2147483647*2147483647\\relax", "2147483647",
@@ -151,16 +148,13 @@ int main() {
     sets("\\the\\dimexpr 1pt*3+2pt\\relax", "5.0pt", "\\dimexpr");
     sets("\\the\\dimexpr (1pt+1pt)*2\\relax", "4.0pt", "\\dimexpr with brackets");
 
-    // --- Numbers written out ------------------------------------------------------
     sets("\\romannumeral 2024", "mmxxiv", "\\romannumeral");
     sets("\\number 007", "7", "\\number drops leading zeros");
     reports("\\set\\integer0 = x", "\\set needs a value", "a register set to nothing is reported");
 
 
-    // --- Numbers and dimensions, as the values above are read ----------------
     constexpr std::int64_t point = 65536;
 
-    // --- Integers -------------------------------------------------------------
     assert((integer("42") == 42) && "a decimal number");
     assert((integer("123456") == 123456) && "every digit of a long one");
     assert((integer("-17") == -17) && "a sign");
@@ -169,7 +163,6 @@ int main() {
     assert((integer("'17") == 15) && "octal");
     assert((!integer("x").has_value()) && "no numeral is no number");
 
-    // --- Dimensions ---------------------------------------------------------------
     assert((dimension("1pt") == point) && "a point");
     assert((dimension("1.5pt") == point * 3 / 2) && "a fraction of one");
     assert((dimension("-3pt") == -3 * point) && "a negative length");

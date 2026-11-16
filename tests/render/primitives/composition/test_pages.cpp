@@ -64,7 +64,6 @@ static std::string filler(const int paragraphs) {
 }
 
 int main() {
-    // --- Classes and the sheet ------------------------------------------------------------
     {
         const Result classed = typeset("\\documentclass[a4paper,11pt]{article}\\begin{document}x\\end{document}");
         assert((classed.clean && holds(classed.pdf, "/MediaBox [0 0 595 842]")) && "the class's a4paper option");
@@ -95,7 +94,6 @@ int main() {
         assert((holds(width.text, "345.0pt")) && "the article class's text width at ten points");
     }
 
-    // --- The page's number, and its style ------------------------------------------------
     {
         const Result plain = article("", "First.\\newpage Second.");
         assert((plain.clean && plain.pages.size() == 2 && plain.pages[0].ends_with("1") &&
@@ -134,7 +132,6 @@ int main() {
         assert((old.clean && holds(old.text, "Left") && holds(old.text, "Right")) && "fancyhdr's first spelling");
     }
 
-    // --- Columns -------------------------------------------------------------------------
     {
         const Result result = typeset("\\documentclass[twocolumn]{article}\\title{Across}\\author{A}"
                                       "\\begin{document}\\maketitle " + filler(12) + "\\end{document}");

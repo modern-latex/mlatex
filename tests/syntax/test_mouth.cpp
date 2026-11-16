@@ -29,13 +29,13 @@ int main() {
     mouth.push(Type::Box);
     mouth.push(Type::Environment);
     assert((mouth.nesting() == 3) && "three scopes open");
-    assert((mouth.pop(Type::Environment)) && "the innermost closes by its own kind");
+    assert((mouth.pop(Type::Environment)) && "the innermost closes by its own type");
     assert((mouth.pop(Type::Box)) && "and the next");
     assert((mouth.nesting() == 1) && "one left");
 
-    // Closing the wrong kind is reported rather than silently accepted, which
+    // Closing the wrong type is reported rather than silently accepted, which
     // is what lets `\begin{a} ... }` be told apart from `\begin{a} ... \end{a}`.
-    assert((!mouth.pop(Type::Alignment)) && "closing the wrong kind fails");
+    assert((!mouth.pop(Type::Alignment)) && "closing the wrong type fails");
     assert((!mouth.traceback().empty()) && "and is reported");
     assert((mouth.nesting() == 0) && "the scope is closed all the same");
 

@@ -3,8 +3,6 @@
 #include "syntax/lexicon.hpp"
 
 #include <array>
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <vector>
 
@@ -54,7 +52,7 @@ namespace syntax::semantics {
             Order ///< A glue register's orders of infinity: its stretch's, and four times its shrink's.
         };
 
-        static constexpr std::size_t banks = 9; ///< How many kinds of register there are.
+        static constexpr std::size_t banks = 9; ///< How many types of register there are.
 
         /// @brief A bank and a slot within it.
         struct Target {

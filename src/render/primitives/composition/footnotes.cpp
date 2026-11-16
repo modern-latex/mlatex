@@ -140,44 +140,44 @@ namespace render::primitives::composition {
             return context.selection.text() ? context.selection.text()->size() : context.document.configuration.size;
         };
 
-        parser.bind("\\footnote", [this, &context, number, current](syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("\\footnote", [this, &context, number, current](syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
             if (!context.selection.text()) {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin,
                                         "\\footnote needs a text face to be set in");
                 return nullptr;
             }
-            const std::string label = number(parser.mouth);
-            layout::Node *raised = mark(context, parser.arena, label, current());
-            return call(parser.arena, raised, note(parser, context, label), origin);
+            const std::string label = number(reader.mouth);
+            layout::Node *raised = mark(context, reader.arena, label, current());
+            return call(reader.arena, raised, note(reader, context, label), origin);
         });
 
-        parser.bind("\\footnotemark", [&context, number, current](const syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const std::string label = number(parser.mouth);
-            return call(parser.arena, mark(context, parser.arena, label, current()), nullptr, origin);
+        parser.bind("\\footnotemark", [&context, number, current](const syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const std::string label = number(reader.mouth);
+            return call(reader.arena, mark(context, reader.arena, label, current()), nullptr, origin);
         });
 
-        parser.bind("\\footnotetext", [this, &context](syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("\\footnotetext", [this, &context](syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
             std::string label;
             const std::vector<syntax::Token> given =
-                    parser.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+                    reader.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
             for (const syntax::Token &token: given) label += token.text;
-            if (label.empty() && context.counters) label = Counters::print(parser.mouth, "footnote");
-            return call(parser.arena, nullptr, note(parser, context, label), origin);
+            if (label.empty() && context.counters) label = Counters::print(reader.mouth, "footnote");
+            return call(reader.arena, nullptr, note(reader, context, label), origin);
         });
 
         // A title's notes: marked with LaTeX's footnote symbols in turn,
         // counted apart from the numbered notes the text calls.
-        parser.bind("\\thanks", [this, &context, current](syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\thanks", [this, &context, current](syntax::Parser &reader) -> syntax::Node * {
             static constexpr std::array<std::string_view, 9> symbols{
                 "*", "†", "‡", "§", "¶", "‖", "**", "††", "‡‡",
             };
-            const memory::Location origin = parser.mouth.lookahead().location;
+            const memory::Location origin = reader.mouth.lookahead().location;
             const std::string label(symbols[static_cast<std::size_t>(thanked++) % symbols.size()]);
-            layout::Node *raised = mark(context, parser.arena, label, current());
-            return call(parser.arena, raised, note(parser, context, label), origin);
+            layout::Node *raised = mark(context, reader.arena, label, current());
+            return call(reader.arena, raised, note(reader, context, label), origin);
         });
 
         // \marginpar{...}: a note in the right margin, \marginparwidth wide,
@@ -185,9 +185,9 @@ namespace render::primitives::composition {
         // two-sided document would set in the left margin is read and let
         // go. marginnote's \marginnote is the same note.
         for (const std::string_view name: {"\\marginpar", "\\marginnote"}) {
-            parser.bind(name, [&context](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [&context](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
                 static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
 
@@ -199,7 +199,7 @@ namespace render::primitives::composition {
                 }
                 const Selection kept = context.selection;
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                const memory::Slice<syntax::Node *> body = parser.parse('}');
+                const memory::Slice<syntax::Node *> body = reader.parse('}');
                 mouth.pop(syntax::semantics::Scope::Type::Group);
                 context.selection = kept;
 

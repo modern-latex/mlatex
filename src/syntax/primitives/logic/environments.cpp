@@ -32,7 +32,7 @@ namespace syntax::primitives::logic {
     }
 
     void Environments::watch(const std::string_view name, Handler entering, Handler leaving,
-                       const bool transparent, const bool lingering) const {
+                       const bool transparent, const bool persisting) const {
         if (!lexicon || name.empty()) return;
 
         // Indexed by the interned name, so dispatch is one bounds check and
@@ -44,7 +44,7 @@ namespace syntax::primitives::logic {
         if (!hook.entering && !hook.leaving) {
             hook = Hook{
                 .entering = std::move(entering), .leaving = std::move(leaving), .transparent = transparent,
-                .lingering = lingering
+                .lingering = persisting
             };
             return;
         }
@@ -63,7 +63,7 @@ namespace syntax::primitives::logic {
             if (earlier) earlier(mouth);
         };
         hook.transparent = hook.transparent || transparent;
-        hook.lingering = hook.lingering || lingering;
+        hook.lingering = hook.lingering || persisting;
     }
 
     void Environments::watch(Handler entering, Handler leaving) const {

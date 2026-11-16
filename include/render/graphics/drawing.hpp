@@ -39,7 +39,7 @@ namespace render::graphics {
     public:
         /// @brief A PDF value, as the file wrote it.
         struct Value {
-            /// @brief What kind of value.
+            /// @brief What type of value.
             enum class Type : std::uint8_t {
                 Null, ///< `null`, or what could not be read.
                 Plain, ///< A number or a boolean, #text as written.

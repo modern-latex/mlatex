@@ -51,7 +51,6 @@ static std::optional<graphics::Drawing> read(const std::string &bytes, const int
 }
 
 int main() {
-    // --- A classic table ---------------------------------------------------------------
     Writer classic;
     classic.object("<</Type /Catalog /Pages 2 0 R>>");
     classic.object("<</Type /Pages /Kids [3 0 R 6 0 R] /Count 2 /MediaBox [0 0 200 100]>>");
@@ -76,7 +75,6 @@ int main() {
     assert((second && second->content.starts_with("0 0 m")) && "with its own contents");
     assert((!read(one, 3)) && "a page the file does not have is none");
 
-    // --- A cross-reference stream and an object stream ----------------------------------
     {
         Writer modern;
         modern.object("<</Type /Catalog /Pages 2 0 R>>");
@@ -92,11 +90,11 @@ int main() {
         const std::size_t content = modern.bytes.size();
         modern.bytes += "6 0 obj\n<</Length 10>>\nstream\n1 0 0 1 cm\nendstream\nendobj\n";
 
-        // The table as a stream: a byte for the kind, two for the place,
+        // The table as a stream: a byte for the type, two for the place,
         // one for the index, uncompressed.
         std::string table;
-        const auto entry = [&table](const int kind, const std::size_t place, const int index) {
-            table += static_cast<char>(kind);
+        const auto entry = [&table](const int type, const std::size_t place, const int index) {
+            table += static_cast<char>(type);
             table += static_cast<char>((place >> 8) & 0xFF);
             table += static_cast<char>(place & 0xFF);
             table += static_cast<char>(index);
@@ -123,7 +121,6 @@ int main() {
         assert((drawn && drawn->content.starts_with("1 0 0 1 cm")) && "its contents");
     }
 
-    // --- A table that lies -------------------------------------------------------------
     {
         Writer wrong;
         wrong.object("<</Type /Catalog /Pages 2 0 R>>");
@@ -136,7 +133,6 @@ int main() {
                "a file whose table is wrong is read the long way, every object found where it stands");
     }
 
-    // --- What is refused -----------------------------------------------------------------
     assert((!read("not a PDF at all")) && "bytes that are no PDF");
     assert((!read("")) && "nothing");
     {

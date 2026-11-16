@@ -17,7 +17,6 @@
 #include <charconv>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <limits>
 #include <numbers>
@@ -25,7 +24,6 @@
 #include <ranges>
 #include <span>
 #include <string>
-#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -83,8 +81,7 @@ namespace render::primitives::figures {
                                                        const float em = 10.0f) noexcept {
         text = trim(text);
         float value = 0.0f;
-        const auto [stop, failure] = patch::decimal(text.data(), text.data() + text.size(), value);
-        if (failure == std::errc{}) {
+        if (const auto [stop, failure] = patch::decimal(text.data(), text.data() + text.size(), value); failure == std::errc{}) {
             const std::string_view unit = trim(text.substr(static_cast<std::size_t>(stop - text.data())));
             static constexpr std::array<std::pair<std::string_view, float>, 8> units{
                 {
@@ -510,8 +507,8 @@ namespace render::primitives::figures {
             inside = trim(inside);
             touched = nullptr;
 
-            graphics::Point2 moved{};
             if (inside.starts_with('[')) {
+                graphics::Point2 moved{};
                 const std::size_t shut = closing(inside, 0);
                 if (shut == std::string_view::npos) return std::nullopt;
                 for (const std::string_view piece: pieces(inside.substr(1, shut - 1))) {
@@ -898,8 +895,7 @@ namespace render::primitives::figures {
             if (!fixed && (share || within)) {
                 if (const auto spot = along(share.value_or(0.5f))) {
                     point = (*spot)[0];
-                    const float length = std::hypot((*spot)[1].across, (*spot)[1].up);
-                    if (side != 0 && length > 0.0f) {
+                    if (const float length = std::hypot((*spot)[1].across, (*spot)[1].up); side != 0 && length > 0.0f) {
                         const auto turned = static_cast<float>(swapped ? -side : side);
                         const float nx = -(*spot)[1].up / length * turned;
                         const float ny = (*spot)[1].across / length * turned;
@@ -1095,19 +1091,19 @@ namespace render::primitives::figures {
                             // the distance, times the looseness, along the
                             // angles it leaves and arrives at -- a node's
                             // outline left and met at those angles.
-                            const float degree = std::numbers::pi_v<float> / 180.0f;
-                            const graphics::Point2 source = resting ? resting->centre : from;
-                            const graphics::Point2 sink = reached ? reached->centre : to;
-                            const float heading = std::atan2(sink.up - source.up, sink.across - source.across) / degree;
+                            constexpr float degree = std::numbers::pi_v<float> / 180.0f;
+                            const auto departure = resting ? resting->centre : from;
+                            const auto finish = reached ? reached->centre : to;
+                            const float heading = std::atan2(finish.up - departure.up, finish.across - departure.across) / degree;
                             const float out = leaving ? *leaving : heading + bend.value_or(0.0f);
                             const float in = arriving ? *arriving : heading + 180.0f - bend.value_or(0.0f);
                             if (resting) from = meet(*resting, {
-                                                         .across = source.across + std::cos(out * degree),
-                                                         .up = source.up + std::sin(out * degree)
+                                                         .across = departure.across + std::cos(out * degree),
+                                                         .up = departure.up + std::sin(out * degree)
                                                      });
                             if (reached) to = meet(*reached, {
-                                                       .across = sink.across + std::cos(in * degree),
-                                                       .up = sink.up + std::sin(in * degree)
+                                                       .across = finish.across + std::cos(in * degree),
+                                                       .up = finish.up + std::sin(in * degree)
                                                    });
                             const float pull = 0.3915f * looseness *
                                                std::hypot(to.across - from.across, to.up - from.up);
@@ -1398,7 +1394,7 @@ namespace render::primitives::figures {
                     return;
                 }
                 const float reach = *radius * scale;
-                const float turn = std::numbers::pi_v<float> / 180.0f;
+                constexpr float turn = std::numbers::pi_v<float> / 180.0f;
                 const graphics::Point2 centre{
                     .across = current.across - reach * std::cos(*from * turn),
                     .up = current.up - reach * std::sin(*from * turn)
@@ -1489,8 +1485,8 @@ namespace render::primitives::figures {
                         ++at;
                         continue;
                     }
-                    const char kind = at + 1 < text.size() && text[at] == '\\' ? text[at + 1] : '\0';
-                    if (kind != 'p' && kind != 'n') break;
+                    const char type = at + 1 < text.size() && text[at] == '\\' ? text[at + 1] : '\0';
+                    if (type != 'p' && type != 'n') break;
                     at += 2;
                     skip();
                     std::string name;
@@ -1505,7 +1501,7 @@ namespace render::primitives::figures {
                     skip();
                     if (!next("=")) break;
                     skip();
-                    if (kind == 'p') {
+                    if (type == 'p') {
                         const std::size_t shut = at < text.size() && text[at] == '('
                                                      ? closing(text, at)
                                                      : std::string_view::npos;
@@ -1658,12 +1654,12 @@ namespace render::primitives::figures {
         // Each end's tip, `to` the end and `from` a point before it on the
         // line: a bar across it, a hook curling back from it, a second tip
         // behind the first, or a tail's tip pointing into the line.
-        const auto cap = [&](const Tip kind, const graphics::Point2 from, const graphics::Point2 to) {
+        const auto cap = [&](const Tip type, const graphics::Point2 from, const graphics::Point2 to) {
             const float length = std::hypot(to.across - from.across, to.up - from.up);
-            if (kind == Tip::None || length <= 0.0f || !stroking) return;
+            if (type == Tip::None || length <= 0.0f || !stroking) return;
             const graphics::Point2 out{.across = (to.across - from.across) / length, .up = (to.up - from.up) / length};
             const float reach = 3.0f + 2.5f * width;
-            switch (kind) {
+            switch (type) {
                 case Tip::Arrow:
                     tip(from, to);
                     break;
@@ -1684,7 +1680,7 @@ namespace render::primitives::figures {
                     // Half a circle from the end, round behind it, to its
                     // side: the line's left for a hook, its right for a crook.
                     const float radius = reach * 0.6f;
-                    const float turn = kind == Tip::Hook ? 1.0f : -1.0f;
+                    const float turn = type == Tip::Hook ? 1.0f : -1.0f;
                     const graphics::Point2 normal{.across = out.up * turn, .up = -out.across * turn};
                     const graphics::Point2 centre{
                         .across = to.across + normal.across * radius, .up = to.up + normal.up * radius
@@ -1735,7 +1731,7 @@ namespace render::primitives::figures {
     void Illustrations::operator()(syntax::Parser &parser, Context &context) const {
         // Shared by both blocks: build whatever is open, anchor it to the
         // page when it was an overlay, then hand it to flush the same way
-        // either kind closes.
+        // either type closes.
         const syntax::Mouth::Handler leaving = [this, &context](syntax::Mouth &mouth) {
             if (canvases.empty()) return;
 
@@ -1744,8 +1740,8 @@ namespace render::primitives::figures {
             // node's centre, top or bottom, shifted as `[yshift=...]` asks.
             std::optional<float> baseline;
             if (std::string_view written = trim(baselines.back()); !written.empty()) {
-                float shift = 0.0f;
                 if (written.starts_with('(') && written.ends_with(')')) {
+                    float shift = 0.0f;
                     written = trim(written.substr(1, written.size() - 2));
                     if (written.starts_with('[')) {
                         const std::size_t shut = written.find(']');
@@ -1982,8 +1978,8 @@ namespace render::primitives::figures {
                  std::tuple{"\\draw", true, false}, std::tuple{"\\fill", false, true},
                  std::tuple{"\\filldraw", true, true}, std::tuple{"\\path", false, false}
              }) {
-            parser.bind(name, [this, &context, path, stroked, filled, name](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
+            parser.bind(name, [this, &context, path, stroked, filled, name](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // Outside a picture, url's \path: a file's path set as an
@@ -2001,7 +1997,7 @@ namespace render::primitives::figures {
                             written += token.text;
                         }
                     }
-                    mouth.ingest(parser.arena.copy(std::format("\\texttt{{\\@breakable{{{}}}}}", written)),
+                    mouth.ingest(reader.arena.copy(std::format("\\texttt{{\\@breakable{{{}}}}}", written)),
                                  memory::Location{});
                     return nullptr;
                 }
@@ -2013,14 +2009,14 @@ namespace render::primitives::figures {
                                             std::format("{} needs an open picture", name));
                     return nullptr;
                 }
-                draw(parser, options, text, origin, context, stroked, filled);
+                draw(reader, options, text, origin, context, stroked, filled);
                 return nullptr;
             });
         }
 
         // \node[options] (name) at (x,y) {text}; -- a path of one node.
-        parser.bind("\\node", [this, &context, path](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\node", [this, &context, path](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
@@ -2028,18 +2024,18 @@ namespace render::primitives::figures {
                 tracebacks.emplace_back(syntax::Traceback::Type::Primitive, origin, "\\node needs an open picture");
                 return nullptr;
             }
-            draw(parser, "", std::format("node[{}] {}", options, text), origin, context, false, false);
+            draw(reader, "", std::format("node[{}] {}", options, text), origin, context, false, false);
             return nullptr;
         });
 
         // A named point: `\\coordinate (a) at (1,2);`, a path of one.
-        parser.bind("\\coordinate", [this, &context, path](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\coordinate", [this, &context, path](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
             if (canvases.empty()) return nullptr;
-            draw(parser, "", std::format("coordinate {}", text), origin, context, false, false);
+            draw(reader, "", std::format("coordinate {}", text), origin, context, false, false);
             return nullptr;
         });
 
@@ -2049,8 +2045,8 @@ namespace render::primitives::figures {
         // its widest node and each row as high as its highest, with `column
         // sep` and `row sep` between their edges, and the whole stands
         // centred on its point, or by the anchor it names.
-        parser.bind("\\matrix", [this, &context, path](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\matrix", [this, &context, path](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             const std::string text = path(mouth, options);
@@ -2205,7 +2201,7 @@ namespace render::primitives::figures {
                 columns = std::max(columns, row.size());
                 for (Cell &cell: row) {
                     if (!cell.present) continue;
-                    draw(parser, "", std::format("node[{}] (\x01) at (0,0) {{{}}}", cell.options, cell.text), origin,
+                    draw(reader, "", std::format("node[{}] (\x01) at (0,0) {{{}}}", cell.options, cell.text), origin,
                          context, false, false);
                     if (const auto found = landmarks.find("\x01"); found != landmarks.end()) {
                         cell.mark = found->second;
@@ -2240,7 +2236,7 @@ namespace render::primitives::figures {
             const float height = grid.empty() ? 0.0f : -(ys.back() - tall.back());
 
             // Its point, and the corner or side of it that stands there.
-            draw(parser, "", std::format("coordinate (\x01) at {}", where), origin, context, false, false);
+            draw(reader, "", std::format("coordinate (\x01) at {}", where), origin, context, false, false);
             graphics::Point2 centre{};
             if (const auto found = landmarks.find("\x01"); found != landmarks.end()) {
                 centre = found->second.centre;
@@ -2260,7 +2256,7 @@ namespace render::primitives::figures {
                                                    : std::string{};
                     const float x = (centre.across - width * 0.5f + xs[c]) / scale;
                     const float y = (centre.up + height * 0.5f + ys[r]) / scale;
-                    draw(parser, "", std::format("node[{}] ({}) at ({:.3f}pt,{:.3f}pt) {{{}}}", cell.options, called, x,
+                    draw(reader, "", std::format("node[{}] ({}) at ({:.3f}pt,{:.3f}pt) {{{}}}", cell.options, called, x,
                                                  y, cell.text),
                          origin, context, false, false);
                     if (!cell.label.empty() && !called.empty()) landmarks[cell.label] = landmarks[called];
@@ -2268,7 +2264,7 @@ namespace render::primitives::figures {
             }
             if (framed) {
                 const float inner = em / 3.0f;
-                draw(parser, "", std::format("({:.3f}pt,{:.3f}pt) rectangle ({:.3f}pt,{:.3f}pt)",
+                draw(reader, "", std::format("({:.3f}pt,{:.3f}pt) rectangle ({:.3f}pt,{:.3f}pt)",
                                              (centre.across - width * 0.5f - inner) / scale,
                                              (centre.up - height * 0.5f - inner) / scale,
                                              (centre.across + width * 0.5f + inner) / scale,
@@ -2401,9 +2397,9 @@ namespace render::primitives::figures {
             }
         });
 
-        parser.bind("\\includegraphics", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\includegraphics", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // LaTeX's own form first, `\includegraphics[width=5cm]{file}`: the
@@ -2459,7 +2455,7 @@ namespace render::primitives::figures {
 
             // From the network last, and never in an offline run.
             std::optional<std::vector<std::uint8_t> > received;
-            if (encoded.empty() && (source.starts_with("http://") || source.starts_with("https://"))) {
+            if (encoded.empty() && source.starts_with("https://")) {
                 if (context.offline) {
                     tracebacks.emplace_back(
                         syntax::Traceback::Type::Primitive, origin,
@@ -2694,9 +2690,9 @@ namespace render::primitives::figures {
         // than appended directly from the Mouth-level leaving hook above, so
         // the picture lands where its block stood in the parse, by the same
         // clock every other node does.
-        parser.bind(flush, [this](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind(flush, [this](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
             layout::Node *built = pending;
             pending = nullptr;
             // A picture stands in the line, as LaTeX's boxes do -- two side by

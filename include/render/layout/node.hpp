@@ -342,7 +342,7 @@ namespace render::layout {
             std::size_t index{0};
             ///< For Command::Anchor: which anchor, counted from 0 in the order written;
                                                      ///< for Command::Columns, how many columns; for Command::Hold,
-                                                     ///< its kind, the floats of one kind keeping their order; for
+                                                     ///< its type, the floats of one type keeping their order; for
                                                      ///< Command::Page, one more than the number the page it lands
                                                      ///< on takes, or 0 to count on; for Command::Source, the line.
         };

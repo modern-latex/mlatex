@@ -108,9 +108,9 @@ namespace render::primitives::composition {
                 mouth.ingest(R"(\par\vskip 2pt\leftskip=0pt\noindent )");
             });
 
-        parser.bind("\\State", [this, &context](const syntax::Parser &parser) { return line(parser, context, true); });
-        parser.bind("\\Statex", [this, &context](const syntax::Parser &parser) {
-            return line(parser, context, false);
+        parser.bind("\\State", [this, &context](const syntax::Parser &reader) { return line(reader, context, true); });
+        parser.bind("\\Statex", [this, &context](const syntax::Parser &reader) {
+            return line(reader, context, false);
         });
 
         // A block's opening line is set before its lines step in, and its

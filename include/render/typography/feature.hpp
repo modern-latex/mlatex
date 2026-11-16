@@ -2,7 +2,6 @@
 
 #include <harfbuzz/hb.h>
 
-#include <cstdint>
 #include <string_view>
 
 namespace render::typography {

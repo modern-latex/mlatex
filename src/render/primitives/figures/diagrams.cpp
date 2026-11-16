@@ -566,8 +566,8 @@ namespace render::primitives::figures {
                             while (at < cell.size() && cell[at] == ' ') ++at;
                             if (at >= cell.size()) break;
                             if (cell[at] == '@' && at + 1 < cell.size()) {
-                                const char kind = cell[at + 1];
-                                if (kind == '{') {
+                                const char type = cell[at + 1];
+                                if (type == '{') {
                                     // Its shape, xy's way: `-->` dashed, `.>`
                                     // dotted, `=>` double, `^{(}->` a hook,
                                     // `|->` a bar, `->>` two heads.
@@ -594,17 +594,17 @@ namespace render::primitives::figures {
                                     if (shape.contains('=')) doubled = true;
                                     if (shape.starts_with("--")) style += "dashed,";
                                     if (shape.starts_with('.')) style += "dotted,";
-                                } else if (kind == '<') {
+                                } else if (type == '<') {
                                     const std::size_t shut = cell.find('>', at);
                                     style += std::format("shift left={},", cell.substr(at + 2, shut - at - 2));
                                     at = std::min(shut + 1, cell.size());
-                                } else if (kind == '/') {
+                                } else if (type == '/') {
                                     const std::size_t shut = cell.find('/', at + 2);
                                     style += cell[at + 2] == '_' ? "bend right," : "bend left,";
                                     at = std::min(shut + 1, cell.size());
-                                } else if (kind == '(' || kind == '[' || kind == '*') {
-                                    at = closing(cell, kind == '*' ? at + 2 : at + 1) + 1;
-                                } else if (kind == '2') {
+                                } else if (type == '(' || type == '[' || type == '*') {
+                                    at = closing(cell, type == '*' ? at + 2 : at + 1) + 1;
+                                } else if (type == '2') {
                                     doubled = true;
                                     at += 2;
                                 } else {
@@ -769,7 +769,7 @@ namespace render::primitives::figures {
                             object += line[at++];
                             continue;
                         }
-                        const char kind = line[at + 1];
+                        const char type = line[at + 1];
                         at += 2;
                         if (!upright) {
                             diagram.cells.back().emplace_back(trim(object));
@@ -784,22 +784,22 @@ namespace render::primitives::figures {
                             arrow.across = column + 1;
                         }
                         ++column;
-                        if (kind == '>' || kind == '<' || kind == 'V' || kind == 'A') {
-                            const std::string_view first = until(kind);
-                            const std::string_view second = until(kind);
+                        if (type == '>' || type == '<' || type == 'V' || type == 'A') {
+                            const std::string_view first = until(type);
+                            const std::string_view second = until(type);
                             // Drawn from the object it leaves; its first
                             // label above a horizontal arrow or left of a
                             // vertical one, which is the arrow's right side
                             // going left or down, and its second the other.
-                            if (kind == '<' || kind == 'A') {
+                            if (type == '<' || type == 'A') {
                                 std::swap(arrow.row, arrow.down);
                                 std::swap(arrow.column, arrow.across);
                             }
-                            const bool turned = kind == '<' || kind == 'V';
+                            const bool turned = type == '<' || type == 'V';
                             arrow.style = "->,";
                             if (!first.empty()) arrow.labels.push_back(label(first, turned, ""));
                             if (!second.empty()) arrow.labels.push_back(label(second, !turned, ""));
-                        } else if (kind == '=' || kind == '|') {
+                        } else if (type == '=' || type == '|') {
                             arrow.style = "double,double distance=1.6pt,-,";
                         } else {
                             continue;
@@ -890,9 +890,8 @@ namespace render::primitives::figures {
                          name == "cwx") && !argument.empty()) {
                         int reach = 0;
                         std::from_chars(argument.data(), argument.data() + argument.size(), reach);
-                        const int target = static_cast<int>(row) + 1 + reach;
-                        if (reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target,
-                                                                            column + 1);
+                        if (const int target = static_cast<int>(row) + 1 + reach; reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target,
+                                                                                                                                  column + 1);
                     }
                 }
                 out += " \\\\ ";
@@ -972,8 +971,8 @@ namespace render::primitives::figures {
             }
             mouth.ingest(context.arena.copy(std::format("\\@tree{{{}}}", text)));
         });
-        parser.bind("\\@tree", [&context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\@tree", [&context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             std::string text;
             for (const syntax::Token &token: mouth.argument({}, 0)) {
                 text += token.text;
@@ -994,7 +993,7 @@ namespace render::primitives::figures {
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
                 const Selection restore = context.selection;
-                const memory::Slice<syntax::Node *> read = parser.parse('}');
+                const memory::Slice<syntax::Node *> read = reader.parse('}');
                 stamp(read, context);
                 context.selection = restore;
                 mouth.pop(syntax::semantics::Scope::Type::Group);

@@ -15,7 +15,6 @@
 #include "syntax/semantics/registers.hpp"
 #include "typography/collection.hpp"
 #include "typography/font.hpp"
-#include "typography/registry.hpp"
 #include "typography/shaper.hpp"
 
 #include <charconv>
@@ -165,9 +164,9 @@ namespace render::primitives {
         /// labels reads it, and neither has to know about the other.
         std::string anchor{};
 
-        /// @brief What kind of thing #anchor numbers -- `section`, `equation`,
+        /// @brief What type of thing #anchor numbers -- `section`, `equation`,
         ///        `figure`, `item` -- which is what `\\cref` names it by.
-        std::string kind{};
+        std::string type{};
 
         /// @brief What #anchor's thing is called, for `\\nameref`: a heading's
         ///        title, a caption's text -- LaTeX's `\\@currentlabelname`.

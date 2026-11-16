@@ -5,7 +5,6 @@
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -73,14 +72,14 @@ namespace render::primitives::composition {
         };
 
         /// @brief One environment `\\newtheorem` declared.
-        struct Kind {
+        struct Type {
             std::string title{}; ///< What its head calls it: `Theorem`.
             std::string counter{}; ///< The counter it numbers by, or empty for none.
             Style style{Style::Plain}; ///< How it is set.
         };
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable memory::Dictionary<Kind> kinds{}; ///< Every environment declared, by name.
+        mutable memory::Dictionary<Type> types{}; ///< Every environment declared, by name.
         mutable memory::Dictionary<Style> styles{}; ///< Styles by name, amsthm's and a document's.
         mutable Style style{Style::Plain}; ///< The style the next declaration takes.
     };

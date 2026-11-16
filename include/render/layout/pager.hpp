@@ -24,12 +24,12 @@ namespace render::layout {
     /// The blocks between a Hold and its Release are a float's, and go
     /// together, placed as LaTeX's output routine places them. Where it is
     /// written, a float goes -- as its `[htbp!]` allows, and nothing of its
-    /// kind waits before it -- in the text there (`h`), at the head of the
+    /// type waits before it -- in the text there (`h`), at the head of the
     /// column (`t`), or at its foot (`b`), each only while the column keeps
     /// the share of text, and the head and foot the shares and counts of
     /// floats, that Placement allows; otherwise it waits. A column that opens
     /// takes a page of waiting floats when they fill enough of one (`p`),
-    /// else takes what it can at its head and foot. Floats of one kind keep
+    /// else takes what it can at its head and foot. Floats of one type keep
     /// their order; one set across the columns of a page of several --
     /// `figure*` -- waits for the head of the next page. A forced page
     /// break, a Barrier and the document's end set every float still

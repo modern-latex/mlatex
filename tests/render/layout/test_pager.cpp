@@ -9,7 +9,7 @@
 // The pager: a column of blocks cut into pages -- a block that does not fit
 // starting the next, a forced break obeyed, floats placed as LaTeX places
 // them (at a column's head or foot, in the text when `h` allows, on a page of
-// floats alone, a kind keeping its order, a barrier setting what waits), and
+// floats alone, a type keeping its order, a barrier setting what waits), and
 // [H] set where written. Pages of several columns are filled a column at a
 // time, and a region of columns that ends part way down a page is balanced.
 
@@ -65,7 +65,6 @@ static std::size_t boxes(const layout::Pager::Page &page) {
 int main() {
     memory::Arena arena(1u << 20);
 
-    // --- One column ------------------------------------------------------------------
     {
         const auto pages = Column{arena}.block(100).block(100).block(100).paginate();
         assert((pages.size() == 2 && boxes(pages[0]) == 2 && boxes(pages[1]) == 1) &&
@@ -123,7 +122,6 @@ int main() {
         assert((rows == 32) && "and every row set");
     }
 
-    // --- Floats as LaTeX places them ----------------------------------------------------
     using Directive = layout::Node::Directive;
     const auto height = [](const layout::Node *node) { return layout::Line::extent(node); };
     {
@@ -170,8 +168,8 @@ int main() {
                "a page of floats alone, when they fill more than \\floatpagefraction of it");
     }
     {
-        // A float that waits holds back the next of its kind, even one that
-        // would fit; one of another kind may pass.
+        // A float that waits holds back the next of its type, even one that
+        // would fit; one of another type may pass.
         Column column{arena};
         column.block(150);
         column.order({.command = Command::Hold, .place = Directive::Top, .index = 0}).block(120)
@@ -195,7 +193,6 @@ int main() {
                "the float on a page of its own, the text after the barrier on the next");
     }
 
-    // --- Two columns --------------------------------------------------------------------
     {
         const auto pages = Column{arena}.block(100).block(100).block(100).block(100).block(100).paginate(2);
         assert((pages.size() == 2) && "a page of two columns takes four blocks where one takes two");

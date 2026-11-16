@@ -94,23 +94,23 @@ namespace render::primitives::composition {
                                 : std::string{})));
         };
 
-        // enumitem's \setlist[itemize]{noitemsep}, and with no kind named,
+        // enumitem's \setlist[itemize]{noitemsep}, and with no type named,
         // for every list: kept to be read before each list's own options.
-        // A level after the kind, `[itemize,1]`, is read as the kind's.
+        // A level after the type, `[itemize,1]`, is read as the type's.
         parser.mouth.bind("\\setlist", [this](syntax::Mouth &mouth) {
             if (mouth.lookahead().is('*')) mouth.read();
-            std::string kinds;
+            std::string types;
             for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                kinds += token.text;
+                types += token.text;
             }
             std::string options;
             for (const syntax::Token &token: mouth.argument({}, 0)) options += token.text;
             bool named = false;
-            for (const auto piece: std::views::split(std::string_view(kinds), ',')) {
-                std::string kind(piece.begin(), piece.end());
-                std::erase(kind, ' ');
-                if (kind.empty() || (kind[0] >= '0' && kind[0] <= '9')) continue;
-                defaults[kind] += std::format(",{}", options);
+            for (const auto piece: std::views::split(std::string_view(types), ',')) {
+                std::string type(piece.begin(), piece.end());
+                std::erase(type, ' ');
+                if (type.empty() || (type[0] >= '0' && type[0] <= '9')) continue;
+                defaults[type] += std::format(",{}", options);
                 named = true;
             }
             if (!named) defaults[""] += std::format(",{}", options);
@@ -230,8 +230,7 @@ namespace render::primitives::composition {
 
                 if (const std::size_t at = settings.find("\\usecounter "); at != std::string::npos) {
                     const std::size_t open = settings.find('{', at);
-                    const std::size_t close = settings.find('}', at);
-                    if (open != std::string::npos && close != std::string::npos && open < close) {
+                    if (const std::size_t close = settings.find('}', at); open != std::string::npos && close != std::string::npos && open < close) {
                         const std::string counter = settings.substr(open + 1, close - open - 1);
                         settings.erase(at, close + 1 - at);
                         level.marker = Marker::Number;
@@ -290,7 +289,7 @@ namespace render::primitives::composition {
             };
             skip();
 
-            // How deep this list is among lists of its own kind, which is what
+            // How deep this list is among lists of its own type, which is what
             // picks the label: LaTeX's second bullet is a dash and its second
             // number a letter.
             std::size_t depth = 0;
@@ -348,7 +347,7 @@ namespace render::primitives::composition {
                 }
                 if (level.marker == Marker::Number) {
                     context.anchor = label;
-                    context.kind = "item";
+                    context.type = "item";
                 }
             } else if (!written) {
                 switch (level.marker) {
@@ -376,7 +375,7 @@ namespace render::primitives::composition {
                         }
                         // What a `\\label` after this item refers to.
                         context.anchor = number;
-                        context.kind = "item";
+                        context.type = "item";
                         break;
                     }
                     case Marker::Bullet: {

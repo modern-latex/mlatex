@@ -16,7 +16,6 @@
 #include <ranges>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <vector>
 
 namespace render::primitives::figures {
@@ -198,7 +197,7 @@ namespace render::primitives::figures {
         lexicon.intern("\\legend");
     }
 
-    void Plots::operator()(syntax::Parser &parser, Context &context) const {
+    void Plots::operator()(const syntax::Parser &parser, Context &context) const {
         using Category = syntax::Catcodes::Category;
         using Pairs = std::vector<std::pair<std::string_view, std::string_view> >;
 
@@ -269,12 +268,12 @@ namespace render::primitives::figures {
             return text;
         };
 
-        for (const std::string_view kind: {"axis", "semilogxaxis", "semilogyaxis", "loglogaxis"}) {
+        for (const std::string_view type: {"axis", "semilogxaxis", "semilogyaxis", "loglogaxis"}) {
             context.environments.watch(
-                kind,
-                [this, kind, spelled](syntax::Mouth &mouth) {
+                type,
+                [this, type, spelled](syntax::Mouth &mouth) {
                     axes.push_back({
-                        .kind = std::string(kind),
+                        .type = std::string(type),
                         .options = spelled(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))
                     });
                 },
@@ -303,9 +302,9 @@ namespace render::primitives::figures {
                     const double tall = std::max(30.0, upward - (only ? 0.0 : 45.0));
 
                     // Logarithmic axes work in the exponents of their values.
-                    const bool xlog = axis.kind == "semilogxaxis" || axis.kind == "loglogaxis" ||
+                    const bool xlog = axis.type == "semilogxaxis" || axis.type == "loglogaxis" ||
                                       find(settings, "xmode") == "log";
-                    const bool ylog = axis.kind == "semilogyaxis" || axis.kind == "loglogaxis" ||
+                    const bool ylog = axis.type == "semilogyaxis" || axis.type == "loglogaxis" ||
                                       find(settings, "ymode") == "log";
                     const auto tx = [xlog](const double v) { return xlog ? std::log10(v) : v; };
                     const auto ty = [ylog](const double v) { return ylog ? std::log10(v) : v; };
@@ -437,7 +436,7 @@ namespace render::primitives::figures {
                         if (const auto written = find(settings, key)) {
                             if (*written == "data") {
                                 for (const Plot &plot: axis.plots) {
-                                    for (const auto &pair: plot.points) found.push_back(pair.first);
+                                    for (const auto &key: plot.points | std::views::keys) found.push_back(key);
                                 }
                                 std::ranges::sort(found);
                                 found.erase(std::ranges::unique(found).begin(), found.end());
@@ -1306,8 +1305,7 @@ namespace render::primitives::figures {
                         out += std::format("\\draw {} -- {};", point(at, oy), point(at, oy + tick));
                         if (boxed) out += std::format("\\draw {} -- {};", point(at, tall), point(at, tall - tick));
                         if (crossing && std::abs(at - ox) < 0.01) continue;
-                        const std::string text = labelled("xticklabels", xs[index], index, xlog);
-                        if (!text.empty()) out += std::format("\\node[below] at {} {{{}}};", point(at, oy), text);
+                        if (const std::string text = labelled("xticklabels", xs[index], index, xlog); !text.empty()) out += std::format("\\node[below] at {} {{{}}};", point(at, oy), text);
                     }
                     for (std::size_t index = 0; index < ys.size() && lines != "none"; ++index) {
                         const double at = py(ys[index]);
@@ -1342,15 +1340,15 @@ namespace render::primitives::figures {
                     if (entries > 0) {
                         std::string rows;
                         for (std::size_t index = 0; index < entries; ++index) {
-                            const Legend &sample = samples[index];
+                            const auto &[color, mark, line, bar] = samples[index];
                             // A bar's square, a line with its mark across it, a
                             // line, or a mark alone.
                             std::string image = "$\\bullet$";
-                            if (sample.bar) image = "\\rule{0.8em}{0.8em}";
-                            else if (sample.line && !sample.mark.empty()) {
+                            if (bar) image = "\\rule{0.8em}{0.8em}";
+                            else if (line && !mark.empty()) {
                                 image = R"(\rule[0.55ex]{0.5em}{0.6pt}$\bullet$\rule[0.55ex]{0.5em}{0.6pt})";
-                            } else if (sample.line) image = "\\rule[0.55ex]{1.2em}{0.6pt}";
-                            rows += std::format(R"(\textcolor{{{}}}{{{}}} & {}\\)", sample.color, image,
+                            } else if (line) image = "\\rule[0.55ex]{1.2em}{0.6pt}";
+                            rows += std::format(R"(\textcolor{{{}}}{{{}}} & {}\\)", color, image,
                                                 axis.legends[index]);
                         }
                         const std::string_view where = find(settings, "legend pos").value_or("north east");
@@ -1584,7 +1582,7 @@ namespace render::primitives::figures {
                                       const auto y = number(row[yi]);
                                       if (!x || !y) continue;
                                       plot.points.emplace_back(*x, *y);
-                                      std::array<double, 4> error{gap, gap, gap, gap};
+                                      std::array error{gap, gap, gap, gap};
                                       for (std::size_t side = 0; side < 4; ++side) {
                                           if (erring[side] && *erring[side] < row.size())
                                               error[side] = number(row[*erring[side]]).value_or(gap);

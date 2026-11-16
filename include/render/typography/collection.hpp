@@ -1,9 +1,7 @@
 #pragma once
 
 #include "memory/arena.hpp"
-#include "memory/slice.hpp"
 
-#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <span>

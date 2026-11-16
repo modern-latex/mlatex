@@ -4,9 +4,7 @@
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
-#include <cstdint>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -112,8 +110,8 @@ namespace render::primitives::composition {
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
         mutable std::vector<Level> levels{}; ///< The lists currently open.
 
-        /// enumitem's \\setlist: options each kind of list reads before its
-        /// own, by the kind's name -- and under the empty name, what every
+        /// enumitem's \\setlist: options each type of list reads before its
+        /// own, by the type's name -- and under the empty name, what every
         /// list reads.
         mutable std::unordered_map<std::string, std::string> defaults{};
     };

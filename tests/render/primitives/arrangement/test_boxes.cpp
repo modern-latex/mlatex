@@ -54,7 +54,6 @@ static bool holds(const std::string_view text, const std::string_view part) {
 }
 
 int main() {
-    // --- Boxes and saved boxes -----------------------------------------------------
     {
         const Result result = article(
             "\\usepackage{xcolor}\\newsavebox{\\stash}\\newlength{\\gap}",
@@ -74,7 +73,6 @@ int main() {
         assert((holds(result.pdf, "1 1 0 rg")) && "a color box is painted behind its text");
     }
 
-    // --- A box narrower than its contents overlaps what follows --------------------------
     {
         const Result result = article("", "a\\rlap{xyz}b");
         // Three letters of ten points' worth back: the b drawn over the x.
@@ -82,7 +80,6 @@ int main() {
                "\\rlap sets its contents over what follows, which starts where they did");
     }
 
-    // --- TeX's box registers --------------------------------------------------------
     {
         const Result result = article("", "\\setbox3=\\hbox{boxed}[\\copy3][\\box3][\\box3] "
                                       "\\setbox0\\hbox{measure}\\the\\wd0.");
@@ -91,7 +88,6 @@ int main() {
         assert((holds(result.text, "pt.")) && "\\wd reads its width as a length");
     }
 
-    // --- graphicx's transforms ------------------------------------------------------
     {
         const Result result = article("\\usepackage{graphicx}",
                                       "\\rotatebox{90}{up} \\scalebox{2}{big} \\resizebox{2cm}{!}{wide} "
@@ -102,7 +98,6 @@ int main() {
                "a quarter turn is a quarter turn");
     }
 
-    // --- Framed blocks --------------------------------------------------------------
     {
         const Result result = article("\\usepackage{framed,tcolorbox}",
                                       "\\begin{framed}In a frame.\\end{framed}"
@@ -111,7 +106,6 @@ int main() {
                "a framed block and a titled colored box keep their text");
     }
 
-    // --- Measuring ------------------------------------------------------------------
     {
         const Result result = article("\\newlength{\\w}", "\\settowidth{\\w}{}\\the\\w{} "
                                       "\\setlength{\\w}{\\widthof{MM}}\\ifdim\\w>0pt wide\\fi");

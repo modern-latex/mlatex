@@ -14,7 +14,7 @@ namespace syntax {
     /// command that made it and processing carries on.
     class Traceback {
     public:
-        /// @brief The kind of error.
+        /// @brief The type of error.
         enum class Type : std::uint8_t {
             Group, ///< Unbalanced or unclosed brace group.
             Equation, ///< Malformed formula.
@@ -37,17 +37,17 @@ namespace syntax {
         };
 
         /// @brief Records an error.
-        /// @param type     Kind of error.
+        /// @param type     Type of error.
         /// @param location Where it happened; zero means unknown.
         /// @param message  Explanation; copied.
         Traceback(const Type type, const memory::Location location, const std::string_view message)
             : type(type), location(location), message(message) {
         }
 
-        /// @brief Whether it stops the document being clean: every kind but a warning does.
+        /// @brief Whether it stops the document being clean: every type but a warning does.
         [[nodiscard]] bool fatal() const noexcept { return type != Type::Warning; }
 
-        /// @brief Renders as `file:line:column: error (kind): message`, or
+        /// @brief Renders as `file:line:column: error (type): message`, or
         ///        `file:line:column: warning: message`.
         /// @param files The name of each file, by the number a location's
         ///              file holds: Mouth::files.
@@ -55,7 +55,7 @@ namespace syntax {
         ///         among @p files, and the position when it is unknown.
         [[nodiscard]] std::string format(std::span<const std::string> files = {}) const;
 
-        Type type; ///< Kind of error.
+        Type type; ///< Type of error.
         memory::Location location; ///< Where it happened.
         std::string message; ///< Explanation.
     };

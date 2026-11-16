@@ -161,13 +161,13 @@ namespace render::primitives::typesetting {
         // what a box or a cell holds is set as it is read, long before the
         // instruction is reached in its place, and is set in the language
         // chosen by then.
-        const auto order = [&context](const syntax::Parser &parser,
+        const auto order = [&context](const syntax::Parser &reader,
                                       const layout::Node::Directive &said) -> syntax::Node * {
             if (said.command == Command::Language) context.document.hyphenate(said);
-            memory::Arena &arena = parser.arena;
+            memory::Arena &arena = reader.arena;
             auto *mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
             mark->directive(said);
-            return directive(arena, mark, parser.mouth.lookahead().location);
+            return directive(arena, mark, reader.mouth.lookahead().location);
         };
 
         // A language's words as they are set: its patterns and how near a
@@ -247,8 +247,8 @@ namespace render::primitives::typesetting {
         // rest comes to is read after it. polyglossia's options for it may
         // come first: `\@language[numerals=maghrib]{arabic}`.
         parser.bind("\\@language",
-                    [this, order, named, spoken, options, remember](const syntax::Parser &parser) -> syntax::Node * {
-                        syntax::Mouth &mouth = parser.mouth;
+                    [this, order, named, spoken, options, remember](const syntax::Parser &reader) -> syntax::Node * {
+                        syntax::Mouth &mouth = reader.mouth;
                         const std::string given = options(mouth);
                         const Language *language = named(mouth);
                         if (!language) return nullptr;
@@ -266,23 +266,23 @@ namespace render::primitives::typesetting {
                                                 language->captions);
                         }
                         mouth.ingest(mouth.arena.copy(said));
-                        return order(parser, spoken(*language));
+                        return order(reader, spoken(*language));
                     });
 
         // Its words alone: a phrase in it inside the text of another, set as
         // it sets them -- its breaks, its digits, French's spaces.
-        parser.bind("\\@hyphenation", [order, named, spoken](const syntax::Parser &parser) -> syntax::Node * {
-            const Language *language = named(parser.mouth);
+        parser.bind("\\@hyphenation", [order, named, spoken](const syntax::Parser &reader) -> syntax::Node * {
+            const Language *language = named(reader.mouth);
             if (!language) return nullptr;
-            return order(parser, spoken(*language));
+            return order(reader, spoken(*language));
         });
 
         // Which way the paragraphs from here on read: `RTL`, right to left,
         // or anything else, left to right.
-        parser.bind("\\@direction", [order, &context](const syntax::Parser &parser) -> syntax::Node * {
-            const std::string way = syntax::Argument::expanded(parser.mouth);
+        parser.bind("\\@direction", [order, &context](const syntax::Parser &reader) -> syntax::Node * {
+            const std::string way = syntax::Argument::expanded(reader.mouth);
             context.reversed = way == "RTL";
-            return order(parser, {.command = Command::Direction, .reversed = context.reversed});
+            return order(reader, {.command = Command::Direction, .reversed = context.reversed});
         });
 
         // A block in another language: its paragraphs apart from those

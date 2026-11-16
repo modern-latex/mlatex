@@ -16,7 +16,6 @@
 #include <ranges>
 #include <span>
 #include <string>
-#include <system_error>
 #include <vector>
 
 namespace render::primitives::typesetting {
@@ -65,14 +64,14 @@ namespace render::primitives::typesetting {
             }
             const float part = std::clamp(share / 100.0f, 0.0f, 1.0f);
 
-            const graphics::Color other = index + 1 < parts.size()
-                                              ? named(parts[index + 1])
-                                              : graphics::white;
+            const auto [red, green, blue, alpha] = index + 1 < parts.size()
+                                                       ? named(parts[index + 1])
+                                                       : graphics::white;
             color = {
-                .red = color.red * part + other.red * (1.0f - part),
-                .green = color.green * part + other.green * (1.0f - part),
-                .blue = color.blue * part + other.blue * (1.0f - part),
-                .alpha = color.alpha * part + other.alpha * (1.0f - part)
+                .red = color.red * part + red * (1.0f - part),
+                .green = color.green * part + green * (1.0f - part),
+                .blue = color.blue * part + blue * (1.0f - part),
+                .alpha = color.alpha * part + alpha * (1.0f - part)
             };
         }
         return color;
@@ -197,8 +196,8 @@ namespace render::primitives::typesetting {
 
         // \color: the text from here to the end of the group or block it is
         // written in, in a color -- which the text keeps as it is read.
-        parser.bind("\\color", [&context, tint](const syntax::Parser &parser) -> syntax::Node * {
-            context.selection.color(tint(parser.mouth));
+        parser.bind("\\color", [&context, tint](const syntax::Parser &reader) -> syntax::Node * {
+            context.selection.color(tint(reader.mouth));
             return nullptr;
         });
         parser.bind("\\normalcolor", [&context](syntax::Parser &) -> syntax::Node * {
@@ -208,9 +207,9 @@ namespace render::primitives::typesetting {
 
         // \textcolor{red}{...}: the same, around one group, which a line may
         // still break inside as it would anywhere else.
-        parser.bind("\\textcolor", [this, &context, tint](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\textcolor", [this, &context, tint](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const layout::Node::Color *color = tint(mouth);
@@ -225,15 +224,15 @@ namespace render::primitives::typesetting {
             const Selection kept = context.selection;
             context.selection.color(color);
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node *> content = parser.parse('}');
+            const memory::Slice<syntax::Node *> content = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
             context.selection = kept;
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, content);
         });
 
         // \pagecolor: what every page is painted in behind its text.
-        parser.bind("\\pagecolor", [&context, tint](const syntax::Parser &parser) -> syntax::Node * {
-            context.document.furniture.background = *tint(parser.mouth);
+        parser.bind("\\pagecolor", [&context, tint](const syntax::Parser &reader) -> syntax::Node * {
+            context.document.furniture.background = *tint(reader.mouth);
             return nullptr;
         });
 

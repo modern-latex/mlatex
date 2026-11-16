@@ -7,7 +7,7 @@
 
 namespace syntax {
     std::string Traceback::format(const std::span<const std::string> files) const {
-        static constexpr std::array<std::string_view, 15> kinds{
+        static constexpr std::array<std::string_view, 15> types{
             "group", "equation", "environment", "delimiter", "argument", "token", "end-of-input",
             "macro", "recursion", "memory", "scope", "primitive", "dimension", "register", "syntax",
         };
@@ -20,6 +20,6 @@ namespace syntax {
             where = std::format("{}:{}: ", location.line, location.column);
         }
         if (type == Type::Warning) return std::format("{}warning: {}", where, message);
-        return std::format("{}error ({}): {}", where, kinds[static_cast<std::size_t>(type)], message);
+        return std::format("{}error ({}): {}", where, types[static_cast<std::size_t>(type)], message);
     }
 }

@@ -57,7 +57,7 @@ int main() {
                                       "\\begin{enumerate}\\item one \\begin{enumerate}\\item two\\end{enumerate}"
                                       "\\item three\\end{enumerate}"
                                       "\\begin{description}\\item[term] meaning\\end{description}");
-        assert((result.clean) && "every kind of list, nested");
+        assert((result.clean) && "every type of list, nested");
         assert((holds(result.text, "\xE2\x80\xA2" "a")) && "a bullet before each item");
         assert((holds(result.text, "1.one(a)two2.three")) && "numbered, nested ones lettered in parentheses");
         assert((holds(result.text, "termmeaning")) && "a description's term before its meaning");
@@ -109,7 +109,7 @@ int main() {
     {
         const Result result = article("\\usepackage{enumitem}\\setlist[enumerate]{label=(\\alph*)}",
                                       "\\begin{enumerate}\\item One\\item Two\\end{enumerate}");
-        assert((result.clean && holds(result.text, "(a)One(b)Two")) && "\\setlist's options for every list of a kind");
+        assert((result.clean && holds(result.text, "(a)One(b)Two")) && "\\setlist's options for every list of a type");
     }
 
     return 0;

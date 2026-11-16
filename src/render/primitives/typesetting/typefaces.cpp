@@ -136,7 +136,7 @@ namespace render::primitives::typesetting {
         // `\\@face{main}{TeX Gyre Termes}`: a face named as the system names
         // it, which fontspec's \\setmainfont and \\setmathfont ask for, set
         // in the one the engine carries that stands nearest it -- STIX Two
-        // for Times and its kind, New Computer Modern for Computer Modern,
+        // for Times and its type, New Computer Modern for Computer Modern,
         // Latin Modern for itself, the TeX Gyre maths for their text faces.
         // Each is found by what its name holds, lower-cased and without its
         // spaces, the longer names first; one the engine has nothing near

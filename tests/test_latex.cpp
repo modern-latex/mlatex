@@ -71,7 +71,6 @@ static std::string dot() {
 }
 
 int main() {
-    // --- A session and what it holds -------------------------------------------------
     {
         latex::Session session(latex::locate(__FILE__));
         assert((session.assets == latex::locate(__FILE__)) && "a session reads the assets it was given");
@@ -127,7 +126,6 @@ int main() {
                "a session with no fonts makes nothing, and says why");
     }
 
-    // --- A snippet, and standalone: a page as large as what it holds -------------------
     {
         // The first page's box as the PDF writes it, as its width and height.
         const auto size = [](const std::string &pdf) {
@@ -174,7 +172,6 @@ int main() {
         assert((framed.clean && grown > 18.5 && grown < 19.5) && "and its border is what border= says");
     }
 
-    // --- A program's own command, package and picture ------------------------------------
     {
         std::string asked;
         latex::Host host;
@@ -197,14 +194,12 @@ int main() {
         assert((holds(result.pdf, "/Subtype /Image")) && "and its picture is placed");
     }
 
-    // --- What only pages can say, from a second pass ------------------------------------
     {
         const Result result = article("", "See page \\pageref{later}.\\newpage Here.\\label{later}");
         assert((result.clean && holds(result.text, "Seepage2.")) &&
                "a forward page reference is filled from a second pass");
     }
 
-    // --- A bibliography set as a document of its own ------------------------------------
     {
         const std::filesystem::path bib = std::filesystem::temp_directory_path() / "latex-entries.bib";
         std::ofstream(bib, std::ios::binary)
@@ -224,7 +219,6 @@ int main() {
                "every entry it holds, listed though none is cited");
     }
 
-    // --- Mistakes ----------------------------------------------------------------------
     {
         const Result undefined = article("", "\\nosuchcommand");
         assert((!undefined.clean && holds(undefined.errors, "\\nosuchcommand")) && "an undefined command is named");
@@ -240,7 +234,6 @@ int main() {
                "a document with a mistake still makes a PDF of what it could");
     }
 
-    // --- A mistake names the file it is in ---------------------------------------------
     {
         latex::Session session(latex::locate(__FILE__));
         session.provide("appendix.tex", "Fine.\n\nStill fine, and \\foo here.\n");
@@ -258,7 +251,6 @@ int main() {
                "and under the name it was provided under when it was");
     }
 
-    // --- Every package's own document --------------------------------------------------
     // tests/packages holds one document for every package and class the engine
     // reads, each using what it is loaded for; every one has to come out with
     // no error and no package or command the engine does not know.
@@ -282,7 +274,6 @@ int main() {
         assert((failed.empty()) && "and every one comes out clean");
     }
 
-    // --- The paper, whole -------------------------------------------------------------
     {
         std::ifstream file(latex::locate(__FILE__).parent_path() / "build" / "main.mtex", std::ios::binary);
         const std::string source{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
@@ -333,7 +324,7 @@ int main() {
         assert((holds(result.text, "itsvalue8,and8asprinted")) && "a counter's value, printed");
         assert((holds(result.text, "keptandkept.")) && "a saved box, used twice");
         assert((holds(result.text, "table3atable,fig.3apicture,item2anitem")) &&
-               "every kind of reference, each resolved");
+               "every type of reference, each resolved");
     }
 
     return 0;

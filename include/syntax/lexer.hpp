@@ -6,7 +6,6 @@
 #include "syntax/traceback.hpp"
 #include "memory/location.hpp"
 
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <vector>

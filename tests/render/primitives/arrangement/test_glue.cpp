@@ -56,7 +56,7 @@ int main() {
         const Result result = article("", "\\smallskip a \\medskip b \\bigskip c \\vskip 12pt d \\hskip 1em e "
                                       "\\hfill f \\quad g \\qquad h \\, i \\enskip j \\kern 3pt k \\hfil l "
                                       "\\vfill m \\hspace{2em} n \\vspace{1ex} o \\hspace*{1pt} p");
-        assert((result.clean && holds(result.text, "abcdefghijklmnop")) && "every kind of space, the words all kept");
+        assert((result.clean && holds(result.text, "abcdefghijklmnop")) && "every type of space, the words all kept");
     }
     {
         const Result result = article("", "\\hskip 0pt plus 1fill Right\\par");

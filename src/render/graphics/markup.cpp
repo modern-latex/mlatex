@@ -27,7 +27,6 @@
 
 namespace render::graphics {
     std::optional<Drawing> Drawing::markup(const std::string_view file) {
-        // --- The elements --------------------------------------------------------------------
 
         // One element: its name, its attributes, the elements in it, and
         // the text it holds -- a `<style>`'s rules -- each run of which is
@@ -77,7 +76,7 @@ namespace render::graphics {
         // document type and an element of the file's own are passed over,
         // CDATA kept as text.
         Element root{.name = "#document"};
-        std::vector<Element *> nested{&root};
+        std::vector nested{&root};
         for (std::size_t at = 0; at < file.size();) {
             if (file[at] != '<') {
                 const std::size_t next = file.find('<', at);
@@ -219,7 +218,6 @@ namespace render::graphics {
         };
         gather(*picture);
 
-        // --- Lengths, colours and transformations ---------------------------------------------
 
         // The numbers in a list, as SVG writes them: blanks or commas
         // between, or none where a sign or a second point starts the next.
@@ -264,7 +262,7 @@ namespace render::graphics {
         // A colour by its name, `#rgb`, `#rrggbb` or `rgb(...)`; none for
         // `none`; a gradient's first stop for `url(#gradient)`.
         const auto colour = [&](this const auto &self, std::string_view text,
-                                const std::optional<std::array<double, 3> > inherited)
+                                const std::optional<std::array<double, 3> > &inherited)
             -> std::optional<std::array<double, 3> > {
             while (!text.empty() && blank(text.front())) text.remove_prefix(1);
             while (!text.empty() && blank(text.back())) text.remove_suffix(1);
@@ -369,29 +367,29 @@ namespace render::graphics {
         };
         // A `transform`'s list, each applied before those written left of it.
         const auto transform = [&](const std::string_view text, std::array<double, 6> matrix) {
-            const double turn = std::numbers::pi / 180.0;
+            constexpr double turn = std::numbers::pi / 180.0;
             for (std::size_t at = 0; at < text.size();) {
                 const std::size_t open = text.find('(', at);
                 if (open == std::string_view::npos) break;
                 const std::size_t close = text.find(')', open);
-                std::string_view kind = text.substr(at, open - at);
-                while (!kind.empty() && (blank(kind.front()) || kind.front() == ',')) kind.remove_prefix(1);
-                while (!kind.empty() && blank(kind.back())) kind.remove_suffix(1);
+                std::string_view type = text.substr(at, open - at);
+                while (!type.empty() && (blank(type.front()) || type.front() == ',')) type.remove_prefix(1);
+                while (!type.empty() && blank(type.back())) type.remove_suffix(1);
                 const std::vector<double> values = numbers(
                     text.substr(open + 1, (close == std::string_view::npos ? text.size() : close) - open - 1));
                 const auto value = [&values](const std::size_t which, const double fallback) {
                     return which < values.size() ? values[which] : fallback;
                 };
                 std::array < double, 6 > step{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
-                if (kind == "matrix" && values.size() == 6) {
+                if (type == "matrix" && values.size() == 6) {
                     std::ranges::copy(values, step.begin());
-                } else if (kind == "translate") {
+                } else if (type == "translate") {
                     step[4] = value(0, 0.0);
                     step[5] = value(1, 0.0);
-                } else if (kind == "scale") {
+                } else if (type == "scale") {
                     step[0] = value(0, 1.0);
                     step[3] = value(1, step[0]);
-                } else if (kind == "rotate") {
+                } else if (type == "rotate") {
                     const double angle = value(0, 0.0) * turn;
                     const double cx = value(1, 0.0);
                     const double cy = value(2, 0.0);
@@ -400,9 +398,9 @@ namespace render::graphics {
                         cx - std::cos(angle) * cx + std::sin(angle) * cy,
                         cy - std::sin(angle) * cx - std::cos(angle) * cy
                     };
-                } else if (kind == "skewX") {
+                } else if (type == "skewX") {
                     step[2] = std::tan(value(0, 0.0) * turn);
-                } else if (kind == "skewY") {
+                } else if (type == "skewY") {
                     step[1] = std::tan(value(0, 0.0) * turn);
                 }
                 matrix = compose(step, matrix);
@@ -411,7 +409,6 @@ namespace render::graphics {
             return matrix;
         };
 
-        // --- The page -------------------------------------------------------------------------
 
         // Its size from `width` and `height`, or from the `viewBox` -- a
         // pixel three quarters of a point -- and the view box fitted into
@@ -454,7 +451,6 @@ namespace render::graphics {
             into += ' ';
         };
 
-        // --- Drawing ----------------------------------------------------------------------------
 
         // What an element inherits and gives what is in it.
         struct Style {
@@ -737,10 +733,10 @@ namespace render::graphics {
                         }
                         const double top = rx * rx * ry * ry - rx * rx * py * py - ry * ry * px * px;
                         const double bottom = rx * rx * py * py + ry * ry * px * px;
-                        double root = bottom > 0.0 ? std::sqrt(std::max(0.0, top / bottom)) : 0.0;
-                        if (large == sweep) root = -root;
-                        const double cxp = root * rx * py / ry;
-                        const double cyp = -root * ry * px / rx;
+                        double factor = bottom > 0.0 ? std::sqrt(std::max(0.0, top / bottom)) : 0.0;
+                        if (large == sweep) factor = -factor;
+                        const double cxp = factor * rx * py / ry;
+                        const double cyp = -factor * ry * px / rx;
                         const double cx = c * cxp - s * cyp + (x + ex) / 2.0;
                         const double cy = s * cxp + c * cyp + (y + ey) / 2.0;
                         const auto angle = [](const double ux, const double uy, const double vx, const double vy) {
@@ -950,7 +946,7 @@ namespace render::graphics {
                 for (std::size_t at = 0; at + 1 < points.size(); at += 2) data += std::format(
                                                                               "{}{} {}", at == 0 ? "M" : "L",
                                                                               points[at], points[at + 1]);
-                if (element.name == "polygon" && !data.empty()) data += "Z";
+                if (element.name == "polygon" && !data.empty()) data += 'Z';
                 paint(trace(data, m), style, m);
             } else if (element.name == "text") {
                 // Its words and its spans', each from where the last ended or
@@ -1049,7 +1045,7 @@ namespace render::graphics {
                         if (part.name == "#text") {
                             set(part.text, look);
                         } else if (part.name == "tspan") {
-                            if (const auto across = attribute(part, "x")) x = length(*across).value_or(x * 0.75) / 0.75;
+                            if (const auto horizontal = attribute(part, "x")) x = length(*horizontal).value_or(x * 0.75) / 0.75;
                             if (const auto upward = attribute(part, "y")) y = length(*upward).value_or(y * 0.75) / 0.75;
                             x += length(attribute(part, "dx").value_or("0")).value_or(0.0) / 0.75;
                             y += length(attribute(part, "dy").value_or("0")).value_or(0.0) / 0.75;

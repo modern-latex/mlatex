@@ -1,5 +1,5 @@
 /// @file
-/// @brief Scope implementation: naming a kind, and nothing else.
+/// @brief Scope implementation: naming a type, and nothing else.
 #include "syntax/semantics/scope.hpp"
 
 namespace syntax::semantics {

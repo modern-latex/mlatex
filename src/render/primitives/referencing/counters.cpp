@@ -186,7 +186,7 @@ namespace render::primitives::referencing {
             if (!known(name, origin)) return;
             step(name);
             context.anchor = print(mouth, name);
-            context.kind = name;
+            context.type = name;
         });
 
         parser.mouth.bind("\\setcounter", [this, known, &context](syntax::Mouth &mouth) {

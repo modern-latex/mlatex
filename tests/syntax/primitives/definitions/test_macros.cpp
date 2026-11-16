@@ -83,7 +83,6 @@ static void reports(const std::string_view document, const std::string_view frag
 }
 
 int main() {
-    // --- Definitions --------------------------------------------------------
     sets("\\define\\greeting{hello}\\greeting", "hello", "a macro with no parameters");
     sets("\\define\\twice[1]{#1#1}\\twice{ab}", "abab", "a parameter used twice");
     sets("\\define\\pair[2]{#1 and #2}\\pair{a}{b}", "a and b", "two parameters");
@@ -97,7 +96,6 @@ int main() {
     reports("\\define 5{x}", "\\define", "\\define needs a control sequence");
     reports("\\define\\loop{\\loop}\\loop", "", "a macro that calls itself forever is stopped");
 
-    // --- Aliases, forgetting and scope ----------------------------------------
     sets("\\define\\a{one}\\alias\\b\\a\\define\\a{two}\\b\\a", "onetwo", "an alias keeps the meaning it was given");
     reports("\\define\\a{x}\\forget\\a\\a", "\\a", "a forgotten macro is undefined again");
     sets("\\group\\define\\local{in}\\ungroup\\ifdefined\\local yes\\else no\\fi", "no",
@@ -105,7 +103,6 @@ int main() {
     sets("\\group\\shared\\define\\kept{in}\\ungroup\\kept", "in", "\\shared outlives the group");
     sets("\\include{core/aliases}\\def\\a{x}\\newcommand{\\b}{y}\\a\\b", "xy", "LaTeX's and TeX's names for \\define");
 
-    // --- Expansion controls ---------------------------------------------------
     sets("\\include{core/aliases}\\def\\a{A}\\edef\\b{\\a\\noexpand\\a}\\def\\a{Z}\\b", "AZ",
          "\\noexpand keeps a name from expanding inside \\edef");
     sets("\\include{core/aliases}\\expandafter\\def\\csname built\\endcsname{made}\\built", "made",

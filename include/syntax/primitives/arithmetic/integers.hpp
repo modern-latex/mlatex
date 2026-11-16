@@ -8,7 +8,6 @@
 #include <vector>
 
 #include <cstdint>
-#include <optional>
 
 namespace syntax::primitives::arithmetic {
     /// @brief Integer arithmetic: `\\evaluate` and the comparison it enables.

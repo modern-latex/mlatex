@@ -114,7 +114,6 @@ namespace syntax::primitives::bookkeeping {
             if (mouth.lookahead().is('*')) mouth.read();
         };
 
-        // --- The tests ---------------------------------------------------------
         mouth.bind("\\IfSubStr", [star, which, locate, branch](Mouth &mouth) {
             star(mouth);
             const long long nth = which(mouth, "\\IfSubStr", 1).first;

@@ -3,7 +3,6 @@
 #include "memory/arena.hpp"
 
 #include <array>
-#include <cstdint>
 #include <string_view>
 #include <vector>
 

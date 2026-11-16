@@ -52,7 +52,6 @@ static bool holds(const std::string_view text, const std::string_view part) {
 }
 
 int main() {
-    // --- A bibliography written into the document ----------------------------------
     {
         const Result result = article("", "See \\cite{lamport, knuth} and \\cite[p.~5]{knuth}; also \\cite{short}."
                                       "\\begin{thebibliography}{9}"
@@ -66,7 +65,6 @@ int main() {
         assert((holds(result.text, "References[1]DonaldKnuth")) && "the list under the class's References heading");
     }
 
-    // --- A .bib file, handed in, in a numbered style -------------------------------
     const std::string bib =
             "@article{knuth84, author = {Donald E. Knuth}, title = {Literate Programming},\n"
             "  journal = {The Computer Journal}, year = {1984}, volume = {27}, pages = {97--111}}\n"
@@ -122,7 +120,6 @@ int main() {
         assert((result.clean && holds(result.text, "TheTEXbook")) && "@preamble defines what the entries use");
     }
 
-    // --- By author and year -------------------------------------------------------
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{natbib}\\begin{document}"
                                       "\\citet{knuth84} showed it \\citep{lamport94}.\\bibliographystyle{plainnat}"
@@ -172,7 +169,6 @@ int main() {
                "a bibliography already made is set when the .bib it names is not there");
     }
 
-    // --- A .bib file imported, as any file is input -------------------------------
     {
         const Result result = typeset("\\documentclass{article}\\input{refs.bib}\\begin{document}\\cite{knuth84}."
                                       "\\bibliography{}\\end{document}",
@@ -194,7 +190,6 @@ int main() {
                "and a file \\bibliography names as well is read once by it");
     }
 
-    // --- Mistakes -------------------------------------------------------------------
     {
         const Result result = typeset("\\documentclass{article}\\begin{document}\\cite{nosuch}"
             "\\bibliographystyle{plain}\\bibliography{missing}\\end{document}");

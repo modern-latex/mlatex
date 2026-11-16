@@ -386,8 +386,8 @@ jobs:
         working-directory: ${{ env.TREE }}
         run: |
           node -e '
-            require("./mlatex.js")().then((engine) => {
-              const session = new engine.Session();
+            require("./mlatex.js")().then((system) => {
+              const session = system.compose();
               const check = (made, pdf, sheet, what) => {
                 const text = Buffer.from(pdf).toString("latin1");
                 if (!made || !text.startsWith("%PDF-") || text.includes("/MediaBox [0 0 612 792]") !== sheet) {
@@ -399,7 +399,7 @@ jobs:
               check(session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]"), session.pdf(), false, "a snippet");
               check(session.typeset("\\documentclass{article}\\begin{document}Hello.\\end{document}"),
                     session.pdf(), true, "a document");
-              session.delete();
+              session.dispose();
             });
           '
 
@@ -427,14 +427,14 @@ jobs:
           npm init -y > /dev/null
           npm install "$GITHUB_WORKSPACE"/bin/*.tgz
           node -e '
-            require("@modern-latex/mlatex")().then((engine) => {
-              const session = new engine.Session();
+            require("@modern-latex/mlatex")().then((system) => {
+              const session = system.compose();
               if (!session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]")) {
                 console.error("the package failed:\n" + session.error());
                 process.exit(1);
               }
               console.log("the package: " + session.pdf().length + " bytes");
-              session.delete();
+              session.dispose();
             });
           '
 

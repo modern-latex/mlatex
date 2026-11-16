@@ -236,9 +236,9 @@ namespace render::primitives::typesetting {
         };
 
         for (const auto &[name, text]: named) {
-            parser.bind(name, [text](const syntax::Parser &parser) -> syntax::Node * {
-                return parser.arena.compose<syntax::Node>(
-                    syntax::Node::Type::Text, text, parser.mouth.lookahead().location);
+            parser.bind(name, [text](const syntax::Parser &reader) -> syntax::Node * {
+                return reader.arena.compose<syntax::Node>(
+                    syntax::Node::Type::Text, text, reader.mouth.lookahead().location);
             });
         }
 
@@ -254,8 +254,8 @@ namespace render::primitives::typesetting {
         for (const std::string_view name: accents) {
             const char accent = name[1];
             const std::size_t row = marks.find(accent);
-            parser.bind(name, [accent, row](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
+            parser.bind(name, [accent, row](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
                 const memory::Location origin = mouth.lookahead().location;
 
                 const auto letter = [](const syntax::Token &token) -> std::string_view {
@@ -314,8 +314,8 @@ namespace render::primitives::typesetting {
                     text = std::format("{}{}{}", base.substr(0, span), mark, base.substr(span));
                 }
 
-                return parser.arena.compose<syntax::Node>(
-                    syntax::Node::Type::Text, parser.arena.copy(text), origin);
+                return reader.arena.compose<syntax::Node>(
+                    syntax::Node::Type::Text, reader.arena.copy(text), origin);
             });
         }
 
@@ -324,8 +324,8 @@ namespace render::primitives::typesetting {
         // element or a bracket is lowered, a charge after ^ -- or a sign that
         // ends an element -- raised, an arrow drawn as one; a number that
         // starts a term stays a coefficient.
-        parser.bind("\\ce", [](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\ce", [](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const std::string formula = syntax::Argument::text(mouth);
             std::string written;
             const auto element = [](const char letter) {
@@ -366,7 +366,7 @@ namespace render::primitives::typesetting {
                     ++at;
                 }
             }
-            mouth.ingest(parser.arena.copy(written));
+            mouth.ingest(reader.arena.copy(written));
             return nullptr;
         });
 

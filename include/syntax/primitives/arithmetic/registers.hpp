@@ -32,7 +32,7 @@ namespace syntax::primitives::arithmetic {
     /// @endcode
     ///
     /// The `=` and `by` are optional noise words, accepted for readability and
-    /// skipped when present. There are 256 slots per kind, numbered 0 to 255.
+    /// skipped when present. There are 256 slots per type, numbered 0 to 255.
     ///
     /// `\\name` binds a control sequence to a slot, which is what makes a
     /// register readable inside any later number: once bound, `\\tally` scans
@@ -66,7 +66,7 @@ namespace syntax::primitives::arithmetic {
         /// beside its natural width.
         mutable std::array<std::int32_t, 3> flex{};
 
-        /// @brief Reads a `<kind><index>` or a bound name.
+        /// @brief Reads a `<type><index>` or a bound name.
         /// @param mouth   Expander to read from.
         /// @param context Engine services, for scanning the index.
         /// @return The addressed slot, or std::nullopt on a malformed reference.

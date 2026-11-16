@@ -85,7 +85,7 @@ namespace render::primitives::arrangement {
 
         /// @brief A framed block opened and not yet read: which, and its options.
         struct Frame {
-            std::string kind; ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
+            std::string type; ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
             std::string options; ///< As written between its brackets.
             float width; ///< The column inside, in points.
             float rule; ///< The frame's thickness; none for a shaded block.

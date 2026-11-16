@@ -2,7 +2,7 @@
  * Loads the engine: mlatex.wasm, and mlatex.data with the fonts, from beside
  * mlatex.js unless `locateFile` says where they are.
  */
-declare function mLatex(options?: mLatex.Options): Promise<mLatex.Engine>;
+declare function mLatex(options?: mLatex.Options): Promise<mLatex.System>;
 
 declare namespace mLatex {
 	/** The package's version, as the engine's VERSION file says. In Node only. */
@@ -13,9 +13,18 @@ declare namespace mLatex {
 		locateFile?: (path: string, prefix: string) => string;
 	}
 
-	interface Engine {
+	/** @deprecated Use System. */
+	type Engine = System;
+
+	interface System {
+		/** Composes a session with the bundled assets. */
+		compose(): Session;
 		Session: new () => Session;
+		Screen: { prototype: Screen };
 	}
+
+	/** Receives expanded LaTeX arguments and returns replacement text. */
+	type Command = (...arguments_: string[]) => unknown;
 
 	/** The values, commands and files every document it makes is handed. */
 	interface Session {
@@ -23,7 +32,7 @@ declare namespace mLatex {
 		set(name: string, value: string): void;
 		unset(name: string): void;
 		/** A command the document calls, answered with what `handler` returns. */
-		define(name: string, arity: number, handler: (...values: string[]) => unknown): void;
+		define(name: string, arity: number, handler: Command): void;
 		forget(name: string): void;
 		/** A file under the name a document uses for it. */
 		provide(name: string, content: Uint8Array | string): void;
@@ -43,9 +52,10 @@ declare namespace mLatex {
 		pdf(): Uint8Array;
 		/** What went wrong, one error per line. */
 		error(): string;
-		/** The last PDF's pages, to draw on a canvas; a copy, deleted when done with. */
+		/** The last PDF's pages, to draw on a canvas; a copy to dispose of when done. */
 		screen(): Screen;
-		delete(): void;
+		/** Disposes of the WebAssembly object. */
+		dispose(): void;
 	}
 
 	/** A canvas's 2D context, a page's or an OffscreenCanvas's. */
@@ -98,7 +108,8 @@ declare namespace mLatex {
 		missing(): number[];
 		/** What the document says of itself. */
 		about(): { title: string; author: string; subject: string; keywords: string };
-		delete(): void;
+		/** Disposes of the WebAssembly object. */
+		dispose(): void;
 	}
 }
 

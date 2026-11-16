@@ -21,7 +21,6 @@
 #include <array>
 #include <cctype>
 #include <charconv>
-#include <cmath>
 #include <format>
 #include <limits>
 #include <optional>
@@ -100,14 +99,14 @@ namespace render::primitives::composition {
         // A chapter's or a part's number stands on a line of its own above the
         // title instead -- `Chapter 1`, in its own face -- as the classes set
         // one, and a chapter starts a new page.
-        const auto heading = [&context](syntax::Parser &parser, const typography::Font *font,
+        const auto heading = [&context](syntax::Parser &reader, const typography::Font *font,
                                         const std::string &number, const std::pair<float, float> around,
                                         const memory::Location origin, const std::size_t listed,
                                         const std::string &brief, const std::string &above = {},
                                         const typography::Font *lead = nullptr,
                                         const bool fresh = false, const Look *look = nullptr) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
 
             // The title is read as any text is, so a macro or a formula in
             // it sets properly; the heading's face is selected around it and
@@ -126,7 +125,7 @@ namespace render::primitives::composition {
             context.selection.text(font);
             context.selection.color(tint);
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node *> title = parser.parse('}');
+            const memory::Slice<syntax::Node *> title = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
             stamp(title, context);
             context.selection.text(restore);
@@ -304,9 +303,9 @@ namespace render::primitives::composition {
         // -- which \\@startsection reaches it by whatever \\section became.
         for (std::size_t level = 0; level < levels; ++level) {
             const auto handler = [this, &context, level, heading, opening](
-                syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+                syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 bool numbered = true;
@@ -343,7 +342,7 @@ namespace render::primitives::composition {
                     number = Counters::print(mouth, counted[level]);
                     context.anchor = number;
                     // After \\appendix, every level is an appendix to cleveref.
-                    context.kind = appendix ? std::string("appendix") : std::string(names[level].substr(1));
+                    context.type = appendix ? std::string("appendix") : std::string(names[level].substr(1));
                 }
 
                 Logger::log(Logger::Type::Layout, Logger::Level::Debug,
@@ -385,12 +384,12 @@ namespace render::primitives::composition {
                         look.spacing.second >= 0.0f ? look.spacing.second / ex : spacing[level].second
                     };
                     if (look.display && !number.empty()) {
-                        return heading(parser, face, number, around, origin, listed, brief, number, face, level == 0,
+                        return heading(reader, face, number, around, origin, listed, brief, number, face, level == 0,
                                        &look);
                     }
-                    return heading(parser, face, number, around, origin, listed, brief, {}, nullptr, level == 0, &look);
+                    return heading(reader, face, number, around, origin, listed, brief, {}, nullptr, level == 0, &look);
                 }
-                if (level != 0) return heading(parser, font, number, spacing[level], origin, listed, brief);
+                if (level != 0) return heading(reader, font, number, spacing[level], origin, listed, brief);
 
                 // A chapter: on a new page, `Chapter 1` -- or `Appendix A` --
                 // in \\huge above its title in \\Huge, as report and book set it.
@@ -401,7 +400,7 @@ namespace render::primitives::composition {
                 }
                 const typography::Font *title =
                         Styles::resolve(context, Styles::Cut::Bold, Styles::measure(body, Styles::Size::Hugest));
-                return heading(parser, title, number, spacing[level], origin, listed, brief, above, font, true);
+                return heading(reader, title, number, spacing[level], origin, listed, brief, above, font, true);
             };
             parser.bind(names[level], handler);
             parser.bind(std::format("{}:native", names[level]), handler);
@@ -585,9 +584,9 @@ namespace render::primitives::composition {
         // `\\part` stands outside the chain above: its own count, roman
         // numbered, resetting nothing beneath it -- a document's chapters
         // keep counting straight through a part break.
-        parser.bind("\\part", [this, &context, heading, opening](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\part", [this, &context, heading, opening](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             bool numbered = true;
@@ -609,7 +608,7 @@ namespace render::primitives::composition {
                 mouth.ingest("{\\partname}");
                 label = std::format("{} {}", syntax::Argument::expanded(mouth), number);
                 context.anchor = number;
-                context.kind = "part";
+                context.type = "part";
             }
 
             const float body = context.document.configuration.size;
@@ -617,7 +616,7 @@ namespace render::primitives::composition {
                                                            Styles::measure(body, Styles::Size::Huge));
             const typography::Font *lead = Styles::resolve(context, Styles::Cut::Bold,
                                                            Styles::measure(body, Styles::Size::Larger));
-            return heading(parser, font, label, {4.0f, 3.0f}, origin, unlisted, brief, label, lead);
+            return heading(reader, font, label, {4.0f, 3.0f}, origin, unlisted, brief, label, lead);
         });
 
         // From here the outermost numbered level -- a chapter if the
@@ -663,21 +662,21 @@ namespace render::primitives::composition {
             }
         };
         for (std::size_t which = 0; which < named.size(); ++which) {
-            parser.bind(named[which].first, [this, &context, which](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
+            parser.bind(named[which].first, [this, &context, which](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
                 if (!context.variables.get("contents.bare")) context.paged = true;
                 const syntax::Token mark{
                     .symbol = marks[which], .category = syntax::Catcodes::Category::Escape,
                     .text = mouth.lexicon.resolve(marks[which])
                 };
                 mouth.stream().inject(std::span{&mark, 1});
-                mouth.ingest(parser.arena.copy(std::format("\\{}*{{{}}}", chaptered ? "chapter" : "section",
+                mouth.ingest(reader.arena.copy(std::format("\\{}*{{{}}}", chaptered ? "chapter" : "section",
                                                            named[which].second)));
                 return nullptr;
             });
-            parser.bind(marks[which], [this, which](const syntax::Parser &parser) -> syntax::Node * {
-                auto *place = parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
-                                                                 parser.mouth.lookahead().location);
+            parser.bind(marks[which], [this, which](const syntax::Parser &reader) -> syntax::Node * {
+                auto *place = reader.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
+                                                                 reader.mouth.lookahead().location);
                 places.emplace_back(which, place);
                 return place;
             });
@@ -685,11 +684,10 @@ namespace render::primitives::composition {
 
         // \@setplain{name}{text}: the variable `name` holds what the text says,
         // read as a heading's title is and kept as its words alone -- an
-        // accent as its letter, `--` and `---` as their dashes, its spaces
         // single and none before a comma -- which is what a PDF's title and
         // author are: hyperref's pdfusetitle gives \title and \author this way.
-        parser.bind("\\@setplain", [&context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\@setplain", [&context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const std::string name = syntax::Argument::text(mouth);
             syntax::Token open = mouth.read();
             while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
@@ -698,7 +696,7 @@ namespace render::primitives::composition {
                 return nullptr;
             }
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node *> said = parser.parse('}');
+            const memory::Slice<syntax::Node *> said = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
 
             std::string words;
@@ -737,12 +735,12 @@ namespace render::primitives::composition {
         // \addcontentsline{toc}{section}{text}: a line of a list's own, for a
         // heading that makes none -- an unnumbered one -- set where it is
         // written, so its page is the one it lands on.
-        parser.bind("\\addcontentsline", [&context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\addcontentsline", [&context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             const std::string list = syntax::Argument::text(mouth);
-            const std::string kind = syntax::Argument::text(mouth);
+            const std::string type = syntax::Argument::text(mouth);
             syntax::Token open = mouth.read();
             while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
@@ -750,14 +748,14 @@ namespace render::primitives::composition {
                 return nullptr;
             }
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node *> title = parser.parse('}');
+            const memory::Slice<syntax::Node *> title = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
 
-            const std::size_t level = kind == "part" || kind == "chapter"
+            const std::size_t level = type == "part" || type == "chapter"
                                           ? 0
-                                          : kind == "subsection"
+                                          : type == "subsection"
                                                 ? 2
-                                                : kind == "subsubsection" || kind == "paragraph"
+                                                : type == "subsubsection" || type == "paragraph"
                                                       ? 3
                                                       : 1;
             const std::size_t index = context.anchors++;
@@ -784,9 +782,9 @@ namespace render::primitives::composition {
         // what follows the @, `a!b` is b under a, and after a `|` how its
         // page is set: `textbf`, `textit`, `see{...}`, `seealso{...}`, and a
         // range's `(` and `)`. imakeidx's index name is read and let go.
-        parser.bind("\\index", [this, &context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\index", [this, &context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             std::string written;
@@ -828,7 +826,7 @@ namespace render::primitives::composition {
                 mouth.ingest(arena.copy(std::format("{{{}}}", trim(parts.back()))));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                const memory::Slice<syntax::Node *> shown = parser.parse('}');
+                const memory::Slice<syntax::Node *> shown = reader.parse('}');
                 mouth.pop(syntax::semantics::Scope::Type::Group);
                 stamp(shown, context);
                 term.shown.push_back(shown);
@@ -843,8 +841,8 @@ namespace render::primitives::composition {
         // The index itself, as LaTeX's theindex sets it: on a page of its own
         // in two columns under an unnumbered heading, \indexname, and what
         // follows it on a new page; its lines known once every page is.
-        parser.bind("\\printindex", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\printindex", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             if (terms.empty()) return nullptr;
             context.paged = true;
@@ -857,9 +855,9 @@ namespace render::primitives::composition {
             mouth.ingest(R"(\twocolumn[\csname\@bibkind\endcsname*{\indexname}])");
             return nullptr;
         });
-        parser.bind(marks[3], [this](const syntax::Parser &parser) -> syntax::Node * {
-            auto *place = parser.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
-                                                             parser.mouth.lookahead().location);
+        parser.bind(marks[3], [this](const syntax::Parser &reader) -> syntax::Node * {
+            auto *place = reader.arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},
+                                                             reader.mouth.lookahead().location);
             places.emplace_back(3, place);
             return place;
         });

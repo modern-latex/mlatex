@@ -3,12 +3,8 @@
 #include "layout/pager.hpp"
 #include "memory/slice.hpp"
 #include "render/composer.hpp"
-#include "render/graphics/image.hpp"
 #include "render/screen.hpp"
 
-#include <harfbuzz/hb.h>
-
-#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>

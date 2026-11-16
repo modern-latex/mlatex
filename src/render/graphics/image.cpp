@@ -4,7 +4,6 @@
 ///        everything past this file expects.
 #include "render/graphics/image.hpp"
 
-#include <cstdio>
 #include <png.h>
 #include <jpeglib.h>
 #include <webp/decode.h>
@@ -84,6 +83,7 @@ namespace render::graphics {
 #pragma warning(disable: 4324 4611)
 #endif
 
+    /// @param bytes Encoded JPEG data.
     /// @param keep Whether a JPEG in grey or in colour keeps its bytes for a
     ///             PDF to decode, rather than being decoded here.
     [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes, const bool keep = true) {
@@ -93,8 +93,8 @@ namespace render::graphics {
             jpeg_error_mgr handler{};
             jmp_buf point{};
         };
-        const auto abandon = [](const j_common_ptr info) {
-            longjmp(reinterpret_cast<Failure *>(info->err)->point, 1);
+        const auto abandon = [](j_common_ptr source) {
+            longjmp(reinterpret_cast<Failure *>(source->err)->point, 1); // NOLINT(modernize-avoid-setjmp, cert-err52-cpp)
         };
 
         jpeg_decompress_struct info{};
@@ -102,7 +102,7 @@ namespace render::graphics {
         info.err = jpeg_std_error(&failure.handler);
         failure.handler.error_exit = abandon;
 
-        if (setjmp(failure.point)) {
+        if (setjmp(failure.point)) { // NOLINT(modernize-avoid-setjmp, cert-err52-cpp)
             jpeg_destroy_decompress(&info);
             return std::nullopt;
         }

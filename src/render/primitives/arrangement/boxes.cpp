@@ -56,22 +56,22 @@ namespace render::primitives::arrangement {
 
         // \fboxsep and \fboxrule, as registers, so \setlength reaches them:
         // the room a frame leaves around what it holds, and its thickness.
-        const std::size_t separation = Registers::reserved + 8;
-        const std::size_t thickness = Registers::reserved + 9;
+        constexpr std::size_t separation = Registers::reserved + 8;
+        constexpr std::size_t thickness = Registers::reserved + 9;
         context.registers.bind(lexicon.intern("\\fboxsep"), Registers::Type::Dimension, separation);
         context.registers.bind(lexicon.intern("\\fboxrule"), Registers::Type::Dimension, thickness);
         context.registers.set(Registers::Type::Dimension, separation, 3 * 65536, true);
         context.registers.set(Registers::Type::Dimension, thickness, 26214, true); // 0.4pt
         // \linewidth, which a box sets for what is inside it.
-        const std::size_t line = Registers::reserved + 1;
+        constexpr std::size_t line = Registers::reserved + 1;
 
         // What a box holds: one brace group, read in a scope of its own, and
         // set in the face it was read in -- which is then put back, with the
         // colour, since neither is a register the scope restores: a
         // `\color` inside the box stays there.
-        const auto contents = [this, &context](syntax::Parser &parser, std::string_view name,
+        const auto contents = [this, &context](syntax::Parser &reader, std::string_view name,
                                                std::optional<float> width = std::nullopt) {
-            syntax::Mouth &mouth = parser.mouth;
+            syntax::Mouth &mouth = reader.mouth;
             while (mouth.lookahead().category == syntax::Catcodes::Category::Space) mouth.read();
 
             syntax::Token open = mouth.read();
@@ -88,7 +88,7 @@ namespace render::primitives::arrangement {
                 context.registers.set(Registers::Type::Dimension, line,
                                       static_cast<std::int32_t>(*width * 65536.0f), false);
             }
-            const memory::Slice<syntax::Node *> children = parser.parse('}');
+            const memory::Slice<syntax::Node *> children = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Box);
             stamp(children, context);
             context.selection = kept;
@@ -135,7 +135,7 @@ namespace render::primitives::arrangement {
         };
 
         // `[width][position]`, as \makebox, \framebox and \savebox read them.
-        const auto options = [&context](syntax::Mouth &mouth) -> std::pair<std::optional<float>, char> {
+        const auto placement = [&context](syntax::Mouth &mouth) -> std::pair<std::optional<float>, char> {
             const syntax::Mouth::Parameter optional{.optional = true};
             std::string written;
             for (const syntax::Token &token: mouth.argument(optional, 0)) written += token.text;
@@ -154,7 +154,7 @@ namespace render::primitives::arrangement {
         // each.
         const auto frame = [&context](memory::Arena &arena, layout::Node *inner, const float rule,
                                       const layout::Node::Color edge,
-                                      const std::optional<layout::Node::Color> fill) {
+                                      const std::optional<layout::Node::Color> &fill) {
             const float room = static_cast<float>(context.registers.get(Registers::Type::Dimension, separation)) /
                                65536.0f;
             const layout::Node::Box &shape = inner->box();
@@ -359,8 +359,8 @@ namespace render::primitives::arrangement {
             return layout::Line::horizontal(arena, only, 0.0f);
         };
 
-        parser.bind("\\hbox", [this, &context, contents, row](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\hbox", [this, &context, contents, row](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const memory::Location origin = mouth.lookahead().location;
 
             // `to <dimension>`. The lexer emits one token per character, so
@@ -377,18 +377,18 @@ namespace render::primitives::arrangement {
                     tracebacks.emplace_back(syntax::Traceback::Type::Dimension, origin, "\\hbox to needs a dimension");
                 }
             }
-            return directive(parser.arena, row(parser.arena, contents(parser, "\\hbox"), target), origin);
+            return directive(reader.arena, row(reader.arena, contents(reader, "\\hbox"), target), origin);
         });
 
         // `\\vbox` and `\\vtop` differ in where their reference point sits,
         // and a vertical box here always hangs from its top edge -- which is
         // what `\\vtop` asks for. They are the same primitive until a box's
         // depth can be moved.
-        const syntax::Parser::Handler stacked = [&context, contents](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        const syntax::Parser::Handler stacked = [&context, contents](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
             std::vector<layout::Node *> nodes;
-            for (const syntax::Node *child: contents(parser, "\\vbox")) compose(nodes, child, context);
+            for (const syntax::Node *child: contents(reader, "\\vbox")) compose(nodes, child, context);
             const memory::Slice<layout::Node *> list = arena.allocate<layout::Node *>(nodes.size());
             std::ranges::copy(nodes, list.begin());
             return directive(arena, layout::Line::vertical(arena, list, 0.0f), origin);
@@ -398,58 +398,58 @@ namespace render::primitives::arrangement {
 
         // LaTeX's boxes. \mbox is a row at its own width, and \makebox one
         // of a given width with its contents placed in it.
-        parser.bind("\\mbox", [contents, row](syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
-            return directive(parser.arena, row(parser.arena, contents(parser, "\\mbox")), origin);
+        parser.bind("\\mbox", [contents, row](syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
+            return directive(reader.arena, row(reader.arena, contents(reader, "\\mbox")), origin);
         });
 
-        parser.bind("\\makebox", [contents, row, placed, options](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const auto [width, position] = options(parser.mouth);
-            const memory::Slice<syntax::Node *> children = contents(parser, "\\makebox");
+        parser.bind("\\makebox", [contents, row, placed, placement](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const auto [width, position] = placement(reader.mouth);
+            const memory::Slice<syntax::Node *> children = contents(reader, "\\makebox");
             return directive(arena, width ? placed(arena, children, *width, position) : row(arena, children), origin);
         });
 
-        parser.bind("\\fbox", [contents, row, frame, rule](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
-            return directive(arena, frame(arena, row(arena, contents(parser, "\\fbox")), rule(), {}, std::nullopt),
+        parser.bind("\\fbox", [contents, row, frame, rule](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
+            return directive(arena, frame(arena, row(arena, contents(reader, "\\fbox")), rule(), {}, std::nullopt),
                              origin);
         });
 
         parser.bind("\\framebox",
-                    [contents, row, placed, options, frame, rule](syntax::Parser &parser) -> syntax::Node * {
-                        memory::Arena &arena = parser.arena;
-                        const memory::Location origin = parser.mouth.lookahead().location;
-                        const auto [width, position] = options(parser.mouth);
-                        const memory::Slice<syntax::Node *> children = contents(parser, "\\framebox");
+                    [contents, row, placed, placement, frame, rule](syntax::Parser &reader) -> syntax::Node * {
+                        memory::Arena &arena = reader.arena;
+                        const memory::Location origin = reader.mouth.lookahead().location;
+                        const auto [width, position] = placement(reader.mouth);
+                        const memory::Slice<syntax::Node *> children = contents(reader, "\\framebox");
                         layout::Node *inner = width ? placed(arena, children, *width, position) : row(arena, children);
                         return directive(arena, frame(arena, inner, rule(), {}, std::nullopt), origin);
                     });
 
-        parser.bind("\\colorbox", [contents, row, frame, tint](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const layout::Node::Color fill = tint(parser.mouth);
-            return directive(arena, frame(arena, row(arena, contents(parser, "\\colorbox")), 0.0f, {}, fill),
+        parser.bind("\\colorbox", [contents, row, frame, tint](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const layout::Node::Color fill = tint(reader.mouth);
+            return directive(arena, frame(arena, row(arena, contents(reader, "\\colorbox")), 0.0f, {}, fill),
                              origin);
         });
 
-        parser.bind("\\fcolorbox", [contents, row, frame, rule, tint](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const layout::Node::Color edge = tint(parser.mouth);
-            const layout::Node::Color fill = tint(parser.mouth);
-            return directive(arena, frame(arena, row(arena, contents(parser, "\\fcolorbox")), rule(), edge, fill),
+        parser.bind("\\fcolorbox", [contents, row, frame, rule, tint](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const layout::Node::Color edge = tint(reader.mouth);
+            const layout::Node::Color fill = tint(reader.mouth);
+            return directive(arena, frame(arena, row(arena, contents(reader, "\\fcolorbox")), rule(), edge, fill),
                              origin);
         });
 
         // \raisebox{lift}[height][depth]{...}: the row moved up by the lift,
         // and said to be as tall and as deep as the two options, when given.
-        parser.bind("\\raisebox", [&context, contents, row](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\raisebox", [&context, contents, row](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             const float lift = measure(syntax::Argument::text(mouth), mouth, context);
             std::array<std::optional<float>, 2> claimed{};
@@ -461,7 +461,7 @@ namespace render::primitives::arrangement {
                 if (!written.empty()) value = measure(written, mouth, context);
             }
 
-            layout::Node *inner = row(arena, contents(parser, "\\raisebox"));
+            layout::Node *inner = row(arena, contents(reader, "\\raisebox"));
             layout::Node::Box shape = inner->box();
             shape.shift = -lift;
             inner->box(shape);
@@ -483,10 +483,10 @@ namespace render::primitives::arrangement {
                  std::tuple{"\\hphantom", true, false},
                  std::tuple{"\\vphantom", false, true}
              }) {
-            parser.bind(name, [contents, row, name, across, upright](syntax::Parser &parser) -> syntax::Node * {
-                memory::Arena &arena = parser.arena;
-                const memory::Location origin = parser.mouth.lookahead().location;
-                layout::Node *box = row(arena, contents(parser, name));
+            parser.bind(name, [contents, row, name, across, upright](syntax::Parser &reader) -> syntax::Node * {
+                memory::Arena &arena = reader.arena;
+                const memory::Location origin = reader.mouth.lookahead().location;
+                layout::Node *box = row(arena, contents(reader, name));
                 layout::Node::Box shape = box->box();
                 shape.list = {};
                 if (!across) shape.width = 0.0f;
@@ -499,9 +499,9 @@ namespace render::primitives::arrangement {
         // \parbox[position]{width}{...}: paragraphs set to a width, hung on
         // the line by the position letter. The height and inner position a
         // LaTeX \parbox may also take are read and let go.
-        parser.bind("\\parbox", [&context, contents, column, hung](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\parbox", [&context, contents, column, hung](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             std::string position;
             for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
@@ -512,7 +512,7 @@ namespace render::primitives::arrangement {
             }
             const float width = measure(syntax::Argument::text(mouth), mouth, context);
             const bool opened = context.reversed;
-            const memory::Slice<syntax::Node *> children = contents(parser, "\\parbox", width);
+            const memory::Slice<syntax::Node *> children = contents(reader, "\\parbox", width);
             return directive(arena, hung(arena, column(arena, children, width, opened),
                                          position.empty() ? 'c' : position[0]),
                              origin);
@@ -570,12 +570,12 @@ namespace render::primitives::arrangement {
         // package draws them: a shaded block has no rule, a left bar a thick
         // one, and tcolorbox's what `boxrule` and `left` say; the column
         // inside as wide as the line leaves, or as tcolorbox's `width` does.
-        const auto enclose = [this, &context, setting](syntax::Mouth &mouth, const std::string_view kind,
+        const auto enclose = [this, &context, setting](syntax::Mouth &mouth, const std::string_view type,
                                                        std::string options, const bool beamer) {
-            const bool box = kind == "tcolorbox";
-            const bool shaded = kind.starts_with("shaded") || kind.starts_with("snugshade") || beamer;
-            float stroke = shaded ? 0.0f : box ? 0.5f : kind == "leftbar" ? 3.0f : 0.4f;
-            float room = beamer ? 4.0f : box || kind == "mdframed" ? 6.0f : 9.0f;
+            const bool box = type == "tcolorbox";
+            const bool shaded = type.starts_with("shaded") || type.starts_with("snugshade") || beamer;
+            float stroke = shaded ? 0.0f : box ? 0.5f : type == "leftbar" ? 3.0f : 0.4f;
+            float room = beamer ? 4.0f : box || type == "mdframed" ? 6.0f : 9.0f;
             const float breadth = static_cast<float>(context.registers.get(
                                    Registers::Type::Dimension, Registers::reserved + 1)) / 65536.0f;
             float outer = breadth;
@@ -594,7 +594,7 @@ namespace render::primitives::arrangement {
             }
             const float width = std::max(outer - 2.0f * (room + stroke), 20.0f);
             frames.push_back({
-                .kind = std::string(kind), .options = std::move(options), .width = width, .rule = stroke, .room = room
+                .type = std::string(type), .options = std::move(options), .width = width, .rule = stroke, .room = room
             });
             // Inside, a line is the frame's inside.
             context.registers.set(Registers::Type::Dimension, Registers::reserved + 1,
@@ -695,27 +695,27 @@ namespace render::primitives::arrangement {
             });
         }
 
-        parser.bind(framing, [this, &context, column, setting](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind(framing, [this, &context, column, setting](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
             if (frames.empty()) return nullptr;
-            const auto [kind, settings, span, stroke, room] = frames.back();
+            const auto [type, options, width, stroke, room] = frames.back();
             frames.pop_back();
 
             syntax::Symbol matched = syntax::none;
             const std::array<syntax::Symbol, 1> stops{framed};
             const bool opened = context.reversed;
-            const memory::Slice<syntax::Node *> children = parser.parse(0, stops, matched);
+            const memory::Slice<syntax::Node *> children = reader.parse(0, stops, matched);
 
-            const auto option = [&settings, setting](const std::string_view key) { return setting(settings, key); };
+            const auto option = [&options, setting](const std::string_view key) { return setting(options, key); };
             const auto colored = [&context](const std::string &written, const layout::Node::Color fallback) {
                 if (written.empty()) return fallback;
                 const auto [red, green, blue, alpha] = Colors::resolve(written, context.variables);
                 return layout::Node::Color{.red = red, .green = green, .blue = blue, .alpha = alpha};
             };
 
-            const bool box = kind == "tcolorbox";
-            const bool bar = kind == "leftbar";
+            const bool box = type == "tcolorbox";
+            const bool bar = type == "leftbar";
             const layout::Node::Color edge = colored(option(box ? "colframe" : "linecolor"),
                                                      box
                                                          ? layout::Node::Color{
@@ -730,7 +730,7 @@ namespace render::primitives::arrangement {
                                                          : layout::Node::Color{
                                                              .red = 1.0f, .green = 1.0f, .blue = 1.0f
                                                          });
-            layout::Node *body = column(arena, children, span, opened);
+            layout::Node *body = column(arena, children, width, opened);
 
             // The column as a row as tall as it is, which the frame goes round.
             const auto upright = [&arena](layout::Node *stack) {
@@ -746,9 +746,9 @@ namespace render::primitives::arrangement {
                 std::ranges::copy(nodes, list.begin());
                 return layout::Line::horizontal(arena, list, 0.0f);
             };
-            const auto kern = [&arena](const float width) {
+            const auto kern = [&arena](const float length) {
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Kern);
-                node->kern({.width = width});
+                node->kern({.width = length});
                 return node;
             };
             const auto paint = [&arena](const layout::Node::Rule &value) {
@@ -759,16 +759,16 @@ namespace render::primitives::arrangement {
 
             layout::Node *inner = upright(body);
             const layout::Node::Box &shape = inner->box();
-            const float width = shape.width + 2.0f * (room + stroke);
+            const float breadth = shape.width + 2.0f * (room + stroke);
             const float height = shape.height + room + stroke;
             const float depth = shape.depth + room + stroke;
-            const float across = width - 2.0f * stroke;
+            const float across = breadth - 2.0f * stroke;
 
             std::vector<layout::Node *> pieces;
             if (bar) {
                 pieces = {paint({.width = stroke, .height = height, .depth = depth, .color = edge}), kern(room), inner};
             } else {
-                pieces = {paint({.width = width, .height = height, .depth = depth, .color = back}), kern(-width)};
+                pieces = {paint({.width = breadth, .height = height, .depth = depth, .color = back}), kern(-breadth)};
                 if (stroke > 0.0f) {
                     for (layout::Node *piece: {
                              paint({.width = stroke, .height = height, .depth = depth, .color = edge}),
@@ -797,7 +797,7 @@ namespace render::primitives::arrangement {
             // `fonttitle`'s face and `coltitle`'s color, white unless it says,
             // on a bar of `colbacktitle`'s, the frame's unless it says.
             if (const std::string title = option("title"); box && !title.empty()) {
-                syntax::Mouth &mouth = parser.mouth;
+                syntax::Mouth &mouth = reader.mouth;
                 const typography::Font *restore = context.selection.text();
                 const layout::Node::Color *painted = context.selection.color();
                 context.selection.color(arena.compose<layout::Node::Color>(
@@ -805,7 +805,7 @@ namespace render::primitives::arrangement {
                 mouth.ingest(arena.copy(std::format("{{{} {}}}", option("fonttitle"), title)));
                 mouth.read();
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                const memory::Slice<syntax::Node *> heading = parser.parse('}');
+                const memory::Slice<syntax::Node *> heading = reader.parse('}');
                 mouth.pop(syntax::semantics::Scope::Type::Group);
                 stamp(heading, context);
                 context.selection.text(restore);
@@ -831,7 +831,7 @@ namespace render::primitives::arrangement {
         });
 
         // minipage, and subcaption's subfigure and subtable, which are one
-        // with a caption of their own kind: the block reads its position and
+        // with a caption of their own type: the block reads its position and
         // width and hands over to a mark that reads the paragraphs as far as
         // the one its end leaves. beamer's column is one too, hung as its
         // columns block says, and the room left beside it spread out.
@@ -941,9 +941,9 @@ namespace render::primitives::arrangement {
             mouth.stream().inject(std::span{marks});
         });
 
-        parser.bind(start, [this, &context, column, hung](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind(start, [this, &context, column, hung](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
             if (openings.empty()) return nullptr;
             const auto [position, width] = openings.back();
             openings.pop_back();
@@ -951,7 +951,7 @@ namespace render::primitives::arrangement {
             syntax::Symbol matched = syntax::none;
             const std::array<syntax::Symbol, 1> stops{finish};
             const bool opened = context.reversed;
-            const memory::Slice<syntax::Node *> children = parser.parse(0, stops, matched);
+            const memory::Slice<syntax::Node *> children = reader.parse(0, stops, matched);
             return directive(arena, hung(arena, column(arena, children, width, opened), position), origin);
         });
 
@@ -969,20 +969,19 @@ namespace render::primitives::arrangement {
         // TeX's tests of a box register: whether it is empty, or holds a box
         // running across or down -- each answered as \iftrue or \iffalse, so
         // a test skipped over still counts as one.
-        for (const auto &[name, kind]: {std::pair{"\\ifvoid", 0}, std::pair{"\\ifhbox", 1}, std::pair{"\\ifvbox", 2}}) {
-            parser.mouth.bind(name, [this, number, kind](syntax::Mouth &mouth) {
+        for (const auto &[name, type]: {std::pair{"\\ifvoid", 0}, std::pair{"\\ifhbox", 1}, std::pair{"\\ifvbox", 2}}) {
+            parser.mouth.bind(name, [this, number, type](syntax::Mouth &mouth) {
                 const auto slot = number(mouth);
                 const layout::Node *box = slot ? stored[*slot] : nullptr;
                 const bool across = box && box->type == layout::Node::Type::Box &&
                                     box->box().alignment == layout::Node::Alignment::Horizontal;
-                const bool holds = kind == 0 ? !box : kind == 1 ? box && across : box && !across;
+                const bool holds = type == 0 ? !box : type == 1 ? box && across : box && !across;
                 mouth.ingest(holds ? "\\iftrue " : "\\iffalse ");
             });
         }
         const auto keep = [this, &context](const std::size_t slot, layout::Node *box) {
             stored[slot] = box;
-            const layout::Node::Box *shape = box ? &box->box() : nullptr;
-            for (const auto &[type, value]: {
+            for (const layout::Node::Box *shape = box ? &box->box() : nullptr; const auto &[type, value]: {
                      std::pair{Registers::Type::Width, shape ? shape->width : 0.0f},
                      std::pair{Registers::Type::Height, shape ? shape->height - shape->shift : 0.0f},
                      std::pair{Registers::Type::Depth, shape ? shape->depth + shape->shift : 0.0f}
@@ -1014,20 +1013,20 @@ namespace render::primitives::arrangement {
         };
 
         parser.bind(
-            "\\setbox", [this, &context, number, keep, contents, row](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            "\\setbox", [this, &context, number, keep, contents, row](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const auto slot = number(mouth);
                 while (mouth.lookahead().category == syntax::Catcodes::Category::Space || mouth.lookahead().is('=')) {
                     mouth.read();
                 }
                 // The box: made here by the name that makes one, or another
                 // register's, taken or copied.
-                const syntax::Token kind = mouth.expand();
+                const syntax::Token type = mouth.expand();
                 layout::Node *box = nullptr;
-                if (kind.symbol == made[0] || kind.symbol == made[3]) {
+                if (type.symbol == made[0] || type.symbol == made[3]) {
                     float target = 0.0f;
-                    if (kind.symbol == made[0]) {
+                    if (type.symbol == made[0]) {
                         while (mouth.lookahead().category == syntax::Catcodes::Category::Space) mouth.read();
                         if (mouth.lookahead(0).is('t') && mouth.lookahead(1).is('o')) {
                             mouth.read();
@@ -1035,17 +1034,17 @@ namespace render::primitives::arrangement {
                             target = measure(syntax::Argument::text(mouth), mouth, context);
                         }
                     }
-                    box = row(arena, contents(parser, "\\setbox"), target);
-                } else if (kind.symbol == made[1] || kind.symbol == made[2]) {
+                    box = row(arena, contents(reader, "\\setbox"), target);
+                } else if (type.symbol == made[1] || type.symbol == made[2]) {
                     std::vector<layout::Node *> nodes;
-                    for (const syntax::Node *child: contents(parser, "\\setbox")) compose(nodes, child, context);
+                    for (const syntax::Node *child: contents(reader, "\\setbox")) compose(nodes, child, context);
                     const memory::Slice<layout::Node *> list = arena.allocate<layout::Node *>(nodes.size());
                     std::ranges::copy(nodes, list.begin());
                     box = layout::Line::vertical(arena, list, 0.0f);
                 } else {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, kind.location,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Argument, type.location,
                                             R"(\setbox needs \hbox, \vbox or \mbox after its number)");
-                    if (!kind.empty()) mouth.stream().inject(std::span{&kind, 1});
+                    if (!type.empty()) mouth.stream().inject(std::span{&type, 1});
                 }
                 if (slot) keep(*slot, box);
                 return nullptr;
@@ -1055,13 +1054,13 @@ namespace render::primitives::arrangement {
                  std::pair{"\\unhbox", true}, std::pair{"\\unhcopy", false},
                  std::pair{"\\unvbox", true}, std::pair{"\\unvcopy", false}
              }) {
-            parser.bind(name, [number, keep, take, emptied](syntax::Parser &parser) -> syntax::Node * {
-                const memory::Location origin = parser.mouth.lookahead().location;
-                const auto slot = number(parser.mouth);
+            parser.bind(name, [number, keep, take, emptied](const syntax::Parser &reader) -> syntax::Node * {
+                const memory::Location origin = reader.mouth.lookahead().location;
+                const auto slot = number(reader.mouth);
                 if (!slot) return nullptr;
-                layout::Node *box = take(parser.arena, *slot);
+                layout::Node *box = take(reader.arena, *slot);
                 if (emptied) keep(*slot, nullptr);
-                return box ? directive(parser.arena, box, origin) : nullptr;
+                return box ? directive(reader.arena, box, origin) : nullptr;
             });
         }
 
@@ -1072,8 +1071,8 @@ namespace render::primitives::arrangement {
             if (!name.empty()) mouth.stream().inject(std::span{name});
             return number(mouth);
         };
-        parser.bind("\\newsavebox", [](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\newsavebox", [](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             std::vector<syntax::Token> name = mouth.argument({}, 0);
             const syntax::Symbol symbol = mouth.lexicon.intern("\\newbox");
             name.insert(name.begin(), syntax::Token{
@@ -1083,34 +1082,34 @@ namespace render::primitives::arrangement {
             mouth.stream().inject(std::span{name});
             return nullptr;
         });
-        parser.bind("\\sbox", [slot, keep, contents, row](syntax::Parser &parser) -> syntax::Node * {
-            const auto index = slot(parser.mouth);
-            layout::Node *box = row(parser.arena, contents(parser, "\\sbox"));
+        parser.bind("\\sbox", [slot, keep, contents, row](syntax::Parser &reader) -> syntax::Node * {
+            const auto index = slot(reader.mouth);
+            layout::Node *box = row(reader.arena, contents(reader, "\\sbox"));
             if (index) keep(*index, box);
             return nullptr;
         });
         parser.bind("\\savebox",
-                    [slot, keep, contents, row, placed, options](syntax::Parser &parser) -> syntax::Node * {
-                        memory::Arena &arena = parser.arena;
-                        const auto index = slot(parser.mouth);
-                        const auto [width, position] = options(parser.mouth);
-                        const memory::Slice<syntax::Node *> children = contents(parser, "\\savebox");
+                    [slot, keep, contents, row, placed, placement](syntax::Parser &reader) -> syntax::Node * {
+                        memory::Arena &arena = reader.arena;
+                        const auto index = slot(reader.mouth);
+                        const auto [width, position] = placement(reader.mouth);
+                        const memory::Slice<syntax::Node *> children = contents(reader, "\\savebox");
                         layout::Node *box = width ? placed(arena, children, *width, position) : row(arena, children);
                         if (index) keep(*index, box);
                         return nullptr;
                     });
-        parser.bind("\\usebox", [slot, take](const syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const auto index = slot(parser.mouth);
-            layout::Node *box = index ? take(parser.arena, *index) : nullptr;
-            return box ? directive(parser.arena, box, origin) : nullptr;
+        parser.bind("\\usebox", [slot, take](const syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const auto index = slot(reader.mouth);
+            layout::Node *box = index ? take(reader.arena, *index) : nullptr;
+            return box ? directive(reader.arena, box, origin) : nullptr;
         });
 
         // graphicx's transforms: a row drawn turned, scaled, stretched to a
         // size or mirrored, in a box as large as what that makes. The map
         // turns about the row's reference point, and the box's left edge is
         // the leftmost ink of the result, on the same baseline.
-        const auto transformed = [](memory::Arena &arena, layout::Node *inner, const layout::Node::Point horizontal,
+        const auto transformed = [](memory::Arena &arena, const layout::Node *inner, const layout::Node::Point horizontal,
                                     const layout::Node::Point vertical) {
             const layout::Node::Box &shape = inner->box();
             float left = 0.0f;
@@ -1151,22 +1150,22 @@ namespace render::primitives::arrangement {
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
         };
 
-        parser.bind("\\rotatebox", [contents, row, transformed, bracketed](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\rotatebox", [contents, row, transformed, bracketed](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             bracketed(mouth);
             float degrees = 0.0f;
             const std::string written = syntax::Argument::expanded(mouth);
             patch::decimal(written.data(), written.data() + written.size(), degrees);
             const float angle = degrees * std::numbers::pi_v<float> / 180.0f;
-            layout::Node *inner = row(arena, contents(parser, "\\rotatebox"));
+            layout::Node *inner = row(arena, contents(reader, "\\rotatebox"));
             return directive(arena, transformed(arena, inner, {.across = std::cos(angle), .down = -std::sin(angle)},
                                                 {.across = std::sin(angle), .down = std::cos(angle)}), origin);
         });
-        parser.bind("\\scalebox", [contents, row, transformed](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\scalebox", [contents, row, transformed](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             float across = 1.0f;
             const std::string written = syntax::Argument::expanded(mouth);
@@ -1177,21 +1176,21 @@ namespace render::primitives::arrangement {
                 vertical += token.text;
             }
             if (!vertical.empty()) patch::decimal(vertical.data(), vertical.data() + vertical.size(), down);
-            layout::Node *inner = row(arena, contents(parser, "\\scalebox"));
+            layout::Node *inner = row(arena, contents(reader, "\\scalebox"));
             return directive(arena, transformed(arena, inner, {.across = across}, {.down = down}), origin);
         });
-        parser.bind("\\reflectbox", [contents, row, transformed](syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
-            layout::Node *inner = row(arena, contents(parser, "\\reflectbox"));
+        parser.bind("\\reflectbox", [contents, row, transformed](syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
+            layout::Node *inner = row(arena, contents(reader, "\\reflectbox"));
             return directive(arena, transformed(arena, inner, {.across = -1.0f}, {.down = 1.0f}), origin);
         });
         // \resizebox{width}{height}: stretched to both, or to one with the
         // other kept in proportion when it is written `!`; the starred form
         // measures height and depth together.
-        parser.bind("\\resizebox", [&context, contents, row, transformed](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\resizebox", [&context, contents, row, transformed](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             const bool total = mouth.lookahead().is('*');
             if (total) mouth.read();
@@ -1200,7 +1199,7 @@ namespace render::primitives::arrangement {
                 const std::string written = syntax::Argument::text(mouth);
                 if (written != "!") size = measure(written, mouth, context);
             }
-            layout::Node *inner = row(arena, contents(parser, "\\resizebox"));
+            layout::Node *inner = row(arena, contents(reader, "\\resizebox"));
             const layout::Node::Box &shape = inner->box();
             const float tall = total ? shape.height + shape.depth : shape.height;
             float across = wanted[0] && shape.width > 0.0f ? *wanted[0] / shape.width : 1.0f;
@@ -1215,13 +1214,13 @@ namespace render::primitives::arrangement {
                  std::pair{"\\settowidth", 0}, std::pair{"\\settoheight", 1},
                  std::pair{"\\settodepth", 2}
              }) {
-            parser.bind(name, [contents, row, name, extent](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
+            parser.bind(name, [contents, row, name, extent](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
                 std::string length;
                 for (const syntax::Token &token: mouth.argument({}, 0)) length += token.text;
-                const layout::Node::Box &shape = row(parser.arena, contents(parser, name))->box();
+                const layout::Node::Box &shape = row(reader.arena, contents(reader, name))->box();
                 const float value = extent == 0 ? shape.width : extent == 1 ? shape.height : shape.depth;
-                mouth.ingest(parser.arena.copy(std::format("\\setlength{{{}}}{{{}pt}}", length, value)));
+                mouth.ingest(reader.arena.copy(std::format("\\setlength{{{}}}{{{}pt}}", length, value)));
                 return nullptr;
             });
         }

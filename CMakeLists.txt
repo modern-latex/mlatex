@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 
+# The builds a preset names beside the plain release one: the sanitizers and
+# clang-tidy. Each is a cache option, so an IDE's own profile can turn one on
+# as well as a preset can.
+set(LATEX_SANITIZE "" CACHE STRING "Sanitizers to build everything with, as -fsanitize names them: address,undefined")
+option(LATEX_TIDY "Check mLaTeX's own sources with clang-tidy as they build" OFF)
+
 # The libraries -- HarfBuzz, FreeType, the image libraries -- come from
 # vcpkg. Its toolchain is taken from whichever vcpkg has libraries installed,
 # VCPKG_ROOT's or the one at C:/vcpkg where it usually lives on Windows,
@@ -56,12 +62,22 @@ if (CMAKE_HOST_WIN32)
 
     # clang-cl's own resource compiler, which links every program's manifest
     # in: the SDK's `rc` is on the path only inside a Visual Studio shell, and
-    # neither a MinGW profile nor a preset run outside one is.
-    if (CMAKE_CXX_COMPILER MATCHES "clang-cl" AND NOT DEFINED CMAKE_RC_COMPILER)
-        get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
-        find_program(resources llvm-rc HINTS "${tools}" NO_CACHE)
-        if (resources)
-            set(CMAKE_RC_COMPILER "${resources}" CACHE FILEPATH "Resource compiler")
+    # neither a CLion profile -- Makefiles or Ninja -- nor a preset run outside
+    # one is. Taken whenever no working resource compiler is named, including
+    # a bare `rc` an earlier configure cached and cannot find.
+    if (CMAKE_CXX_COMPILER MATCHES "clang-cl")
+        set(working "")
+        if (IS_ABSOLUTE "${CMAKE_RC_COMPILER}" AND EXISTS "${CMAKE_RC_COMPILER}")
+            set(working "${CMAKE_RC_COMPILER}")
+        elseif (CMAKE_RC_COMPILER)
+            find_program(working NAMES "${CMAKE_RC_COMPILER}" NO_CACHE)
+        endif ()
+        if (NOT working)
+            get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
+            find_program(resources llvm-rc HINTS "${tools}" NO_CACHE)
+            if (resources)
+                set(CMAKE_RC_COMPILER "${resources}" CACHE FILEPATH "Resource compiler" FORCE)
+            endif ()
         endif ()
     endif ()
 endif ()
@@ -73,7 +89,7 @@ endif ()
 # installers, which take nothing else, and whole everywhere it is shown.
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" version LIMIT_COUNT 1)
 string(REGEX MATCH "^[0-9]+[.][0-9]+[.][0-9]+" number "${version}")
-project(latex VERSION ${number} LANGUAGES C CXX)
+project(mlatex VERSION ${number} LANGUAGES C CXX)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)
 
 # The npm package's package.json carries the same version, written into it
@@ -171,6 +187,16 @@ include(CheckIPOSupported)
 check_ipo_supported(RESULT whole LANGUAGES CXX)
 if (whole)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+endif ()
+
+# Sanitizers over the engine, so a memory error or undefined behaviour stops
+# the program where it happens rather than corrupting what comes after.
+if (LATEX_SANITIZE)
+    if (MSVC OR EMSCRIPTEN)
+        message(FATAL_ERROR "LATEX_SANITIZE needs Clang on macOS or Linux")
+    endif ()
+    add_compile_options(-fsanitize=${LATEX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=${LATEX_SANITIZE})
 endif ()
 
 find_package(Doxygen)
@@ -409,7 +435,7 @@ set_source_files_properties("${source}/src/syntax/glossary.cpp" PROPERTIES
         COMPILE_OPTIONS "${evaluation}")
 
 # The engine, compiled once, as the target core: the command line -- the
-# target latex, the program an IDE runs -- the foreign-function library, the
+# target mlatex, the program an IDE runs -- the foreign-function library, the
 # WebAssembly module and every test link this rather than each compiling
 # all of it again, which is what used to make a full build take twenty
 # minutes for ten small tests. Position independent, because the
@@ -477,6 +503,7 @@ if (EMSCRIPTEN)
     # 8 MB here is about what a native thread starts with.
     add_executable(wasm "${source}/src/render/wasm.cpp" "${source}/include/render/wasm.hpp")
     target_link_libraries(wasm PRIVATE core)
+    set_property(TARGET wasm APPEND PROPERTY LINK_DEPENDS "${source}/bindings/javascript/lifecycle.js")
     target_link_options(wasm PRIVATE
             -lembind
             -sMODULARIZE=1
@@ -484,6 +511,7 @@ if (EMSCRIPTEN)
             -sALLOW_MEMORY_GROWTH=1
             -sSTACK_SIZE=8MB
             -sENVIRONMENT=web,worker,node
+            "SHELL:--extern-post-js \"${source}/bindings/javascript/lifecycle.js\""
             "SHELL:--preload-file ${fonts}@/assets/fonts")
     set_target_properties(wasm PROPERTIES OUTPUT_NAME mlatex)
     # Beside them, the faces a page lends the module for a script or symbols
@@ -495,14 +523,14 @@ if (EMSCRIPTEN)
             COMMAND ${CMAKE_COMMAND} -E copy_directory "${source}/assets/fallback" "$<TARGET_FILE_DIR:wasm>/fallback"
             VERBATIM)
 else ()
-    add_executable(latex "${source}/src/main.cpp")
-    target_link_libraries(latex PRIVATE core)
-    # The program a person runs is `mlatex`: `latex` is the command a TeX
+    add_executable(mlatex "${source}/src/main.cpp")
+    target_link_libraries(mlatex PRIVATE core)
+    # The program a person runs is `mlatex`: `mlatex` is the command a TeX
     # distribution installs, and the two could stand on one PATH. The
     # target keeps its name, which is what an IDE's run configuration names.
-    set_target_properties(latex PROPERTIES OUTPUT_NAME mlatex)
+    set_target_properties(mlatex PROPERTIES OUTPUT_NAME mlatex)
     # What `mlatex --version` prints.
-    target_compile_definitions(latex PRIVATE LATEX_VERSION="${version}")
+    target_compile_definitions(mlatex PRIVATE LATEX_VERSION="${version}")
 
     # The engine as a C library, for a program that wants documents made
     # without running a second process: see include/protocols/ffi.hpp. Named
@@ -518,7 +546,7 @@ else ()
     # starts: most documents draw no JPEG or WebP picture and fetch nothing
     # over HTTP, and every library loaded at start-up is paid for by all.
     if (WIN32 AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-        foreach (target latex ffi)
+        foreach (target mlatex ffi)
             target_link_options(${target} PRIVATE /DELAYLOAD:jpeg62.dll /DELAYLOAD:libwebp.dll
                     /DELAYLOAD:winhttp.dll)
             target_link_libraries(${target} PRIVATE delayimp)
@@ -527,28 +555,37 @@ else ()
 
     # After vcpkg's copy, not instead of it: see `dependencies` above.
     if (dependencies)
-        foreach (target latex ffi)
+        foreach (target mlatex ffi)
             add_custom_command(TARGET ${target} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${dependencies} "$<TARGET_FILE_DIR:${target}>"
                     VERBATIM)
         endforeach ()
     endif ()
 
+    # clang-tidy over the engine's own sources as they build, as .clang-tidy
+    # configures it: the analyze preset turns it on. Taken from beside the
+    # compiler first, then from the PATH.
+    if (LATEX_TIDY)
+        get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        find_program(tidy NAMES clang-tidy-22 clang-tidy HINTS "${tools}" REQUIRED)
+        set_target_properties(core mlatex ffi PROPERTIES CXX_CLANG_TIDY "${tidy};--config-file=${source}/.clang-tidy")
+    endif ()
+
     enable_testing()
     add_subdirectory(tests)
 
     # What an installed copy holds, laid out the way the engine looks for it:
-    # the program in bin/ and assets/ beside bin/. latex::locate walks up from
+    # the program in bin/ and assets/ beside bin/. mlatex::locate walks up from
     # the executable to the first folder holding assets/fonts, so the tree
     # works wherever it is put. The C library and its header go with it, for
     # a program that links the engine instead of running it. English
     # hyphenation and every package are compiled in; the other languages'
     # patterns and the fonts are read from assets/ at run time.
-    install(TARGETS latex ffi
+    install(TARGETS mlatex ffi
             RUNTIME DESTINATION bin
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib)
-    install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/latex)
+    install(FILES "${source}/include/protocols/ffi.hpp" DESTINATION include/mlatex)
     install(DIRECTORY "${source}/assets/fonts" "${source}/assets/hyphens" DESTINATION assets)
     # The licenses travel with every installed tree: mLaTeX's own, and the
     # notices of the libraries linked in. The fonts' and the patterns' are in
@@ -561,7 +598,7 @@ else ()
         # delay-loaded ones included -- goes beside it again, so an installed
         # copy runs on a machine with no vcpkg. The C and C++ runtimes are
         # linked in (CMAKE_MSVC_RUNTIME_LIBRARY above): no redistributable.
-        install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:latex>/*.dll\")
+        install(CODE "file(GLOB libraries \"$<TARGET_FILE_DIR:mlatex>/*.dll\")
             file(INSTALL \${libraries} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")")
     endif ()
 
@@ -609,7 +646,7 @@ else ()
         set(CPACK_PACKAGE_VENDOR "Andres Hernandez")
         set(CPACK_PACKAGE_CONTACT "Andres Hernandez <andromedeyz@hotmail.com>")
         set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Typesets LaTeX into PDF: one program, no TeX installation behind it")
-        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/modern-latex/mlatex")
+        set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/modern-mlatex/mlatex")
         set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
         set(CPACK_PACKAGE_INSTALL_DIRECTORY mLaTeX)
         set(CPACK_PACKAGE_FILE_NAME "mlatex-${version}-${platform}-${architecture}")
@@ -680,7 +717,7 @@ else ()
 
         # Where each package puts the tree: an mLaTeX folder in the disk
         # image, /Applications/mLaTeX from the .pkg, and /opt/mlatex for
-        # Debian and Red Hat -- whose own `latex` is TeX Live's, in /usr/bin,
+        # Debian and Red Hat -- whose own `mlatex` is TeX Live's, in /usr/bin,
         # and is left alone.
         file(CONFIGURE OUTPUT "${binary}/packaging.cmake" CONTENT [[
 if(CPACK_GENERATOR STREQUAL "DragNDrop")

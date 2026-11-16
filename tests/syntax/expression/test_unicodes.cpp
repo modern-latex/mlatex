@@ -3,7 +3,7 @@
 #include <cassert>
 
 // The maths symbol table: a name, without its backslash, to the character
-// it draws and the kind of atom it makes -- which decides the space either
+// it draws and the type of atom it makes -- which decides the space either
 // side of it. Built from assets/unicodes.gperf, a perfect hash: one probe.
 
 int main() {

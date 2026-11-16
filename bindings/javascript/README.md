@@ -6,29 +6,32 @@ A LaTeX typesetting engine, rewritten from the ground up in modern C++ and compi
 npm install @modern-latex/mlatex
 ```
 
-## A document
+## Typeset a document
 
 ```js
 import mLatex from "@modern-latex/mlatex";
 
-const engine = await mLatex();
-const session = new engine.Session();
+const system = await mLatex();
+const session = system.compose();
 
-const made = session.typeset(String.raw`\documentclass{article}
+let pdf;
+try {
+    const made = session.typeset(String.raw`\documentclass{article}
 \begin{document}
 Hello, \LaTeX.
 \end{document}`);
-
-if (!made) console.error(session.error());
-const pdf = session.pdf(); // a Uint8Array of its own
-session.delete();
+    if (!made) throw new Error(session.error());
+    pdf = session.pdf();
+} finally {
+    session.dispose();
+}
 ```
 
 CommonJS works the same way: `const mLatex = require("@modern-latex/mlatex")`.
 
-## A session
+## Session API
 
-A session keeps what it is handed from one document to the next, so a program that makes a thousand invoices sets up its letterhead once.
+Compose a session with `system.compose()`. It keeps values, commands, and files across documents.
 
 | Operation | What it does |
 | --- | --- |
@@ -37,9 +40,10 @@ A session keeps what it is handed from one document to the next, so a program th
 | `provide(name, content)`, `withdraw(name)` | A file under the name a document uses for it, as a `Uint8Array` or a string: `letterhead/main.mtex` for `\usepackage{letterhead}`, `chapter.tex` for `\input{chapter}`, `logo.png` for `\includegraphics{logo.png}`, `references.bib` for `\bibliography{references}`. |
 | `typeset(document)` | Sets a document, and says whether it was set with nothing reported. |
 | `snippet(text)` | Sets a piece of LaTeX alone, such as a formula or a table, on a page cropped to it. |
-| `pdf()` | The last PDF made. |
+| `pdf()` | Returns the last PDF as a `Uint8Array` you can keep after disposing of the session. |
+| `screen()` | Returns a copy of the pages for drawing to a canvas. Call `screen.dispose()` when you finish with it. |
 | `error()` | What went wrong, one problem per line: `appendix.tex:3:5: error (macro): Undefined control sequence \foo`. |
-| `delete()` | Frees the session, as every object Emscripten binds must be. |
+| `dispose()` | Disposes of the session and its WebAssembly resources. |
 
 ```js
 session.set("customer", "Acme Corporation");
@@ -59,7 +63,7 @@ The package holds three files: `mlatex.js`, which loads the engine, `mlatex.wasm
 - **A bundler** that moves `mlatex.js` away from the other two says where they are:
 
 ```js
-const engine = await mLatex({ locateFile: (name) => `/engine/${name}` });
+const system = await mLatex({ locateFile: (name) => `/engine/${name}` });
 ```
 
 The engine starts no threads and makes no network requests: a picture from a URL is fetched by your code and handed in with `provide`.

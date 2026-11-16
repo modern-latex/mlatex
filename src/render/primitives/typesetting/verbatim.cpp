@@ -102,8 +102,8 @@ namespace render::primitives::typesetting {
 
         // Inline: the text after \verb, \Verb, \lstinline or \mintinline, one box.
         for (const std::string_view name: {"\\verb", "\\Verb", "\\lstinline", "\\mintinline"}) {
-            parser.bind(name, [this, typed, current, name](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
+            parser.bind(name, [this, typed, current, name](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
                 const memory::Location origin = mouth.lookahead().location;
                 const syntax::Token text = mouth.read();
                 if (text.symbol != syntax::none || text.category != syntax::Catcodes::Category::Other) {
@@ -112,7 +112,7 @@ namespace render::primitives::typesetting {
                                             std::format("{} needs its text between two of one character", name));
                     return nullptr;
                 }
-                return directive(parser.arena, typed(parser.arena, text.text, current(), 8), origin);
+                return directive(reader.arena, typed(reader.arena, text.text, current(), 8), origin);
             });
         }
 
@@ -139,7 +139,7 @@ namespace render::primitives::typesetting {
                     const bool listing = name == "lstlisting" || name == "minted";
                     const bool unread = name == "comment" || name == "CCSXML" || name.starts_with("luacode");
                     openings.push_back({
-                        .kind = listing ? "lstlisting" : unread ? "comment" : "verbatim",
+                        .type = listing ? "lstlisting" : unread ? "comment" : "verbatim",
                         .options = std::move(options)
                     });
                     const syntax::Token mark{
@@ -172,8 +172,8 @@ namespace render::primitives::typesetting {
         }
 
         // \lstinputlisting[options]{file}: a listing of a file handed in.
-        parser.bind("\\lstinputlisting", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\lstinputlisting", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
             for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
@@ -190,7 +190,7 @@ namespace render::primitives::typesetting {
                                         std::format("\\lstinputlisting: no file named '{}' was handed in", name));
                 return nullptr;
             }
-            openings.push_back({.kind = "lstlisting", .options = std::move(options)});
+            openings.push_back({.type = "lstlisting", .options = std::move(options)});
             const std::array marked{
                 syntax::Token{
                     .symbol = start, .category = syntax::Catcodes::Category::Escape,
@@ -205,9 +205,9 @@ namespace render::primitives::typesetting {
             return nullptr;
         });
 
-        parser.bind(start, [this, &context, option, typed, current](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind(start, [this, &context, option, typed, current](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
             if (openings.empty()) return nullptr;
 
@@ -216,15 +216,15 @@ namespace render::primitives::typesetting {
                 if (!body.empty()) mouth.stream().inject(std::span{&body, 1});
                 body = {};
             }
-            if (openings.back().kind == "comment") {
+            if (openings.back().type == "comment") {
                 openings.pop_back();
                 return nullptr;
             }
-            const bool listing = openings.back().kind == "lstlisting";
+            const bool listing = openings.back().type == "lstlisting";
             const std::string options = openings.back().options;
 
             // A listing's caption heads it: read first, as a caption of its
-            // own kind, with the mark and the body put back after it.
+            // own type, with the mark and the body put back after it.
             if (listing && !openings.back().headed) {
                 const std::string caption = option(options, "caption");
                 const std::string label = option(options, "label");

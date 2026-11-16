@@ -4,7 +4,6 @@
 
 #include <harfbuzz/hb.h>
 
-#include <array>
 #include <cstdint>
 #include <string_view>
 

@@ -35,26 +35,25 @@ namespace render::graphics {
         if (text.starts_with('#')) text.remove_prefix(1);
         if (text.size() != 6 && text.size() != 8) return black;
 
-        std::uint8_t r = 0;
-        std::uint8_t g = 0;
-        std::uint8_t b = 0;
-        std::uint8_t a = 255;
-        if (!byte(text.substr(0, 2), r) || !byte(text.substr(2, 2), g) || !byte(text.substr(4, 2), b) ||
-            (text.size() == 8 && !byte(text.substr(6, 2), a))) {
+        std::uint8_t red = 0;
+        std::uint8_t green = 0;
+        std::uint8_t blue = 0;
+        std::uint8_t alpha = 255;
+        if (!byte(text.substr(0, 2), red) || !byte(text.substr(2, 2), green) || !byte(text.substr(4, 2), blue) ||
+            (text.size() == 8 && !byte(text.substr(6, 2), alpha))) {
             return black;
         }
 
         return {
-            static_cast<float>(r) / 255.0f, static_cast<float>(g) / 255.0f,
-            static_cast<float>(b) / 255.0f, static_cast<float>(a) / 255.0f
+            .red = static_cast<float>(red) / 255.0f, .green = static_cast<float>(green) / 255.0f,
+            .blue = static_cast<float>(blue) / 255.0f, .alpha = static_cast<float>(alpha) / 255.0f
         };
     }
 
     Color Color::parse(std::string_view text) noexcept {
         text = trim(text);
 
-        const bool alpha = text.starts_with("rgba(");
-        if (alpha || text.starts_with("rgb(")) {
+        if (const bool alpha = text.starts_with("rgba("); alpha || text.starts_with("rgb(")) {
             if (!text.ends_with(')')) return black;
             text.remove_prefix(alpha ? 5 : 4);
             text.remove_suffix(1);
@@ -71,16 +70,15 @@ namespace render::graphics {
             }
             if (count != 3 && count != 4) return black;
 
-            std::array < float, 4 > channel{0.0f, 0.0f, 0.0f, 1.0f};
+            std::array channel{0.0f, 0.0f, 0.0f, 1.0f};
             const std::size_t wanted = alpha ? 4 : 3;
             for (std::size_t index = 0; index < wanted; ++index) {
                 const std::string_view part = parts[index];
                 if (part.empty()) return black;
-                const auto [stop, failure] = patch::decimal(part.data(), part.data() + part.size(), channel[index]);
-                if (failure != std::errc{} || stop != part.data() + part.size()) return black;
+                if (const auto [stop, failure] = patch::decimal(part.data(), part.data() + part.size(), channel[index]); failure != std::errc{} || stop != part.data() + part.size()) return black;
             }
 
-            return {channel[0] / 255.0f, channel[1] / 255.0f, channel[2] / 255.0f, channel[3]};
+            return {.red = channel[0] / 255.0f, .green = channel[1] / 255.0f, .blue = channel[2] / 255.0f, .alpha = channel[3]};
         }
 
         // A color by the name xcolor gives it.
@@ -91,11 +89,11 @@ namespace render::graphics {
 
         static constexpr std::array<Named, 20> table{
             {
-                {"black", black}, {"white", white}, {"red", graphics::red}, {"green", graphics::green},
-                {"blue", graphics::blue}, {"cyan", cyan}, {"magenta", magenta}, {"yellow", yellow},
-                {"gray", gray}, {"grey", gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
-                {"brown", brown}, {"lime", lime}, {"olive", olive}, {"orange", orange},
-                {"pink", pink}, {"purple", purple}, {"teal", teal}, {"violet", violet},
+                {.name = "black", .color = black}, {.name = "white", .color = white}, {"red", graphics::red}, {"green", graphics::green},
+                {.name = "blue", .color = graphics::blue}, {.name = "cyan", .color = cyan}, {"magenta", magenta}, {"yellow", yellow},
+                {.name = "gray", .color = gray}, {.name = "grey", .color = gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
+                {.name = "brown", .color = brown}, {.name = "lime", .color = lime}, {"olive", olive}, {"orange", orange},
+                {.name = "pink", .color = pink}, {.name = "purple", .color = purple}, {"teal", teal}, {"violet", violet},
             }
         };
         for (const auto &[name, color]: table) {

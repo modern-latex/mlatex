@@ -1,0 +1,29 @@
+# Text is stored with LF and checked out with LF everywhere, so Git for Windows'
+# CRLF default leaves no stray diffs and the shell snippets still run.
+* text=auto eol=lf
+
+*.cpp text diff=cpp
+*.hpp text diff=cpp
+*.c text diff=cpp
+*.h text diff=cpp
+*.in text
+*.cmake text
+CMakeLists.txt text
+*.json text
+*.md text diff=markdown
+*.py text diff=python
+*.js text
+*.ts text
+
+# mLaTeX's own kinds of file.
+*.mtex text
+*.bib text
+*.gperf text
+*.otf binary
+*.ttf binary
+*.ttc binary
+*.pfb binary
+*.pdf binary
+
+# CLion's project files are editor settings, not code.
+.idea/** linguist-generated

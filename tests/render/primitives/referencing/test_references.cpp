@@ -74,11 +74,11 @@ int main() {
                "each named by cleveref's own names, forward ones included");
         const Result named = article("\\usepackage{cleveref}\\crefname{section}{sec.}{secs.}",
                                      "\\section{A}\\label{a}\\cref{a}");
-        assert((holds(named.text, "sec.1")) && "\\crefname renames a kind");
+        assert((holds(named.text, "sec.1")) && "\\crefname renames a type");
     }
     {
         const Result plain = article("", "\\section{A}\\label{a}\\cref{a} \\Cref{a}");
-        assert((holds(plain.text, "section1Section1")) && "without the package, a kind is named by itself");
+        assert((holds(plain.text, "section1Section1")) && "without the package, a type is named by itself");
         const Result autoref = article("\\usepackage{hyperref}", "\\section{A}\\label{a}\\autoref{a}");
         assert((holds(autoref.text, "Section1")) && "hyperref's \\autoref names it too");
     }

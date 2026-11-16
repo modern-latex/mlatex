@@ -1,13 +1,11 @@
 #pragma once
 
 #include "syntax/expression/node.hpp"
-#include "syntax/expression/unicodes.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/traceback.hpp"
 #include "memory/arena.hpp"
 
 #include <array>
-#include <cstddef>
 #include <functional>
 #include <string_view>
 #include <vector>
@@ -25,7 +23,7 @@ namespace syntax::expression {
     public:
         /// @brief What one command or character means in a formula.
         struct Rule {
-            Node::Type type = Node::Type::Variable; ///< What kind of node it makes.
+            Node::Type type = Node::Type::Variable; ///< What type of node it makes.
             int weight = 0; ///< How tightly it binds as an operator; 0 for none.
             bool right = false; ///< True for an operator that groups to the right.
             bool structural = false; ///< True when it takes brace arguments, not operands.
@@ -52,7 +50,7 @@ namespace syntax::expression {
         /// @brief Makes a command or character an operator, or a command
         ///        that takes brace arguments.
         /// @param symbol     The command.
-        /// @param type       What kind of node it makes.
+        /// @param type       What type of node it makes.
         /// @param weight     How tightly it binds; 0 for a structure.
         /// @param right      True when it groups to the right.
         /// @param structural True when it takes brace arguments.
@@ -148,7 +146,7 @@ namespace syntax::expression {
         /// @param value Called as each row opens and as it closes; replaces any earlier one.
         void watch(Hook value) { hook = std::move(value); }
 
-        /// @brief Builds an empty node of a kind, carrying this parser's style.
+        /// @brief Builds an empty node of a type, carrying this parser's style.
         /// @param type What the node is.
         /// @return The node.
         [[nodiscard]] Node *compose(Node::Type type) const;

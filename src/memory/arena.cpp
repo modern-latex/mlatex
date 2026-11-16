@@ -8,8 +8,6 @@
 #include "memory/arena.hpp"
 
 #include <algorithm>
-#include <cstdlib>
-#include <cstring>
 
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -29,13 +27,13 @@ namespace memory {
     }
 
     Arena::~Arena() {
-        for (const Block &block: blocks) {
+        for (const auto &[data, length]: blocks) {
 #if defined(_WIN32)
-            VirtualFree(block.data, 0, MEM_RELEASE);
+            VirtualFree(data, 0, MEM_RELEASE);
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
-            munmap(block.data, block.capacity);
+            munmap(data, length);
 #else
-            std::free(block.data);
+            std::free(data);
 #endif
         }
     }

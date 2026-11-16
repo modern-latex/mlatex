@@ -7,7 +7,7 @@
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 
-#include <cstddef>
+#include <cstddef> // NOLINT
 #include <cstdint>
 #include <functional>
 #include <string_view>

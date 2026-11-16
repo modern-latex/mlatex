@@ -28,7 +28,6 @@ static std::size_t count(const std::string_view text, const std::string_view par
 }
 
 int main() {
-    // --- Paths, painting and the state ----------------------------------------------------
     {
         const auto drawn = read("%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 10 20 110 70\n"
             "/box { 4 dict begin /h exch def /w exch def /y exch def /x exch def\n"
@@ -60,7 +59,6 @@ int main() {
             "a path filled in a saved state, then stroked again after it");
     }
 
-    // --- Text ---------------------------------------------------------------------------
     {
         const auto drawn = read("%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 30\n"
             "/Times-Bold findfont 12 scalefont setfont 50 10 moveto\n"
@@ -76,7 +74,6 @@ int main() {
                "each a standard face, named in the page's resources");
     }
 
-    // --- An image -----------------------------------------------------------------------
     {
         const auto drawn = read("%!PS\n%%BoundingBox: 0 0 20 20\n"
             "20 20 scale 2 2 8 [2 0 0 -2 0 2] {currentfile 4 string readhexstring pop} image\n"
@@ -86,7 +83,6 @@ int main() {
                "an image's samples, read from the file after it, drawn inline");
     }
 
-    // --- What is passed over, stopped and refused ---------------------------------------
     {
         // A DOS EPS's header names where the PostScript is.
         std::string header{"\xC5\xD0\xD3\xC6", 4};

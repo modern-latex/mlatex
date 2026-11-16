@@ -66,7 +66,7 @@ namespace render::primitives::figures {
         /// @brief Installs the axes, `\\addplot`, `\\addlegendentry` and `\\legend`.
         /// @param parser  Parser to bind into.
         /// @param context Engine services; a table's file is read through its reader.
-        void operator()(syntax::Parser &parser, Context &context) const;
+        void operator()(const syntax::Parser &parser, Context &context) const;
 
         /// @brief Works out a function of x -- and of y, for a surface -- as
         ///        pgfplots writes one.
@@ -125,9 +125,9 @@ namespace render::primitives::figures {
             std::size_t columns{0};
         };
 
-        /// @brief One axis being read: its kind, its options and its plots.
+        /// @brief One axis being read: its type, its options and its plots.
         struct Axis {
-            std::string kind{}; ///< `axis`, `semilogyaxis` and the rest.
+            std::string type{}; ///< `axis`, `semilogyaxis` and the rest.
             std::string options{}; ///< As written.
             std::vector<Plot> plots{}; ///< In the order given.
             std::vector<std::string> legends{}; ///< Each plot's entry, in order.

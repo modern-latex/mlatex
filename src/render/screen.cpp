@@ -269,7 +269,7 @@ namespace render {
         /// One operand: a number, a name without its slash, a string of
         /// hexadecimal digits, or one bracket of an array.
         struct Operand {
-            enum class Kind : std::uint8_t { Number, Name, Hex, Open, Shut } kind{Kind::Number};
+            enum class Type : std::uint8_t { Number, Name, Hex, Open, Shut } type{Type::Number};
             float number{0.0f};
             std::string_view text{};
         };
@@ -284,7 +284,7 @@ namespace render {
         const auto slot = [&operands](const std::string_view prefix, const std::size_t back = 0) -> std::size_t {
             if (back >= operands.size()) return static_cast<std::size_t>(-1);
             const Operand &operand = operands[operands.size() - 1 - back];
-            if (operand.kind != Operand::Kind::Name) return static_cast<std::size_t>(-1);
+            if (operand.type != Operand::Type::Name) return static_cast<std::size_t>(-1);
             std::string_view name = operand.text;
             if (!name.starts_with(prefix)) return static_cast<std::size_t>(-1);
             name.remove_prefix(prefix.size());
@@ -310,18 +310,18 @@ namespace render {
             if (letter == '/') {
                 const std::size_t start = ++at;
                 while (at < content.size() && !delimiter(content[at])) ++at;
-                operands.push_back({.kind = Operand::Kind::Name, .text = content.substr(start, at - start)});
+                operands.push_back({.type = Operand::Type::Name, .text = content.substr(start, at - start)});
                 continue;
             }
             if (letter == '<') {
                 const std::size_t start = ++at;
                 while (at < content.size() && content[at] != '>') ++at;
-                operands.push_back({.kind = Operand::Kind::Hex, .text = content.substr(start, at - start)});
+                operands.push_back({.type = Operand::Type::Hex, .text = content.substr(start, at - start)});
                 ++at;
                 continue;
             }
             if (letter == '[' || letter == ']') {
-                operands.push_back({.kind = letter == '[' ? Operand::Kind::Open : Operand::Kind::Shut});
+                operands.push_back({.type = letter == '[' ? Operand::Type::Open : Operand::Type::Shut});
                 ++at;
                 continue;
             }
@@ -354,9 +354,8 @@ namespace render {
             // An operator: what the operands before it are for.
             const std::size_t start = at;
             while (at < content.size() && !delimiter(content[at])) ++at;
-            const std::string_view word = content.substr(start, at - start);
 
-            if (word == "cm") {
+            if (const std::string_view word = content.substr(start, at - start); word == "cm") {
                 state.matrix = compose({number(5), number(4), number(3), number(2), number(1), number(0)},
                                        state.matrix);
             } else if (word == "q") {
@@ -378,7 +377,7 @@ namespace render {
                 state.width = number(0);
             } else if (word == "d") {
                 // [3 3] 0 d dashes; [] 0 d is solid.
-                state.dashed = operands.size() >= 3 && operands[operands.size() - 3].kind != Operand::Kind::Open;
+                state.dashed = operands.size() >= 3 && operands[operands.size() - 3].type != Operand::Type::Open;
             } else if (word == "m") {
                 begin();
                 target.move(number(1), number(0));
@@ -426,11 +425,11 @@ namespace render {
                 const float unit = face && face->units > 0.0f ? size / face->units : 0.0f;
                 bool colored = false;
                 for (const Operand &item: operands) {
-                    if (item.kind == Operand::Kind::Number) {
+                    if (item.type == Operand::Type::Number) {
                         run -= item.number / 1000.0f * size;
                         continue;
                     }
-                    if (item.kind != Operand::Kind::Hex || !face) continue;
+                    if (item.type != Operand::Type::Hex || !face) continue;
                     for (std::size_t digit = 0; digit + 4 <= item.text.size(); digit += 4) {
                         std::uint32_t code = 0;
                         std::from_chars(item.text.data() + digit, item.text.data() + digit + 4, code, 16);

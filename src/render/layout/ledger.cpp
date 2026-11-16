@@ -26,7 +26,7 @@ namespace render::layout {
         value ^= reinterpret_cast<std::uintptr_t>(key.font);
         value *= 1099511628211ull;
         value ^= static_cast<std::uint64_t>(std::bit_cast<std::uint32_t>(key.size)) << 17;
-        return static_cast<std::size_t>(value ^ value >> 32);
+        return value ^ value >> 32;
     }
 
     Ledger::Ledger(memory::Arena &arena, const std::size_t size) noexcept {
@@ -41,13 +41,13 @@ namespace render::layout {
     memory::Slice<Node *> Ledger::get(const Key &key) const noexcept {
         if (entries == 0) return {};
 
-        const std::size_t start = digest(key) & (limit - 1);
+        const std::size_t start = digest(key) & limit - 1;
         for (std::size_t step = 0; step < limit; ++step) {
-            const Entry &slot = slots[(start + step) & (limit - 1)];
+            const auto &[stored, nodes, occupied] = slots[start + step & limit - 1];
             // An empty slot ends the probe: anything with this key would have
             // been placed here or before.
-            if (!slot.occupied) return {};
-            if (slot.key == key) return slot.nodes;
+            if (!occupied) return {};
+            if (stored == key) return nodes;
         }
         return {};
     }
@@ -60,9 +60,9 @@ namespace render::layout {
         // that ends it, and at the last slot it would probe them all.
         if (entries >= limit - limit / 4) return;
 
-        const std::size_t start = digest(key) & (limit - 1);
+        const std::size_t start = digest(key) & limit - 1;
         for (std::size_t step = 0; step < limit; ++step) {
-            Entry &slot = slots[(start + step) & (limit - 1)];
+            Entry &slot = slots[start + step & limit - 1];
 
             if (!slot.occupied) {
                 slot = Entry{.key = key, .nodes = nodes, .occupied = true};

@@ -296,12 +296,9 @@ namespace render::layout {
                         code += 0x50;
                     } else if (code >= 0x531 && code <= 0x556) {
                         code += 0x30;
-                    } else if (((code >= 0x100 && code <= 0x137) || (code >= 0x14A && code <= 0x177) ||
-                                (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) && code % 2 ==
-                               0) {
-                        code += 1;
-                    } else if (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) && code % 2 ==
-                               1) {
+                    } else if ((((code >= 0x100 && code <= 0x137) || (code >= 0x14A && code <= 0x177) ||
+                                 (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) && code % 2 == 0) ||
+                               (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) && code % 2 == 1)) {
                         code += 1;
                     }
 
@@ -932,7 +929,7 @@ namespace render::layout {
             space->kern({.width = configuration.indent});
             content[0] = space;
         }
-        std::copy(pending.begin(), pending.end(), content.begin() + lead);
+        std::ranges::copy(pending, content.begin() + lead);
         pending.clear();
 
         auto *element = arena.compose<Element>();

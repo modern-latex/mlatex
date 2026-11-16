@@ -17,9 +17,9 @@ namespace render::primitives::arrangement {
     }
 
     void Penalties::operator()(syntax::Parser &parser, Context &context) const {
-        parser.bind("\\penalty", [&context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\penalty", [&context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const auto scanned = syntax::Number::integer(mouth, context.registers);
@@ -60,9 +60,9 @@ namespace render::primitives::arrangement {
 
         for (const auto &[name, value, page, optional, sheet]: fixed) {
             parser.bind(
-                name, [&context, name, value, page, optional, sheet](const syntax::Parser &parser) -> syntax::Node * {
-                    syntax::Mouth &mouth = parser.mouth;
-                    memory::Arena &arena = parser.arena;
+                name, [&context, name, value, page, optional, sheet](const syntax::Parser &reader) -> syntax::Node * {
+                    syntax::Mouth &mouth = reader.mouth;
+                    memory::Arena &arena = reader.arena;
                     const memory::Location origin = mouth.lookahead().location;
 
                     // LaTeX's optional forms -- `\\*`, `\\[4pt]`, `\\linebreak[3]`
@@ -108,9 +108,9 @@ namespace render::primitives::arrangement {
         // `?`, `&`, `=`, `#` and the rest -- the last of a run of them, so
         // `https://` stays whole. What \\url and \\path set, so an address
         // in a narrow column turns over rather than running out of it.
-        parser.bind("\\@breakable", [](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\@breakable", [](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // The text as written, `\\#` and `\\_` their characters.

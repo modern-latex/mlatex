@@ -9,14 +9,14 @@ namespace render::graphics {
         const Point2 from, const Point2 to,
         const Color color, const float width, const bool dashed
     ) {
-        segments.push_back({from, to, color, width, dashed});
+        segments.push_back({.from = from, .to = to, .color = color, .width = width, .dashed = dashed});
     }
 
     void Canvas::line(
         const Point3 &from, const Point3 &to, const Projection &view,
         const Color color, const float width, const bool dashed
     ) {
-        segments.push_back({view.project(from), view.project(to), color, width, dashed});
+        segments.push_back({.from = view.project(from), .to = view.project(to), .color = color, .width = width, .dashed = dashed});
     }
 
     void Canvas::place(const Point2 at, layout::Node *box, const int across, const int up, const float gap) {
@@ -32,7 +32,7 @@ namespace render::graphics {
                                      ? at.across - gap - width
                                      : at.across - width * 0.5f;
         const float bottom = up < 0 ? at.up + gap : up > 0 ? at.up - gap - tall : at.up - tall * 0.5f;
-        labels.push_back(Label{.corner = {left, bottom}, .box = box});
+        labels.push_back(Label{.corner = {.across = left, .up = bottom}, .box = box});
     }
 
     void Canvas::fill(const std::span<const Point2> corners, const Color color) {
@@ -70,13 +70,13 @@ namespace render::graphics {
                 take(segment.from);
                 take(segment.to);
             }
-            for (const Region &region: regions) {
-                for (const Point2 corner: region.corners) take(corner);
+            for (const auto &[corners, color]: regions) {
+                for (const Point2 corner: corners) take(corner);
             }
-            for (const Label &label: labels) {
-                const layout::Node::Box &shape = label.box->box();
-                take(label.corner);
-                take({label.corner.across + shape.width, label.corner.up + shape.height + shape.depth});
+            for (const auto &[corner, box]: labels) {
+                const layout::Node::Box &shape = box->box();
+                take(corner);
+                take({.across = corner.across + shape.width, .up = corner.up + shape.height + shape.depth});
             }
         }
 
@@ -84,14 +84,14 @@ namespace render::graphics {
         const memory::Slice<layout::Node *> strokes =
                 arena.allocate<layout::Node *>(regions.size() + segments.size() + labels.size());
         std::size_t filled = 0;
-        for (const Region &region: regions) {
-            const memory::Slice<layout::Node::Point> area = arena.allocate<layout::Node::Point>(region.corners.size());
-            for (std::size_t index = 0; index < region.corners.size(); ++index) {
-                area[index] = {region.corners[index].across - left, top - region.corners[index].up};
+        for (const auto &[corners, color]: regions) {
+            const memory::Slice<layout::Node::Point> area = arena.allocate<layout::Node::Point>(corners.size());
+            for (std::size_t index = 0; index < corners.size(); ++index) {
+                area[index] = {.across = corners[index].across - left, .down = top - corners[index].up};
             }
             auto *shape = arena.compose<layout::Node>();
             shape->path({
-                .color = {region.color.red, region.color.green, region.color.blue, region.color.alpha},
+                .color = {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha},
                 .area = area,
             });
             strokes[filled++] = shape;

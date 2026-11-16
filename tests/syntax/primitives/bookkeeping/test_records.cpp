@@ -88,7 +88,6 @@ static void reports(const std::string_view document, const std::string_view need
 }
 
 int main() {
-    // --- A CSV file's text ----------------------------------------------------------------
     const auto rows = syntax::primitives::bookkeeping::Records::parse(prices, ',');
     assert((rows.size() == 4 && rows[0][0] == "Item" && rows[2][0] == "Cake, lemon" && rows[2][1] == "3.5") &&
            "a quoted field keeps its comma");
@@ -96,7 +95,6 @@ int main() {
     assert((doubled.size() == 1 && doubled[0][0] == "say \"hi\"" && doubled[0][1] == "x") &&
            "a doubled quote is one, a line end of two characters one, and a blank line none");
 
-    // --- csvsimple ------------------------------------------------------------------------
     sets("\\csvreader[head to column names]{prices.csv}{}{\\Item: \\Price. }", "Tea: 2. Cake, lemon: 3.5. Scone: 1.",
          "a row at a time, each column a macro of its name");
     sets("\\csvreader{prices.csv}{Item=\\thing, 2=\\price}{(\\thecsvrow) \\thing=\\price; }",
@@ -104,7 +102,6 @@ int main() {
     sets("\\csvreader[separator=semicolon]{semicolons.csv}{}{\\csvcoli+\\csvcolii}", "1+2", "another separator");
     reports("\\csvreader{nowhere.csv}{}{x}", "No data file named 'nowhere.csv'", "a file that is not there");
 
-    // --- datatool -------------------------------------------------------------------------
     sets("\\DTLnewdb{s}\\DTLnewrow{s}\\DTLnewdbentry{s}{Name}{Ada}\\DTLnewdbentry{s}{Score}{90}"
          "\\DTLnewrow{s}\\DTLnewdbentry{s}{Name}{Alan}\\DTLnewdbentry{s}{Score}{85}"
          "\\DTLforeach{s}{\\name=Name,\\score=Score}{\\name: \\score\\DTLiflastrow{.}{, }}",

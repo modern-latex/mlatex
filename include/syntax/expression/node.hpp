@@ -3,7 +3,6 @@
 #include "syntax/expression/unicodes.hpp"
 #include "memory/slice.hpp"
 
-#include <cstdint>
 #include <string_view>
 
 namespace syntax::expression {
@@ -15,7 +14,7 @@ namespace syntax::expression {
     /// fraction, and a parenthesis grows to whatever it encloses. The tree is
     /// what lets the typesetter see all of that at once.
     ///
-    /// One struct serves every kind, and the kind says which fields mean
+    /// One struct serves every type, and the type says which fields mean
     /// anything. That keeps a node one allocation and the whole tree a handful
     /// of pointers, where a hierarchy of node classes would cost a virtual
     /// call per visit for no gain the typesetter could use.
@@ -37,7 +36,7 @@ namespace syntax::expression {
             Unary, ///< A prefix or postfix operator: #left, and the operator in #value.
             Group, ///< A sub-formula in #left, fenced by #open and #close when they are set.
             Script, ///< A base in #left with a #subscript, a #superscript, or both.
-            Fraction, ///< #left over #right; #value names the kind, as `\\binom` does.
+            Fraction, ///< #left over #right; #value names the type, as `\\binom` does.
             Radical, ///< A root of #right, with an optional degree in #left.
             Accent, ///< A mark over #left; #value names which mark.
             Sequence, ///< A run of #arguments, or a named command with them.

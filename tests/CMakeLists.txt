@@ -50,8 +50,8 @@ endforeach ()
 # The command line's test runs the executable itself, so it is told where the
 # build put it, and waits for it to be built.
 if (TARGET test_main)
-    target_compile_definitions(test_main PRIVATE BINARY="$<TARGET_FILE:latex>")
-    add_dependencies(test_main latex)
+    target_compile_definitions(test_main PRIVATE BINARY="$<TARGET_FILE:mlatex>")
+    add_dependencies(test_main mlatex)
 endif ()
 
 # The foreign-function test calls the engine the way a host program would,

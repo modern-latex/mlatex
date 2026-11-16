@@ -30,15 +30,21 @@
 #endif
 
 namespace protocols {
-    /// @brief The opaque handle the C side holds: the session itself.
-    struct [[maybe_unused]] Session : latex::Session {
-        using latex::Session::Session;
-    };
+    namespace {
+        // The C handle carries the address of the native session.
+        latex::Session *native(Session *session) noexcept {
+            return reinterpret_cast<latex::Session *>(session);
+        }
 
-    /// @brief What one call of a command has written so far.
-    struct [[maybe_unused]] Output {
-        std::string text{}; ///< Read in the command's place once it returns.
-    };
+        const latex::Session *native(const Session *session) noexcept {
+            return reinterpret_cast<const latex::Session *>(session);
+        }
+
+        /// @brief What one call of a command has written so far.
+        struct OutputBuffer {
+            std::string text{}; ///< Read in the command's place once it returns.
+        };
+    }
 
     /// @brief Latex::compose: a session over the assets, or none.
     static Session *compose(const char *assets) {
@@ -87,29 +93,29 @@ namespace protocols {
         }
         std::error_code failure;
         if (root.empty() || !std::filesystem::is_directory(root / "fonts", failure) || failure) return nullptr;
-        return new(std::nothrow) Session(std::move(root));
+        return reinterpret_cast<Session *>(new(std::nothrow) latex::Session(std::move(root)));
     }
 
     /// @brief Latex::dispose.
-    static void dispose(Session *session) {
-        delete session;
+    static void dispose(const Session *session) {
+        delete native(session);
     }
 
     /// @brief Latex::set.
     static int set(Session *session, const char *name, const char *value) {
         if (!session || !name || !*name || !value) return 0;
-        session->set(name, value);
+        native(session)->set(name, value);
         return 1;
     }
 
     /// @brief Latex::unset.
     static int unset(Session *session, const char *name) {
         if (!session || !name) return 0;
-        session->unset(name);
+        native(session)->unset(name);
         return 1;
     }
 
-    /// @brief Latex::define: the C function behind the engine's own kind of
+    /// @brief Latex::define: the C function behind the engine's own type of
     ///        handler, the arguments lent out as C strings for the length of
     ///        the call and whatever it wrote taken back as the command's text.
     static int define(Session *session, const char *name, const size_t arity, const Handler handler, void *data) {
@@ -119,7 +125,7 @@ namespace protocols {
         if (bare.starts_with('\\')) bare.remove_prefix(1);
         if (bare.empty()) return 0;
 
-        session->define({
+        native(session)->define({
             .name = std::string(bare),
             .arity = arity,
             .handler = [handler, data](const std::span<const std::string> arguments) {
@@ -127,8 +133,8 @@ namespace protocols {
                 texts.reserve(arguments.size());
                 for (const std::string &argument: arguments) texts.push_back(argument.c_str());
 
-                Output output;
-                handler(data, texts.data(), texts.size(), &output);
+                OutputBuffer output;
+                handler(data, texts.data(), texts.size(), reinterpret_cast<Output *>(&output));
                 return std::move(output.text);
             },
         });
@@ -138,26 +144,26 @@ namespace protocols {
     /// @brief Latex::forget.
     static int forget(Session *session, const char *name) {
         if (!session || !name) return 0;
-        session->forget(name);
+        native(session)->forget(name);
         return 1;
     }
 
     /// @brief Latex::write.
     static void write(Output *output, const char *text, const size_t length) {
-        if (output && text) output->text.append(text, length);
+        if (output && text) reinterpret_cast<OutputBuffer *>(output)->text.append(text, length);
     }
 
     /// @brief Latex::provide.
     static int provide(Session *session, const char *name, const void *bytes, const size_t length) {
         if (!session || !name || !*name || (!bytes && length > 0)) return 0;
-        session->provide(name, bytes ? std::string(static_cast<const char *>(bytes), length) : std::string());
+        native(session)->provide(name, bytes ? std::string(static_cast<const char *>(bytes), length) : std::string());
         return 1;
     }
 
     /// @brief Latex::withdraw.
     static int withdraw(Session *session, const char *name) {
         if (!session || !name) return 0;
-        session->withdraw(name);
+        native(session)->withdraw(name);
         return 1;
     }
 
@@ -168,8 +174,8 @@ namespace protocols {
         if (size) *size = 0;
         if (!session || !document) return 0;
 
-        const bool made = session->typeset(std::string_view(document, length));
-        if (const std::string &bytes = session->pdf; !bytes.empty()) {
+        const bool made = native(session)->typeset(std::string_view(document, length));
+        if (const std::string &bytes = native(session)->pdf; !bytes.empty()) {
             if (pdf) *pdf = reinterpret_cast<const unsigned char *>(bytes.data());
             if (size) *size = bytes.size();
         }
@@ -178,13 +184,13 @@ namespace protocols {
 
     /// @brief Latex::error.
     static const char *error(const Session *session) {
-        return session ? session->error.c_str() : "";
+        return session ? native(session)->error.c_str() : "";
     }
 
     /// @brief Latex::offline.
     static int offline(Session *session, const int on) {
         if (!session) return 0;
-        session->host.offline = on != 0;
+        native(session)->host.offline = on != 0;
         return 1;
     }
 
@@ -195,8 +201,8 @@ namespace protocols {
         if (size) *size = 0;
         if (!session || !text) return 0;
 
-        const bool made = session->snippet(std::string_view(text, length));
-        if (const std::string &bytes = session->pdf; !bytes.empty()) {
+        const bool made = native(session)->snippet(std::string_view(text, length));
+        if (const std::string &bytes = native(session)->pdf; !bytes.empty()) {
             if (pdf) *pdf = reinterpret_cast<const unsigned char *>(bytes.data());
             if (size) *size = bytes.size();
         }
@@ -260,5 +266,5 @@ namespace protocols {
 
 #if defined(_WIN32) && defined(_MSC_VER)
 // NOLINTNEXTLINE(bugprone-reserved-identifier): the name the delay-load helper calls.
-extern "C" const PfnDliHook __pfnDliNotifyHook2 = protocols::preload;
+extern "C" decltype(&protocols::preload) const __pfnDliNotifyHook2 = protocols::preload;
 #endif

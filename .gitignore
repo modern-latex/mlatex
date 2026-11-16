@@ -1,16 +1,58 @@
 # Build trees: CLion's profiles' and the presets', all named cmake-build-*.
 cmake-build-*/
 
+# What a build leaves in bin/: the program, its libraries, and the packages
+# cpack makes. Never committed: a release carries them instead.
+/bin/
+
+# The scratch documents and programs in build/ are local; only what is
+# committed on purpose is tracked.
+/build/*
+!/build/.gitkeep
+!/build/main.*
+/build/**/*.pdf
+
+# Third-party sources the first configure downloads at their pinned versions.
+/vendors/
+
+# Each machine's own presets: its compilers, toolchains and paths.
+CMakeUserPresets.json
+
+# CMake run by hand, outside a preset.
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+install_manifest.txt
+Testing/
+
+# Compiled objects and libraries, wherever a tool leaves them.
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+
+# Editors and tools.
+.cache/
+.idea/workspace.xml
+.idea/shelf/
+.idea/usage.statistics.xml
+*.swp
+__pycache__/
+
+# The folder metadata macOS's Finder leaves behind.
+.DS_Store
+
+# mLaTeX's own.
 # The sample documents in build/ are tracked; what they make is not, since
 # main.pdf changes every day through \today.
 /build/**/*.pdf
-
-# Packages a release build leaves behind, in bin/.
-/bin/
-*.msi
-*.dmg
-*.deb
-*.rpm
 
 # What a release copies into the npm and Python packages before packing them:
 # the built engine, its fonts and the license and notices.

@@ -46,7 +46,6 @@ namespace render::graphics {
         if (!file.starts_with("%PDF-") || page < 1) return std::nullopt;
         constexpr std::size_t none = std::string_view::npos;
 
-        // --- The file's words ---------------------------------------------------------------
 
         const auto blank = [](const char letter) {
             return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter ==
@@ -172,10 +171,8 @@ namespace render::graphics {
             at += token.size();
             if (whole(token)) {
                 const std::size_t look = skip(in, at);
-                const std::string_view generation = word(in, look);
-                if (whole(generation)) {
-                    const std::size_t after = skip(in, look + generation.size());
-                    if (after < in.size() && in[after] == 'R' && (after + 1 >= in.size() || boundary(in[after + 1]))) {
+                if (const std::string_view generation = word(in, look); whole(generation)) {
+                    if (const std::size_t after = skip(in, look + generation.size()); after < in.size() && in[after] == 'R' && (after + 1 >= in.size() || boundary(in[after + 1]))) {
                         made.type = Type::Reference;
                         made.number = static_cast<std::uint32_t>(integer(token));
                         at = after + 1;
@@ -198,7 +195,6 @@ namespace render::graphics {
             return nullptr;
         };
 
-        // --- Streams ----------------------------------------------------------------------
 
         // Flate's compressed bytes, unpacked.
         const auto unpack = [](const std::string_view data) -> std::optional<std::string> {
@@ -247,21 +243,21 @@ namespace render::graphics {
             const long long colors = std::max(parameter("/Colors", 1), 1LL);
             const long long bits = std::max(parameter("/BitsPerComponent", 8), 1LL);
             const std::size_t pixel = static_cast<std::size_t>(std::max(colors * bits / 8, 1LL));
-            const std::size_t row = static_cast<std::size_t>((parameter("/Columns", 1) * colors * bits + 7) / 8);
+            const auto row = static_cast<std::size_t>((parameter("/Columns", 1) * colors * bits + 7) / 8);
             std::string plain;
             std::string previous(row, '\0');
             for (std::size_t at = 0; at + row + 1 <= out->size(); at += row + 1) {
-                const auto kind = static_cast<unsigned char>((*out)[at]);
+                const auto type = static_cast<unsigned char>((*out)[at]);
                 std::string line = out->substr(at + 1, row);
                 for (std::size_t index = 0; index < row; ++index) {
                     const int left = index >= pixel ? static_cast<unsigned char>(line[index - pixel]) : 0;
                     const int up = static_cast<unsigned char>(previous[index]);
                     const int corner = index >= pixel ? static_cast<unsigned char>(previous[index - pixel]) : 0;
                     int add = 0;
-                    if (kind == 1) add = left;
-                    if (kind == 2) add = up;
-                    if (kind == 3) add = (left + up) / 2;
-                    if (kind == 4) {
+                    if (type == 1) add = left;
+                    if (type == 2) add = up;
+                    if (type == 3) add = (left + up) / 2;
+                    if (type == 4) {
                         const int guess = left + up - corner;
                         const int apart[3] = {std::abs(guess - left), std::abs(guess - up), std::abs(guess - corner)};
                         add = apart[0] <= apart[1] && apart[0] <= apart[2] ? left : apart[1] <= apart[2] ? up : corner;
@@ -274,22 +270,21 @@ namespace render::graphics {
             return plain;
         };
 
-        // --- Where each object is ------------------------------------------------------
 
         /// Where one object is: nowhere yet (0), at an offset in the file
         /// (1), in an object stream at a place (2), or freed (3).
         struct Entry {
-            std::uint8_t kind{0};
+            std::uint8_t type{0};
             std::size_t first{0};
             std::size_t second{0};
         };
         std::vector<Entry> entries;
         // Sections are read newest first, so an object already placed stays.
-        const auto enter = [&entries](const long long number, const Entry entry) {
+        const auto enter = [&entries](const long long number, const Entry &entry) {
             if (number < 0 || number > 8'000'000) return;
             const auto slot = static_cast<std::size_t>(number);
             if (slot >= entries.size()) entries.resize(slot + 1);
-            if (entries[slot].kind == 0) entries[slot] = entry;
+            if (entries[slot].type == 0) entries[slot] = entry;
         };
 
         // The dictionary and the bytes of a stream object at an offset whose
@@ -344,10 +339,10 @@ namespace render::graphics {
                             field[part] = (field[part] << 8) | static_cast<unsigned char>((*table)[at++]);
                         }
                     }
-                    const std::size_t kind = width[0] == 0 ? 1 : field[0];
-                    if (kind == 1) enter(number, {1, field[1], 0});
-                    if (kind == 2) enter(number, {2, field[1], field[2]});
-                    if (kind == 0) enter(number, {3, 0, 0});
+                    const std::size_t type = width[0] == 0 ? 1 : field[0];
+                    if (type == 1) enter(number, {.type = 1, .first = field[1], .second = 0});
+                    if (type == 2) enter(number, {.type = 2, .first = field[1], .second = field[2]});
+                    if (type == 0) enter(number, {.type = 3, .first = 0, .second = 0});
                 }
             }
             return dictionary;
@@ -387,12 +382,12 @@ namespace render::graphics {
                             const std::string_view offset = word(file, at);
                             at = skip(file, at + offset.size());
                             at = skip(file, at + word(file, at).size());
-                            const char kind = at < file.size() ? file[at] : 'f';
+                            const char type = at < file.size() ? file[at] : 'f';
                             ++at;
                             enter(integer(first) + index,
-                                  kind == 'n'
-                                      ? Entry{1, static_cast<std::size_t>(integer(offset)), 0}
-                                      : Entry{3, 0, 0});
+                                  type == 'n'
+                                      ? Entry{.type = 1, .first = static_cast<std::size_t>(integer(offset)), .second = 0}
+                                      : Entry{.type = 3, .first = 0, .second = 0});
                         }
                     }
                     if (const Value *hybrid = get(trailer, "/XRefStm"); hybrid && hybrid->type == Type::Plain) {
@@ -445,7 +440,6 @@ namespace render::graphics {
         if (catalog == 0 || entries.empty()) rescan();
         if (catalog == 0) return std::nullopt;
 
-        // --- Objects ----------------------------------------------------------------------
 
         /// An object as the file holds it: its value, and a stream's bytes.
         struct Loaded {
@@ -466,10 +460,10 @@ namespace render::graphics {
         const auto load = [&](this const auto &self, const std::uint32_t number, const int depth) -> const Loaded * {
             if (const auto found = loaded.find(number); found != loaded.end()) return &found->second;
             if (number >= entries.size() || depth > 32) return nullptr;
-            const Entry entry = entries[number];
+            const auto [type, first, second] = entries[number];
             Loaded made;
-            if (entry.kind == 1) {
-                std::size_t at = skip(file, entry.first);
+            if (type == 1) {
+                std::size_t at = skip(file, first);
                 for (int index = 0; index < 2; ++index) at = skip(file, at + word(file, at).size());
                 if (word(file, at) != "obj") return nullptr;
                 at += 3;
@@ -499,8 +493,8 @@ namespace render::graphics {
                     made.data = file.substr(at, size);
                     made.streamed = true;
                 }
-            } else if (entry.kind == 2) {
-                const auto holder = static_cast<std::uint32_t>(entry.first);
+            } else if (type == 2) {
+                const auto holder = static_cast<std::uint32_t>(first);
                 auto box = opened.find(holder);
                 if (box == opened.end()) {
                     const Loaded *stream = self(holder, depth + 1);
@@ -510,20 +504,20 @@ namespace render::graphics {
                     Opened fresh;
                     fresh.content = std::move(*content);
                     const Value *count = get(stream->value, "/N");
-                    const Value *first = get(stream->value, "/First");
-                    if (!count || !first) return nullptr;
+                    const Value *origin = get(stream->value, "/First");
+                    if (!count || !origin) return nullptr;
                     std::size_t at = 0;
                     for (long long index = 0; index < integer(count->text); ++index) {
                         at = skip(fresh.content, at);
                         at = skip(fresh.content, at + word(fresh.content, at).size());
                         const std::string_view offset = word(fresh.content, at);
                         at += offset.size();
-                        fresh.places.push_back(static_cast<std::size_t>(integer(first->text) + integer(offset)));
+                        fresh.places.push_back(static_cast<std::size_t>(integer(origin->text) + integer(offset)));
                     }
                     box = opened.emplace(holder, std::move(fresh)).first;
                 }
-                if (entry.second >= box->second.places.size()) return nullptr;
-                std::size_t at = box->second.places[entry.second];
+                if (second >= box->second.places.size()) return nullptr;
+                std::size_t at = box->second.places[second];
                 made.value = read(box->second.content, at, 0);
             } else {
                 return nullptr;
@@ -540,7 +534,6 @@ namespace render::graphics {
             return value;
         };
 
-        // --- The page -----------------------------------------------------------------------
 
         /// What a page takes from the nodes above it in the tree.
         struct Inherited {
@@ -604,8 +597,7 @@ namespace render::graphics {
         const Value *contents = get(*leaf, "/Contents");
         std::vector<const Value *> parts;
         if (contents && contents->type == Type::Reference) {
-            const Loaded *held = load(contents->number, 0);
-            if (held && held->value.type == Type::List) {
+            if (const Loaded *held = load(contents->number, 0); held && held->value.type == Type::List) {
                 for (const Value &item: held->value.items) parts.push_back(&item);
             } else {
                 parts.push_back(contents);
@@ -650,9 +642,9 @@ namespace render::graphics {
         };
         if (inherited.resources) made.resources = copy(*inherited.resources);
         if (const Value *group = get(*leaf, "/Group")) made.group = copy(*group);
-        for (std::size_t index = 0; index < pending.size(); ++index) {
+        for (unsigned int index : pending) {
             Object object;
-            if (const Loaded *source = load(pending[index], 0)) {
+            if (const Loaded *source = load(index, 0)) {
                 object.value = copy(source->value);
                 if (source->streamed) {
                     object.streamed = true;

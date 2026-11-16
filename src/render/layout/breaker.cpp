@@ -49,7 +49,7 @@ namespace render::layout {
             stretch[index + 1] = stretch[index] + (elastic ? item->glue().stretch : 0.0f);
             shrink[index + 1] = shrink[index] + (elastic ? item->glue().shrink : 0.0f);
 
-            // Glue of an infinite order, counted apart from the finite kind:
+            // Glue of an infinite order, counted apart from the finite type:
             // a line holding any can always be filled, and is never loose.
             infinite[index + 1] = infinite[index] +
                                   (elastic && item->glue().expand != Node::Order::Normal ? 1u : 0u);

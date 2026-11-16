@@ -5,8 +5,6 @@
 #include "syntax/traceback.hpp"
 #include "memory/dictionary.hpp"
 
-#include <cstddef>
-#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -89,9 +87,9 @@ namespace render::primitives::referencing {
         /// @param context Engine services: the variables hyperref's options are.
         /// @param target  The address it goes to; empty for @p anchor's place.
         /// @param anchor  The anchor it goes to, when it has no address.
-        /// @param kind    `link`, `url` or `cite`: which of hyperref's colors.
+        /// @param type    `link`, `url` or `cite`: which of hyperref's colors.
         [[nodiscard]] static Hyperlink hyperlink(Context &context, std::string_view target, std::size_t anchor,
-                                                 std::string_view kind);
+                                                 std::string_view type);
 
         /// @brief What a reference or a citation set, made the link given:
         ///        its text in the link's color, between its two marks.
@@ -106,8 +104,8 @@ namespace render::primitives::referencing {
         /// @brief How a reference is written out.
         enum class Form : std::uint8_t {
             Number, ///< The number alone: `\\ref`, and inside `\\eqref`'s parentheses.
-            Named, ///< Its kind, then its number: `\\cref`.
-            Capital, ///< The same, the kind capitalised: `\\Cref`.
+            Named, ///< Its type, then its number: `\\cref`.
+            Capital, ///< The same, the type capitalised: `\\Cref`.
             Page, ///< The page it is on: `\\pageref`.
             Title ///< What it is called: `\\nameref`.
         };
@@ -115,7 +113,7 @@ namespace render::primitives::referencing {
         /// @brief One label, and every reference that came before it.
         struct Mark {
             std::string text{}; ///< What it names, once defined.
-            std::string kind{}; ///< What kind of thing that is.
+            std::string type{}; ///< What type of thing that is.
             std::string title{}; ///< What that is called.
             std::size_t anchor{static_cast<std::size_t>(-1)}; ///< Where it stands, for its page.
             bool defined{false}; ///< Whether its `\\label` has been read.
@@ -129,9 +127,9 @@ namespace render::primitives::referencing {
 
         /// @brief A reference's text, written out in its form.
         ///
-        /// A kind is named by the variable `cref.kind` -- `Cref.kind` for the
+        /// A type is named by the variable `cref.type` -- `Cref.type` for the
         /// capitalised form -- when the cleveref package or the document set
-        /// one, and by the kind itself otherwise. An equation's number is
+        /// one, and by the type itself otherwise. An equation's number is
         /// parenthesised, as cleveref prints one. A page is the one the pass
         /// before found, or `??` on a first pass.
         ///

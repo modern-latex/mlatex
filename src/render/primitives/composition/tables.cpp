@@ -21,7 +21,6 @@
 #include <optional>
 #include <span>
 #include <string_view>
-#include <system_error>
 #include <vector>
 
 namespace render::primitives::composition {
@@ -215,9 +214,9 @@ namespace render::primitives::composition {
     }
 
     void Tables::operator()(syntax::Parser &parser, Context &context) const {
-        parser.bind("\\halign", [this, &context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\halign", [this, &context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // A table is written across several lines, so the blanks between
@@ -254,7 +253,7 @@ namespace render::primitives::composition {
                     mouth.stream().inject(std::span{&brace, 1});
                 }
 
-                const memory::Slice<syntax::Node *> children = parser.parse('}');
+                const memory::Slice<syntax::Node *> children = reader.parse('}');
 
                 std::vector<layout::Node *> nodes;
                 nodes.reserve(children.count);
@@ -354,14 +353,14 @@ namespace render::primitives::composition {
         // LaTeX's tables. Each `\begin` reads its preamble -- and tabularx
         // and tabular* their width first -- and hands over to `\tabular`,
         // which reads the rows as far as the marker `\end` leaves.
-        struct Kind {
+        struct Type {
             std::string_view name; ///< The block.
             bool sized; ///< True when a width comes before the preamble.
             bool breakable; ///< True when a page may end between its rows.
         };
         // nicematrix's and tabularray's tables are read as the tabular they
         // write out, their own keys aside.
-        static constexpr std::array<Kind, 14> kinds{
+        static constexpr std::array<Type, 14> types{
             {
                 {.name = "tabular", .sized = false, .breakable = false},
                 {.name = "tabular*", .sized = true, .breakable = false},
@@ -379,7 +378,7 @@ namespace render::primitives::composition {
                 {.name = "xltabular", .sized = true, .breakable = true},
             }
         };
-        for (const auto &[name, sized, breakable]: kinds) {
+        for (const auto &[name, sized, breakable]: types) {
             const bool keyed = name.ends_with("tblr");
             context.environments.watch(
                 name,
@@ -470,9 +469,9 @@ namespace render::primitives::composition {
                 if (token.text.size() > 1 && token.text.front() == '\\') body += ' ';
             }
             if (letter.size() != 1 || static_cast<unsigned char>(letter[0]) >= customs.size()) return;
-            Custom &made = customs[static_cast<unsigned char>(letter[0])];
-            made.count = count.empty() ? 0 : count[0] - '0';
-            made.body = std::move(body);
+            auto &[arity, definition] = customs[static_cast<unsigned char>(letter[0])];
+            arity = count.empty() ? 0 : count[0] - '0';
+            definition = std::move(body);
         });
 
         // multirow's `\\multirow[place]{rows}[struts]{width}[move]{text}`:
@@ -485,8 +484,8 @@ namespace render::primitives::composition {
             char place{'c'}; ///< t, c or b.
             memory::Slice<syntax::Node *> nodes{}; ///< Its text.
         };
-        const auto spanned = [&context](syntax::Parser &parser) {
-            syntax::Mouth &mouth = parser.mouth;
+        const auto spanned = [&context](syntax::Parser &reader) {
+            syntax::Mouth &mouth = reader.mouth;
             const syntax::Mouth::Parameter optional{.optional = true};
             Span made;
             for (const syntax::Token &token: mouth.argument(optional, 0)) {
@@ -502,7 +501,7 @@ namespace render::primitives::composition {
             while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
             if (open.is(syntax::Catcodes::Category::Group, '{')) {
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                made.nodes = parser.parse('}');
+                made.nodes = reader.parse('}');
                 mouth.pop(syntax::semantics::Scope::Type::Group);
                 stamp(made.nodes, context);
             } else if (!open.empty()) {
@@ -510,16 +509,16 @@ namespace render::primitives::composition {
             }
             return made;
         };
-        parser.bind("\\multirow", [spanned](syntax::Parser &parser) -> syntax::Node * {
-            const memory::Location origin = parser.mouth.lookahead().location;
-            const Span made = spanned(parser);
-            return parser.arena.compose<
+        parser.bind("\\multirow", [spanned](syntax::Parser &reader) -> syntax::Node * {
+            const memory::Location origin = reader.mouth.lookahead().location;
+            const Span made = spanned(reader);
+            return reader.arena.compose<
                 syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, made.nodes);
         });
 
-        parser.bind("\\tabular", [this, &context, spanned](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\tabular", [this, &context, spanned](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             if (openings.empty()) {
@@ -705,7 +704,7 @@ namespace render::primitives::composition {
                 const typography::Font *text = context.selection.text();
                 const typography::Font *formula = context.selection.formula();
                 syntax::Symbol matched = syntax::none;
-                const memory::Slice<syntax::Node *> read = parser.parse(0, stops, matched);
+                const memory::Slice<syntax::Node *> read = reader.parse(0, stops, matched);
                 stamp(read, context);
                 context.selection.text(text);
                 context.selection.formula(formula);
@@ -769,7 +768,7 @@ namespace render::primitives::composition {
                     if (open.is(syntax::Catcodes::Category::Group, '{')) {
                         const Selection restore = context.selection;
                         mouth.push(syntax::semantics::Scope::Type::Group);
-                        const memory::Slice<syntax::Node *> inside = parser.parse('}');
+                        const memory::Slice<syntax::Node *> inside = reader.parse('}');
                         mouth.pop(syntax::semantics::Scope::Type::Group);
                         stamp(inside, context);
                         context.selection = restore;
@@ -783,7 +782,7 @@ namespace render::primitives::composition {
                 }
 
                 if (matched == multirow) {
-                    const Span made = spanned(parser);
+                    const Span made = spanned(reader);
                     cell.nodes.insert(cell.nodes.end(), made.nodes.begin(), made.nodes.end());
                     cell.rows = std::max<std::size_t>(made.rows, 1);
                     cell.place = made.place;

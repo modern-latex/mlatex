@@ -1,0 +1,27 @@
+# clang-tidy over mLaTeX's own sources, for bugs rather than style: the Clang
+# Static Analyzer, the bug-prone patterns, and what costs time for nothing.
+# HarfBuzz's, FreeType's, the image libraries' and asmjit's sources are theirs, and only mlatex's own headers are checked.
+# `cmake --preset analyze` builds with these checks on.
+#
+# Left out, each for what it would flag here and nowhere else:
+#   bugprone-easily-swappable-parameters: line, column and offset are integers side by side, as the lexer carries them.
+#   bugprone-narrowing-conversions: font units, points and pixels convert between each other on purpose, checked where made.
+#   bugprone-implicit-widening-of-multiplication-result: glyph counts times sizes stay far below overflowing.
+#   performance-enum-size: the enums are a handful of values, never stored in bulk.
+#   clang-analyzer-optin.performance.Padding: the PDF and font structures are laid out as their formats are.
+Checks: >
+  -*,
+  clang-analyzer-*,
+  -clang-analyzer-optin.performance.Padding,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -bugprone-implicit-widening-of-multiplication-result,
+  performance-*,
+  -performance-enum-size,
+  misc-redundant-expression,
+  readability-misleading-indentation,
+  readability-suspicious-call-argument
+HeaderFilterRegex: '.*/mlatex/(include|src)/.*'
+ExcludeHeaderFilterRegex: '.*/(vendors|cmake-build-[^/]*)/.*'
+WarningsAsErrors: ''

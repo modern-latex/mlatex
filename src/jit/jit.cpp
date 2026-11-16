@@ -19,7 +19,6 @@
 namespace jit {
     bool Jit::typeset(const std::filesystem::path &source, const std::filesystem::path &destination,
                       std::ostream *report, std::ostream &errors, std::vector<std::string> *texts) {
-        // ---------------------------------------------------------------
         // Piece 2: keep the engine warm.
         //
         // `run()` in src/latex.cpp builds everything a run needs as locals
@@ -77,7 +76,6 @@ namespace jit {
         //    languages.cpp) and lost with it; keep them here, by language, so
         //    a Russian document reads its patterns once a session.
         //
-        // ---------------------------------------------------------------
         // Piece 3: set the document once, not twice.
         //
         // A document that asks for a page number -- `\pageref`,
@@ -107,7 +105,6 @@ namespace jit {
         // errors of the last pass alone, as run() does: hold the first pass's
         // in a std::ostringstream and drop them when there is a second.
         //
-        // ---------------------------------------------------------------
         // Pieces 7 and 8: start from a snapshot.
         //
         // For a snapshot to be put back, the objects it was taken from must
@@ -125,7 +122,6 @@ namespace jit {
         //        if (start) { /* put it back, rewind the arenas, read on from start->offset */ }
         //        else       { /* a whole run, taking checkpoints as it goes */ }
         //
-        // ---------------------------------------------------------------
         // Piece 9: the snapshot on disk (jit::Format).
         //
         // Two calls, once the format exists: on the first run of a session,
@@ -135,7 +131,6 @@ namespace jit {
         // else, so a Jit that never finds the file runs exactly as it does
         // now.
         //
-        // ---------------------------------------------------------------
         // Handing the JIT to other languages.
         //
         // The C library (protocols/ffi.hpp) adds operations only after the

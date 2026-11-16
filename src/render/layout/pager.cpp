@@ -29,6 +29,7 @@
 #include <deque>
 #include <functional>
 #include <limits>
+#include <ranges>
 #include <utility>
 #include <vector>
 
@@ -81,7 +82,7 @@ namespace render::layout {
             float span{0.0f}; ///< How tall they stand.
             std::vector<const Node *> notes{}; ///< The footnotes it calls.
             std::uint8_t place{0}; ///< Directive::Place bits.
-            std::size_t kind{0}; ///< Its kind, which keeps its order among its kind.
+            std::size_t type{0}; ///< Its type, which keeps its order among its type.
             bool across{false}; ///< Across the columns of a page of several.
             std::size_t written{0}; ///< Where it came among all the floats.
         };
@@ -118,7 +119,7 @@ namespace render::layout {
         // The floats at the head and the foot of the column being filled;
         // the room each area takes, their separating space included; what
         // is left of the share of the column each may take; how many floats
-        // the column holds, wherever they stand; and the kinds already set
+        // the column holds, wherever they stand; and the types already set
         // in its text or at its foot, none of whose floats may then go
         // above them.
         std::vector<Float> heads;
@@ -136,12 +137,12 @@ namespace render::layout {
         std::deque<Float> spanning;
         std::size_t floats = 0;
 
-        // Whether a float of this kind written before this one waits in a
-        // list, which keeps this one waiting too: LaTeX sets a kind's floats
+        // Whether a float of this type written before this one waits in a
+        // list, which keeps this one waiting too: LaTeX sets a type's floats
         // in the order written, across the columns or in one.
         const auto before = [](const std::deque<Float> &list, const Float &item) {
             return std::ranges::any_of(list, [&item](const Float &other) {
-                return other.kind == item.kind && other.written < item.written;
+                return other.type == item.type && other.written < item.written;
             });
         };
 
@@ -300,15 +301,15 @@ namespace render::layout {
                     if (block->glue().expand == order) weight += block->glue().stretch;
                 }
                 if (order != Node::Order::Normal && weight > 0.0f) {
-                    const float room = std::max(context.height - used - reserved, 0.0f);
+                    const float remaining = std::max(context.height - used - reserved, 0.0f);
                     for (Node *&block: above) {
                         if (block->type != Node::Type::Glue || block->glue().expand != order) continue;
                         Node::Glue grown = block->glue();
-                        grown.width += room * grown.stretch / weight;
+                        grown.width += remaining * grown.stretch / weight;
                         block = arena.compose<Node>(Node::Type::Glue);
                         block->glue(grown);
                     }
-                    used += room;
+                    used += remaining;
                 }
 
                 const memory::Slice<Node *> nodes = arena.allocate<Node *>(above.size());
@@ -360,7 +361,7 @@ namespace render::layout {
         };
 
         // Which of the floats waiting in a list fit on a page of floats of
-        // this height -- in order, at least the first when forced, a kind
+        // this height -- in order, at least the first when forced, a type
         // whose float does not fit, or waits earlier in the other list,
         // holding back its later ones -- and how tall they stand together.
         const auto fitting = [&](const std::deque<Float> &list, const std::deque<Float> &other, const float tall,
@@ -370,17 +371,14 @@ namespace render::layout {
             float filled = 0.0f;
             for (std::size_t index = 0; index < list.size(); ++index) {
                 const Float &item = list[index];
-                if (std::ranges::contains(held, item.kind) || before(other, item)) continue;
-                const float added = item.span + (taken.empty() ? 0.0f : leaf);
-                if ((forced || (item.place & Directive::Alone)) && filled + added <= tall) {
-                    taken.push_back(index);
-                    filled += added;
-                } else if (forced && taken.empty()) {
-                    // Taller than a page: set alone all the same, over its foot.
+                if (std::ranges::contains(held, item.type) || before(other, item)) continue;
+                // When forced, set the first float even if it is taller than the page.
+                if (const float added = item.span + (taken.empty() ? 0.0f : leaf); ((forced || item.place & Directive::Alone) && filled + added <= tall) ||
+                                                                                   (forced && taken.empty())) {
                     taken.push_back(index);
                     filled += added;
                 } else {
-                    held.push_back(item.kind);
+                    held.push_back(item.type);
                 }
             }
             return std::pair{taken, filled};
@@ -397,8 +395,8 @@ namespace render::layout {
                 if (!above.empty()) seal();
                 std::vector<Float> set;
                 for (const std::size_t index: taken) set.push_back(std::move(spanning[index]));
-                for (auto index = taken.rbegin(); index != taken.rend(); ++index) spanning.erase(
-                    spanning.begin() + *index);
+                for (const std::size_t index: std::views::reverse(taken)) spanning.erase(
+                    spanning.begin() + static_cast<std::deque<Float>::difference_type>(index));
                 for (Node *node: alone(set, context.height)) above.push_back(node);
                 for (const Float &item: set) call(item);
                 used = context.height;
@@ -447,20 +445,20 @@ namespace render::layout {
         const auto text = [&](const bool forced) {
             return std::max(height, forced ? 0.0f : rules.text * (context.height - used));
         };
-        // Whether a float of this kind waits already, which keeps the next
+        // Whether a float of this type waits already, which keeps the next
         // waiting too.
-        const auto waits = [&](const std::size_t kind) {
-            const auto same = [kind](const Float &other) { return other.kind == kind; };
+        const auto waits = [&](const std::size_t type) {
+            const auto same = [type](const Float &other) { return other.type == type; };
             return std::ranges::any_of(waiting, same) || std::ranges::any_of(spanning, same);
         };
 
         // A float at the head of the column being filled, if it may stand
         // there: `t` allowed, fewer than topnumber there and totalnumber in
         // the column, within what is left of \\topfraction, nothing of its
-        // kind set below it, and the column's text still fitting beside it.
+        // type set below it, and the column's text still fitting beside it.
         const auto crowned = [&](Float &item) {
             const bool forced = item.place & Directive::Force;
-            if (!(item.place & Directive::Top) || std::ranges::contains(below, item.kind)) return false;
+            if (!(item.place & Directive::Top) || std::ranges::contains(below, item.type)) return false;
             if (!forced && (heads.size() >= rules.heads || within >= rules.most || item.span > headroom)) return false;
             const float added = item.span + (heads.empty() ? rules.clearance : rules.apart);
             if (text(forced) + added > left(item.notes)) return false;
@@ -483,7 +481,7 @@ namespace render::layout {
             footroom -= item.span + rules.apart;
             sole += added;
             ++within;
-            below.push_back(item.kind);
+            below.push_back(item.type);
             call(item);
             feet.push_back(std::move(item));
             return true;
@@ -500,7 +498,7 @@ namespace render::layout {
             filling.push_back(kern(rules.amid));
             height += item.span + 2.0f * rules.amid;
             ++within;
-            below.push_back(item.kind);
+            below.push_back(item.type);
             call(item);
             return true;
         };
@@ -514,12 +512,11 @@ namespace render::layout {
             // -- \\floatpagefraction -- or the break is forced.
             if (!waiting.empty() && filling.empty() && heads.empty() && feet.empty()) {
                 const float tall = context.height - used - reserved;
-                const auto [taken, filled] = fitting(waiting, spanning, tall, forced);
-                if (!taken.empty() && (forced || filled >= rules.page * tall)) {
+                if (const auto [taken, filled] = fitting(waiting, spanning, tall, forced); !taken.empty() && (forced || filled >= rules.page * tall)) {
                     std::vector<Float> set;
                     for (const std::size_t index: taken) set.push_back(std::move(waiting[index]));
-                    for (auto index = taken.rbegin(); index != taken.rend(); ++index) waiting.erase(
-                        waiting.begin() + *index);
+                    for (const std::size_t index: std::views::reverse(taken)) waiting.erase(
+                        waiting.begin() + static_cast<std::deque<Float>::difference_type>(index));
                     filling = alone(set, tall);
                     height = tall;
                     for (const Float &item: set) call(item);
@@ -530,14 +527,14 @@ namespace render::layout {
             if (forced) return;
 
             // Otherwise each at the column's head or foot, as far as they may
-            // go, in the order written; one that cannot holds its kind back.
+            // go, in the order written; one that cannot holds its type back.
             std::vector<std::size_t> held;
             for (auto item = waiting.begin(); item != waiting.end();) {
-                if (!std::ranges::contains(held, item->kind) && !before(spanning, *item) &&
+                if (!std::ranges::contains(held, item->type) && !before(spanning, *item) &&
                     (crowned(*item) || footed(*item))) {
                     item = waiting.erase(item);
                 } else {
-                    held.push_back(item->kind);
+                    held.push_back(item->type);
                     ++item;
                 }
             }
@@ -642,7 +639,7 @@ namespace render::layout {
                             final = scan;
                         }
                     }
-                    Float item{.place = order.place, .kind = order.index, .across = order.across, .written = floats++};
+                    Float item{.place = order.place, .type = order.index, .across = order.across, .written = floats++};
                     if (!(item.place & (Directive::Here | Directive::Top | Directive::Bottom | Directive::Alone))) {
                         item.place |= Directive::Top | Directive::Bottom | Directive::Alone;
                     }
@@ -668,7 +665,7 @@ namespace render::layout {
                         call(item);
                     } else if (item.across && count > 1) {
                         spanning.push_back(std::move(item));
-                    } else if (waits(item.kind) || !(amid(item) || crowned(item) || footed(item))) {
+                    } else if (waits(item.type) || !(amid(item) || crowned(item) || footed(item))) {
                         waiting.push_back(std::move(item));
                     }
                     continue;

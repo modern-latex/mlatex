@@ -30,9 +30,9 @@ namespace render::primitives::arrangement {
     }
 
     void Rules::operator()(syntax::Parser &parser, Context &context) const {
-        parser.bind("\\rule", [&context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\rule", [&context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // `\\rule[0.5ex]{...}{...}`: how far above the baseline the rule
@@ -97,21 +97,21 @@ namespace render::primitives::arrangement {
             }
         };
 
-        parser.bind("\\hrule", [&context, keywords](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("\\hrule", [&context, keywords](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
 
             layout::Node::Rule shape{.width = breadth(context), .height = hairline, .color = ink(context)};
-            keywords(parser.mouth, shape);
+            keywords(reader.mouth, shape);
 
             auto *node = arena.compose<layout::Node>();
             node->rule(shape);
             return directive(arena, node, origin, true);
         });
 
-        parser.bind("\\vrule", [&context, keywords](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("\\vrule", [&context, keywords](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
 
             // Descent comes back negative from the font and a depth is a
             // distance, so it is negated here.
@@ -121,7 +121,7 @@ namespace render::primitives::arrangement {
             layout::Node::Rule shape{
                 .width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)
             };
-            keywords(parser.mouth, shape);
+            keywords(reader.mouth, shape);
 
             auto *node = arena.compose<layout::Node>();
             node->rule(shape);
@@ -132,9 +132,9 @@ namespace render::primitives::arrangement {
         // baseline -- the same stacked-column shape a math-mode `\\underline`
         // is built from, with a fixed drop in place of a MATH table constant
         // since a text face carries none.
-        parser.bind("\\underline", [&context](syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\underline", [&context](syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             syntax::Token open = mouth.read();
@@ -144,7 +144,7 @@ namespace render::primitives::arrangement {
             }
 
             mouth.push(syntax::semantics::Scope::Type::Group);
-            const memory::Slice<syntax::Node *> content = parser.parse('}');
+            const memory::Slice<syntax::Node *> content = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
             stamp(content, context);
 

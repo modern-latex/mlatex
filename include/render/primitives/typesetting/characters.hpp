@@ -6,7 +6,7 @@
 namespace render::primitives::typesetting {
     /// @brief The characters and marks a document cannot type directly.
     ///
-    /// Two kinds of thing, for the same reason. A `%` starts a comment and a
+    /// Two types of thing, for the same reason. A `%` starts a comment and a
     /// `$` starts a formula, so a document that wants to print one has to ask
     /// for it by name. And an em dash or an ellipsis has no key at all, so it
     /// has to be asked for by name too.

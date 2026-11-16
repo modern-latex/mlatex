@@ -1,0 +1,16 @@
+# The compile commands of the debug build, `cmake --preset debug`, which also puts
+# the generated headers on the include path. No include hints: third-party
+# headers are included as umbrellas, and the hints would point inside them.
+CompileFlags:
+  CompilationDatabase: cmake-build-debug
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+
+---
+
+# Downloaded and generated sources are someone else's, and are never diagnosed.
+If:
+  PathMatch: (vendors|cmake-build-[^/]*)/.*
+Diagnostics:
+  Suppress: "*"

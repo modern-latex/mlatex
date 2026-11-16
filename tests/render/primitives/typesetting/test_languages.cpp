@@ -50,7 +50,6 @@ static bool holds(const std::string_view text, const std::string_view part) {
 }
 
 int main() {
-    // --- Captions and dates ------------------------------------------------------------
     {
         const Result russian = article("\\usepackage[russian]{babel}",
                                        "\\figurename,\\tablename,\\abstractname,\\languagename:\\today");
@@ -64,7 +63,6 @@ int main() {
         assert((plain.clean && holds(plain.text, "Figure")) && "with none named, the captions are English");
     }
 
-    // --- Choosing another, and going back ------------------------------------------------
     {
         const Result chosen = article("\\usepackage[english,german]{babel}",
                                       "\\figurename;\\selectlanguage{english}\\figurename");
@@ -82,7 +80,6 @@ int main() {
                "a language not known is reported, and the document still made");
     }
 
-    // --- polyglossia ------------------------------------------------------------------
     {
         const Result glossia = article("\\usepackage{polyglossia}\\setmainlanguage{russian}\\setotherlanguage{english}",
                                        "\\figurename;\\textenglish{word};\\begin{english}\\figurename\\end{english}");
@@ -90,7 +87,6 @@ int main() {
                "polyglossia names its languages by command, each with a command and a block of its own");
     }
 
-    // --- How words break ------------------------------------------------------------------
     {
         const std::string narrow = "\\begin{minipage}{2cm}Электрификация государственного\\end{minipage}";
         const Result broken = article("\\usepackage[russian]{babel}", narrow);
@@ -99,7 +95,6 @@ int main() {
                "a Russian word breaks by Russian patterns, and by no others");
     }
 
-    // --- The faces a script is drawn in ------------------------------------------------------
     {
         const Result cyrillic = article("\\usepackage[russian]{babel}", "Слово");
         assert((cyrillic.clean && holds(cyrillic.pdf, "NewCM10-Regular")) &&
@@ -113,7 +108,6 @@ int main() {
         }
     }
 
-    // --- A language's digits and spaces ------------------------------------------------------
     {
         const Result eastern = article("\\usepackage{polyglossia}\\setmainlanguage{arabic}", "عام 2024");
         assert((eastern.clean && holds(eastern.text, "\xD9\xA2\xD9\xA0\xD9\xA2\xD9\xA4")) &&

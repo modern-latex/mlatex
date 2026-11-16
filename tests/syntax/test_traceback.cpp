@@ -4,7 +4,7 @@
 #include <cassert>
 #include <string>
 
-// A traceback says where, what kind, and what: enough to find the line and
+// A traceback says where, what type, and what: enough to find the line and
 // know what was wrong with it without reading the engine.
 
 int main() {
@@ -14,11 +14,11 @@ int main() {
 
     assert((text.find("14:2") != std::string::npos) && "the line and column are given");
     assert((text.find("\\unknown") != std::string::npos) && "the message is given whole");
-    assert((text.find("macro") != std::string::npos) && "the kind of error is named");
+    assert((text.find("macro") != std::string::npos) && "the type of error is named");
     assert((text.find("error") != std::string::npos) && "it says it is an error");
 
     const syntax::Traceback other(syntax::Traceback::Type::Register, {.line = 1, .column = 1}, "x");
-    assert((other.format().find("register") != std::string::npos) && "each kind is named for itself");
+    assert((other.format().find("register") != std::string::npos) && "each type is named for itself");
 
     // The file comes first, when the location's has a name.
     const std::array<std::string, 2> files{"", "appendix.tex"};

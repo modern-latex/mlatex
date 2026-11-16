@@ -220,7 +220,6 @@ namespace syntax::primitives::bookkeeping {
             return text;
         };
 
-        // --- csvsimple ----------------------------------------------------------
         for (const bool booktabs: {false, true}) {
             mouth.bind(booktabs ? "\\csvautobooktabular" : "\\csvautotabular",
                        [this, file, read, tabular, pieces, booktabs](Mouth &mouth) {

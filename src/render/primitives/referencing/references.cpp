@@ -42,15 +42,15 @@ namespace render::primitives::referencing {
                        : std::string("??");
         }
 
-        std::string number = mark.kind == "equation" && form != Form::Number
+        std::string number = mark.type == "equation" && form != Form::Number
                                  ? std::format("({})", mark.text)
                                  : mark.text;
-        if (form == Form::Number || mark.kind.empty()) return number;
+        if (form == Form::Number || mark.type.empty()) return number;
 
-        // The name the document or cleveref gave the kind, or the kind itself.
+        // The name the document or cleveref gave the type, or the type itself.
         const std::string *named = context.variables.get(
-            std::format("{}.{}", form == Form::Capital ? "Cref" : "cref", mark.kind));
-        std::string name = named ? *named : mark.kind;
+            std::format("{}.{}", form == Form::Capital ? "Cref" : "cref", mark.type));
+        std::string name = named ? *named : mark.type;
         if (!named && form == Form::Capital && !name.empty() && name[0] >= 'a' && name[0] <= 'z') {
             name[0] = static_cast<char>(name[0] - 'a' + 'A');
         }
@@ -59,7 +59,7 @@ namespace render::primitives::referencing {
 
     References::Hyperlink References::hyperlink(Context &context, const std::string_view target,
                                                 const std::size_t anchor,
-                                                const std::string_view kind) {
+                                                const std::string_view type) {
         if (!context.variables.get("links")) return {};
         const auto option = [&context](const std::string_view key) {
             return context.variables.get(std::format("hyperref.{}", key));
@@ -73,9 +73,9 @@ namespace render::primitives::referencing {
         const bool colored = on("colorlinks") && !hidden;
 
         using Color = layout::Node::Color;
-        const Color frame = kind == "url"
+        const Color frame = type == "url"
                                 ? Color{.red = 0.0f, .green = 1.0f, .blue = 1.0f}
-                                : kind == "cite"
+                                : type == "cite"
                                       ? Color{.red = 0.0f, .green = 1.0f, .blue = 0.0f}
                                       : Color{.red = 1.0f, .green = 0.0f, .blue = 0.0f};
         Hyperlink made;
@@ -87,9 +87,9 @@ namespace render::primitives::referencing {
         made.close = context.arena.compose<layout::Node>(layout::Node::Type::Directive);
         made.close->directive({.command = layout::Node::Directive::Command::Unlink});
         if (colored) {
-            const std::string *named = option(std::format("{}color", kind));
+            const std::string *named = option(std::format("{}color", type));
             if (!named) named = option("allcolors");
-            const std::string_view fallback = kind == "url" ? "magenta" : kind == "cite" ? "green" : "red";
+            const std::string_view fallback = type == "url" ? "magenta" : type == "cite" ? "green" : "red";
             const auto [red, green, blue, alpha] = Colors::resolve(named ? std::string_view(*named) : fallback,
                                                                    context.variables);
             made.tint = context.arena.compose<Color>(Color{.red = red, .green = green, .blue = blue, .alpha = alpha});
@@ -130,7 +130,7 @@ namespace render::primitives::referencing {
             }
 
             mark.text = context.anchor;
-            mark.kind = context.kind;
+            mark.type = context.type;
             mark.title = context.title;
             mark.defined = true;
 
@@ -175,23 +175,23 @@ namespace render::primitives::referencing {
                 reference->value = context.arena.copy(mark.title);
             mark.references.clear();
         });
-        parser.bind("\\@forward", [this](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            Mark &mark = forwards[syntax::Argument::text(parser.mouth)];
+        parser.bind("\\@forward", [this](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            Mark &mark = forwards[syntax::Argument::text(reader.mouth)];
             auto *text = arena.compose<syntax::Node>(syntax::Node::Type::Text,
                                                      mark.defined ? arena.copy(mark.title) : std::string_view{"??"},
-                                                     parser.mouth.lookahead().location);
+                                                     reader.mouth.lookahead().location);
             if (!mark.defined) mark.references.emplace_back(text, Form::Title);
             return text;
         });
 
-        parser.bind(place, [this](const syntax::Parser &parser) -> syntax::Node * {
+        parser.bind(place, [this](const syntax::Parser &reader) -> syntax::Node * {
             if (waiting.empty()) return nullptr;
-            memory::Arena &arena = parser.arena;
+            memory::Arena &arena = reader.arena;
             auto *anchor = arena.compose<layout::Node>(layout::Node::Type::Directive);
             anchor->directive({.command = layout::Node::Directive::Command::Anchor, .index = waiting.back()});
             waiting.pop_back();
-            return directive(arena, anchor, parser.mouth.lookahead().location);
+            return directive(arena, anchor, reader.mouth.lookahead().location);
         });
 
         // `\\ref` is the number alone; `\\eqref` puts it in the parentheses an
@@ -215,9 +215,9 @@ namespace render::primitives::referencing {
         };
 
         for (const auto &[name, form, enclosed]: forms) {
-            parser.bind(name, [this, &context, form, enclosed](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [this, &context, form, enclosed](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // hyperref's starred forms are the same reference, unlinked.
@@ -226,7 +226,7 @@ namespace render::primitives::referencing {
                 const std::string label = syntax::Argument::text(mouth);
 
                 // cleveref's list, `\\cref{sec:a,sec:b,eq:c}`: labels of one
-                // kind, every one known already, share their kind's plural --
+                // type, every one known already, share their type's plural --
                 // `sections 1 and 2` -- and otherwise each is named in turn;
                 // the last is joined by `and`, the rest by commas.
                 if ((form == Form::Named || form == Form::Capital) && label.contains(',')) {
@@ -237,16 +237,16 @@ namespace render::primitives::referencing {
                         while (!one.empty() && one.back() == ' ') one.remove_suffix(1);
                         if (!one.empty()) labels.emplace_back(one);
                     }
-                    const std::string &kind = marks[labels.front()].kind;
-                    const bool alike = !kind.empty() && std::ranges::all_of(
-                                           labels, [this, &kind](const std::string &one) {
-                                               return marks[one].defined && marks[one].kind == kind;
+                    const std::string &type = marks[labels.front()].type;
+                    const bool alike = !type.empty() && std::ranges::all_of(
+                                           labels, [this, &type](const std::string &one) {
+                                               return marks[one].defined && marks[one].type == type;
                                            });
                     std::string plural;
                     if (alike) {
                         const std::string *named = context.variables.get(
-                            std::format("{}.{}", form == Form::Capital ? "Crefs" : "crefs", kind));
-                        plural = named ? *named : std::format("{}s", kind);
+                            std::format("{}.{}", form == Form::Capital ? "Crefs" : "crefs", type));
+                        plural = named ? *named : std::format("{}s", type);
                         if (!named && form == Form::Capital && plural[0] >= 'a' && plural[0] <= 'z') {
                             plural[0] = static_cast<char>(plural[0] - 'a' + 'A');
                         }
@@ -313,9 +313,9 @@ namespace render::primitives::referencing {
         // Without hyperref, the text alone.
         for (const bool address: {true, false}) {
             parser.bind(address ? "\\@link" : "\\@linkto",
-                        [this, &context, address](syntax::Parser &parser) -> syntax::Node * {
-                            syntax::Mouth &mouth = parser.mouth;
-                            memory::Arena &arena = parser.arena;
+                        [this, &context, address](syntax::Parser &reader) -> syntax::Node * {
+                            syntax::Mouth &mouth = reader.mouth;
+                            memory::Arena &arena = reader.arena;
                             const memory::Location origin = mouth.lookahead().location;
                             // The address as written, `\#` and `\_` their characters.
                             std::string target;
@@ -331,7 +331,7 @@ namespace render::primitives::referencing {
                                 return nullptr;
                             }
                             mouth.push(syntax::semantics::Scope::Type::Group);
-                            const memory::Slice<syntax::Node *> children = parser.parse('}');
+                            const memory::Slice<syntax::Node *> children = reader.parse('}');
                             mouth.pop(syntax::semantics::Scope::Type::Group);
                             stamp(children, context);
                             auto *content = arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{},

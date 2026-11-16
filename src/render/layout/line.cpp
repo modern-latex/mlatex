@@ -323,8 +323,8 @@ namespace render::layout {
         // takes the way of what is either side of it when both agree,
         // and the paragraph's when they do not.
         const int base = reversed ? 1 : 0;
-        std::vector<int> levels(pieces.size(), base);
-        std::vector<int> strong(pieces.size(), 0); // 1 left to right, 2 right to left, 0 none
+        std::vector levels(pieces.size(), base);
+        std::vector strong(pieces.size(), 0); // 1 left to right, 2 right to left, 0 none
         int last = reversed ? 2 : 1;
         for (std::size_t index = 0; index < pieces.size(); ++index) {
             if (ways[index] == 1 || ways[index] == 2) last = ways[index];

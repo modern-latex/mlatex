@@ -28,7 +28,6 @@ static std::size_t count(const std::string_view text, const std::string_view par
 }
 
 int main() {
-    // --- The page and its shapes ------------------------------------------------------------
     {
         const auto drawn = read(R"svg(<?xml version="1.0"?>
 <!-- shapes -->
@@ -62,7 +61,6 @@ int main() {
             "curves, smooth ones and an arc, closed");
     }
 
-    // --- Style --------------------------------------------------------------------------------
     {
         const auto drawn = read(R"svg(<svg width="100" height="100">
   <defs><style>.warm { fill: orange } #cold { fill: blue }</style>
@@ -85,7 +83,6 @@ int main() {
                "its opacity a graphics state of the page's");
     }
 
-    // --- Text ---------------------------------------------------------------------------------
     {
         const auto drawn = read(
             R"svg(<svg width="200" height="50"><text x="100" y="40" font-size="20" font-family="serif"
@@ -101,7 +98,6 @@ int main() {
                "set in the standard faces nearest its family and weight");
     }
 
-    // --- What is refused --------------------------------------------------------------------
     assert((!read("<html><body>no picture</body></html>")) && "a file with no <svg>");
     return 0;
 }

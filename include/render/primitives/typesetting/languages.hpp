@@ -5,7 +5,6 @@
 #include "syntax/traceback.hpp"
 #include "typography/hyphenator.hpp"
 
-#include <cstdint>
 #include <deque>
 #include <string>
 #include <string_view>

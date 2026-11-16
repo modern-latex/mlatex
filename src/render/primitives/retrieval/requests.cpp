@@ -17,9 +17,9 @@ namespace render::primitives::retrieval {
     void Requests::operator()(syntax::Parser &parser, Context &context) const {
         // An offline run sends nothing: each request is refused where it is
         // written, and named, as one that could not be sent would be.
-        parser.bind("\\httpget", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\httpget", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);
@@ -39,9 +39,9 @@ namespace render::primitives::retrieval {
             return arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text), origin);
         });
 
-        parser.bind("\\httppost", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\httppost", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             const std::string url = syntax::Argument::text(mouth);

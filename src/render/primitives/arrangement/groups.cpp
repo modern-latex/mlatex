@@ -23,12 +23,12 @@ namespace render::primitives::arrangement {
 
     void Groups::operator()(syntax::Parser &parser, Context &context) const {
         // One group, however it opened: read in a scope of its own up to its
-        // close -- a brace, or the name that closes its kind -- and what it
+        // close -- a brace, or the name that closes its type -- and what it
         // selected put back on the way out. A brace and \bgroup close each
         // other, as they do in TeX; \begingroup closes only at \endgroup.
-        const auto grouped = [&context](syntax::Parser &parser, const char closing, const syntax::Symbol stop) {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        const auto grouped = [&context](syntax::Parser &reader, const char closing, const syntax::Symbol stop) {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // What the group is entered with, so that whatever it selects
@@ -38,7 +38,7 @@ namespace render::primitives::arrangement {
             mouth.push(syntax::semantics::Scope::Type::Group);
             syntax::Symbol matched = syntax::none;
             const std::array<syntax::Symbol, 1> stops{stop};
-            const memory::Slice<syntax::Node *> children = parser.parse(closing, stops, matched);
+            const memory::Slice<syntax::Node *> children = reader.parse(closing, stops, matched);
             mouth.pop(syntax::semantics::Scope::Type::Group);
 
             // Stamped while the selection is still the group's own.
@@ -72,14 +72,14 @@ namespace render::primitives::arrangement {
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, wrapped);
         };
 
-        parser.bind("{", [this, grouped](syntax::Parser &parser) -> syntax::Node * {
-            return grouped(parser, '}', close);
+        parser.bind("{", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
+            return grouped(reader, '}', close);
         });
-        parser.bind("\\bgroup", [this, grouped](syntax::Parser &parser) -> syntax::Node * {
-            return grouped(parser, '}', close);
+        parser.bind("\\bgroup", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
+            return grouped(reader, '}', close);
         });
-        parser.bind("\\begingroup", [this, grouped](syntax::Parser &parser) -> syntax::Node * {
-            return grouped(parser, 0, end);
+        parser.bind("\\begingroup", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
+            return grouped(reader, 0, end);
         });
 
         // A block is a group too: a face or a color chosen inside one --

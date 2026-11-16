@@ -2,7 +2,6 @@
 
 #include "latex.hpp"
 
-#include <cstddef>
 #include <string>
 #include <string_view>
 

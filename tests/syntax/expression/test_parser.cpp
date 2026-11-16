@@ -15,23 +15,23 @@
 // The formula parser: a formula read into a tree -- operators by their
 // weight, scripts on their base, fractions, radicals, accents, fences,
 // grids and words -- with the grammar the render layer gives it. Each tree
-// is printed compactly, a node as its kind and what it holds, so an
+// is printed compactly, a node as its type and what it holds, so an
 // expectation reads as the structure it describes.
 
 namespace expression = syntax::expression;
 
-/// @brief One node and everything under it, as `kind(value)[children]`.
+/// @brief One node and everything under it, as `type(value)[children]`.
 static void print(const expression::Node *node, std::string &text) {
     if (!node) {
         text += '_';
         return;
     }
     using Type = expression::Node::Type;
-    static constexpr const char *kinds[] = {
+    static constexpr const char *types[] = {
         "var", "bin", "un", "group", "script", "frac", "root", "accent", "seq",
         "grid", "text"
     };
-    text += kinds[static_cast<std::size_t>(node->type)];
+    text += types[static_cast<std::size_t>(node->type)];
     if (!node->value.empty()) {
         text += '(';
         text += node->value;

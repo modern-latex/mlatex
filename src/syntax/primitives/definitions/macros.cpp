@@ -303,7 +303,7 @@ namespace syntax::primitives::definitions {
                     parameter.fallbacks = {make("\\BooleanFalse", Catcodes::Category::Escape)};
                 } else if (!letter.is('m')) {
                     tracebacks.emplace_back(Traceback::Type::Argument, letter.location,
-                                            std::format("\\declare{}: an argument of kind {} is not supported",
+                                            std::format("\\declare{}: an argument of type {} is not supported",
                                                         name.text, letter.text));
                     return;
                 }

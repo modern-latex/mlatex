@@ -82,7 +82,7 @@ namespace protocols {
 
             ~Handle() { if (value) WinHttpCloseHandle(value); }
 
-            operator HINTERNET() const noexcept { return value; }
+            explicit operator HINTERNET() const noexcept { return value; }
             [[nodiscard]] bool ok() const noexcept { return value != nullptr; }
 
             HINTERNET value;
@@ -95,12 +95,12 @@ namespace protocols {
         };
         if (!session.ok()) return std::nullopt;
 
-        const Handle connection{WinHttpConnect(session, host, parts.nPort, 0)};
+        const Handle connection{WinHttpConnect(static_cast<HINTERNET>(session), host, parts.nPort, 0)};
         if (!connection.ok()) return std::nullopt;
 
         const Handle request{
             WinHttpOpenRequest(
-                connection, verb.c_str(), path, nullptr, nullptr,
+                static_cast<HINTERNET>(connection), verb.c_str(), path, nullptr, nullptr,
                 nullptr, secure ? WINHTTP_FLAG_SECURE : 0)
         };
         if (!request.ok()) return std::nullopt;
@@ -109,30 +109,30 @@ namespace protocols {
         // for JSON or form encoding writes the header itself, as \\httppost
         // does with its own Content-Type.
         const auto sent = body.empty()
-                              ? WinHttpSendRequest(request, nullptr, 0,
+                              ? WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0,
                                                    nullptr, 0, 0, 0)
-                              : WinHttpSendRequest(request, nullptr, 0,
+                              : WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0,
                                                    const_cast<void *>(static_cast<const void *>(body.data())),
                                                    static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
 
-        if (!sent || !WinHttpReceiveResponse(request, nullptr)) return std::nullopt;
+        if (!sent || !WinHttpReceiveResponse(static_cast<HINTERNET>(request), nullptr)) return std::nullopt;
 
         Response response;
 
         DWORD status = 0;
         DWORD size = sizeof(status);
-        if (WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+        if (WinHttpQueryHeaders(static_cast<HINTERNET>(request), WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                 nullptr, &status, &size, nullptr)) {
             response.status = static_cast<int>(status);
         }
 
         DWORD available = 0;
-        while (WinHttpQueryDataAvailable(request, &available) && available > 0) {
+        while (WinHttpQueryDataAvailable(static_cast<HINTERNET>(request), &available) && available > 0) {
             const std::size_t start = response.body.size();
             response.body.resize(start + available);
 
             DWORD received = 0;
-            if (!WinHttpReadData(request, response.body.data() + start, available, &received)) break;
+            if (!WinHttpReadData(static_cast<HINTERNET>(request), response.body.data() + start, available, &received)) break;
             response.body.resize(start + received);
         }
 

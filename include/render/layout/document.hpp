@@ -91,7 +91,7 @@ namespace render::layout {
 
         /// @brief One block of the document.
         struct Element {
-            /// @brief What kind of block this is.
+            /// @brief What type of block this is.
             enum class Type : std::uint8_t {
                 Paragraph, ///< A horizontal list, to be broken into lines.
                 Directive ///< A box that stands on its own.

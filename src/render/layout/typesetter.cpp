@@ -1,8 +1,8 @@
 /// @file
 /// @brief Typesetter implementation: formulas into boxes, documents into pages.
 ///
-/// render() is one switch over the expression node kinds, not a table of
-/// handlers. A formula has nine kinds of node and they are not extensible at
+/// render() is one switch over the expression node types, not a table of
+/// handlers. A formula has nine types of node and they are not extensible at
 /// run time, so a switch is both the smaller code and the faster dispatch --
 /// the compiler turns it into a jump table, and nothing has to be registered
 /// before a document can be set.
@@ -21,7 +21,7 @@
 namespace render::layout {
     using Category = syntax::expression::Unicodes::Category;
     using Expression = syntax::expression::Node;
-    using Alphabet = Typesetter::Alphabet;
+    // using Alphabet = Typesetter::Alphabet;
 
     /// @brief How much space goes between two adjacent atoms, in
     ///        eighteenths of an em.
@@ -634,9 +634,7 @@ namespace render::layout {
                             return (upper ? 0x1D400 : 0x1D41A) + letter;
                         }
 
-                        const bool italic = scope.alphabet == Alphabet::Italic;
-
-                        if (italic) {
+                        if (scope.alphabet == Alphabet::Italic) {
                             // Lower-case Greek runs contiguously in both places; the
                             // variant forms and the partial sign sit after it.
                             if (codepoint >= 0x03B1 && codepoint <= 0x03C9) return 0x1D6FC + (codepoint - 0x03B1);
@@ -1676,7 +1674,7 @@ namespace render::layout {
                 else if (name == "mathring") code = 0x030A;
                 else if (name == "dddot") code = 0x20DB;
                 else if (name == "ddddot") code = 0x20DC;
-                else if (name == "overrightarrow") code = 0x20D7;
+                else if (name == "overrightarrow" || name == "vec") code = 0x20D7;
                 else if (name == "overleftarrow") code = 0x20D6;
                 else if (name == "overleftrightarrow") code = 0x20E1;
                 else if (name == "tilde") code = 0x0303;
@@ -1687,7 +1685,6 @@ namespace render::layout {
                 else if (name == "check") code = 0x030C;
                 else if (name == "acute") code = 0x0301;
                 else if (name == "grave") code = 0x0300;
-                else if (name == "vec") code = 0x20D7;
 
                 std::uint32_t glyph = code != 0 ? font.index(code) : 0;
                 if (glyph == 0) return body;

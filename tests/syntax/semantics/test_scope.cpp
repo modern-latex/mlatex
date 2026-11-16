@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-// Every kind of scope has a name an error message can use.
+// Every type of scope has a name an error message can use.
 
 int main() {
     using Scope = syntax::semantics::Scope;

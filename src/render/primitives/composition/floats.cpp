@@ -30,7 +30,7 @@ namespace render::primitives::composition {
         release = lexicon.intern("\\float:release");
     }
 
-    syntax::Node *Floats::caption(syntax::Parser &parser, Context &context, const std::string &kind,
+    syntax::Node *Floats::caption(syntax::Parser &parser, Context &context, const std::string &type,
                                   const bool ruled) const {
         syntax::Mouth &mouth = parser.mouth;
         memory::Arena &arena = parser.arena;
@@ -62,19 +62,19 @@ namespace render::primitives::composition {
         // its name, through the macro a document renames it with.
         std::string number;
         if (context.counters) {
-            context.counters->step(kind);
-            number = Counters::print(mouth, kind);
+            context.counters->step(type);
+            number = Counters::print(mouth, type);
         }
         context.anchor = number;
-        context.kind = kind;
+        context.type = type;
 
         // A subfigure's or a subtable's: its letter in parentheses and no
         // name, and a reference to it the float's number and the letter --
         // the number the float's own caption will give it, when that is
         // still to come, as it usually is.
-        const bool sub = kind.starts_with("sub");
+        const bool sub = type.starts_with("sub");
         if (sub && context.counters) {
-            const std::string parent = kind.substr(3);
+            const std::string parent = type.substr(3);
             const bool ahead = floats.size() < 2 || !floats[floats.size() - 2].captioned;
             const int value = context.counters->value(parent);
             if (ahead) context.counters->set(parent, value + 1);
@@ -85,14 +85,14 @@ namespace render::primitives::composition {
             floats.back().captioned = true;
         }
 
-        // Named by `\\<kind>name`, as LaTeX names its own -- \\figurename,
-        // \\tablename -- and the float package a float of a new kind.
-        const std::string macro = std::format("\\{}name", kind);
+        // Named by `\\<type>name`, as LaTeX names its own -- \\figurename,
+        // \\tablename -- and the float package a float of a new type.
+        const std::string macro = std::format("\\{}name", type);
         std::string name;
         if (!sub) {
             mouth.ingest(context.arena.copy(std::format("{{{}}}", macro)));
             name = syntax::Argument::expanded(mouth);
-            if (name == macro) name = kind == "algorithm" ? "Algorithm" : name;
+            if (name == macro) name = type == "algorithm" ? "Algorithm" : name;
         }
 
         // The caption package's settings: the label's weight, the caption's
@@ -166,10 +166,10 @@ namespace render::primitives::composition {
         // table, and above a figure's, which ends it.
         std::vector<syntax::Node *> parts;
         parts.push_back(arena.compose<syntax::Node>(syntax::Node::Type::Paragraph, std::string_view{}, origin));
-        if (kind == "figure" || kind == "subfigure") parts.push_back(space(sub ? 4.0f : 10.0f));
+        if (type == "figure" || type == "subfigure") parts.push_back(space(sub ? 4.0f : 10.0f));
         // Its line in the list of figures or of tables, and where it stands,
         // for the page that line prints.
-        if (!sub && (kind == "figure" || kind == "table")) {
+        if (!sub && (type == "figure" || type == "table")) {
             const std::size_t index = context.anchors++;
             memory::Slice<syntax::Node *> shown = body;
             if (!brief.empty()) {
@@ -177,7 +177,7 @@ namespace render::primitives::composition {
                 shown[0] = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(brief), origin);
             }
             context.entries.push_back({
-                .list = kind == "figure" ? "lof" : "lot", .level = 1, .number = number, .title = shown, .anchor = index
+                .list = type == "figure" ? "lof" : "lot", .level = 1, .number = number, .title = shown, .anchor = index
             });
             parts.push_back(order({.command = Command::Anchor, .index = index}));
         }
@@ -204,7 +204,7 @@ namespace render::primitives::composition {
             bar->rule({.width = breadth(context), .height = 0.4f});
             parts.push_back(directive(arena, bar, origin, true));
             parts.push_back(space(2.0f));
-        } else if (kind != "figure" && kind != "subfigure") {
+        } else if (type != "figure" && type != "subfigure") {
             parts.push_back(space(sub ? 4.0f : 10.0f));
         }
 
@@ -221,7 +221,7 @@ namespace render::primitives::composition {
         // under rather than beside, wrapfig's across the column rather than
         // with the text flowing round -- `[lines]{r}{width}`, read and let
         // go -- and acmart's teaser a figure too.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 14> kinds{
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 14> types{
             {
                 {"figure", "figure"}, {"figure*", "figure"}, {"table", "table"}, {"table*", "table"},
                 {"algorithm", "algorithm"}, {"sidewaysfigure", "figure"}, {"sidewaystable", "table"},
@@ -232,11 +232,11 @@ namespace render::primitives::composition {
 
         // One float's block: where it may go read on the way in, its marks
         // for the pager left either side of what it holds. A float of a new
-        // kind is installed the same way as LaTeX's own.
-        const auto install = [this, &context](const std::string &name, const std::string &kind, const bool ruled) {
+        // type is installed the same way as LaTeX's own.
+        const auto install = [this, &context](const std::string &name, const std::string &type, const bool ruled) {
             context.environments.watch(
                 name,
-                [this, kind, name, ruled](syntax::Mouth &mouth) {
+                [this, type, name, ruled](syntax::Mouth &mouth) {
                     // Where LaTeX may place it -- `[htbp!]`, a letter each --
                     // and `tbp` when it does not say, as the classes give
                     // their figures and tables. `H` is the float package's:
@@ -278,7 +278,7 @@ namespace render::primitives::composition {
                         here = true;
                     }
                     floats.push_back(
-                        Open{.kind = std::string(kind), .ruled = ruled, .place = place, .across = name.ends_with('*')});
+                        Open{.type = std::string(type), .ruled = ruled, .place = place, .across = name.ends_with('*')});
 
                     // The cursor is a stack: the opening text goes in first
                     // and the mark in front of it, so the mark is read first.
@@ -319,9 +319,9 @@ namespace render::primitives::composition {
                                      "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
                 });
         };
-        for (const auto &[name, kind]: kinds) install(std::string(name), std::string(kind), kind == "algorithm");
+        for (const auto &[name, type]: types) install(std::string(name), std::string(type), type == "algorithm");
 
-        // A float of the document's own kind -- the float package's
+        // A float of the document's own type -- the float package's
         // \\newfloat, newfloat's \\DeclareFloatingEnvironment -- numbered by
         // the counter of its name and captioned by `\\<name>name`, which the
         // package defines first; `\\@newfloat*` sets it between rules, as the
@@ -329,16 +329,15 @@ namespace render::primitives::composition {
         parser.mouth.bind("\\@newfloat", [install](syntax::Mouth &mouth) {
             const bool ruled = mouth.lookahead().is('*');
             if (ruled) mouth.read();
-            const std::string name = syntax::Argument::text(mouth);
-            if (!name.empty()) install(name, name, ruled);
+            if (const std::string name = syntax::Argument::text(mouth); !name.empty()) install(name, name, ruled);
         });
 
         // subcaption's blocks, which the box module sets as minipages: here
         // only what a caption inside one numbers by.
-        for (const std::string_view kind: {"subfigure", "subtable"}) {
+        for (const std::string_view type: {"subfigure", "subtable"}) {
             context.environments.watch(
-                kind,
-                [this, kind](syntax::Mouth &) { floats.push_back(Open{.kind = std::string(kind)}); },
+                type,
+                [this, type](syntax::Mouth &) { floats.push_back(Open{.type = std::string(type)}); },
                 [this](syntax::Mouth &) {
                     if (!floats.empty()) floats.pop_back();
                 });
@@ -355,13 +354,13 @@ namespace render::primitives::composition {
                 memory::Arena &arena = parser.arena;
                 auto *mark = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 layout::Node::Directive order{.command = command, .fixed = stays};
-                // A Hold says where its float may go, and what kind it is --
+                // A Hold says where its float may go, and what type it is --
                 // figures, tables and algorithms each keep their own order.
                 if (command == layout::Node::Directive::Command::Hold && !floats.empty()) {
                     const Open &current = floats.back();
                     order.place = current.place;
                     order.across = current.across;
-                    order.index = current.kind == "figure" ? 0 : current.kind == "table" ? 1 : 2;
+                    order.index = current.type == "figure" ? 0 : current.type == "table" ? 1 : 2;
                 }
                 mark->directive(order);
                 return directive(arena, mark, parser.mouth.lookahead().location);
@@ -379,15 +378,15 @@ namespace render::primitives::composition {
         });
 
         parser.bind("\\caption", [this, &context](syntax::Parser &parser) -> syntax::Node * {
-            const Open current = floats.empty() ? Open{.kind = "figure"} : floats.back();
-            return caption(parser, context, current.kind, current.ruled);
+            const Open current = floats.empty() ? Open{.type = "figure"} : floats.back();
+            return caption(parser, context, current.type, current.ruled);
         });
 
-        // The caption package's: a caption of a kind named outright, wherever
+        // The caption package's: a caption of a type named outright, wherever
         // it stands.
         parser.bind("\\captionof", [this, &context](syntax::Parser &parser) -> syntax::Node * {
-            const std::string kind = syntax::Argument::text(parser.mouth);
-            return caption(parser, context, kind.empty() ? "figure" : kind, false);
+            const std::string type = syntax::Argument::text(parser.mouth);
+            return caption(parser, context, type.empty() ? "figure" : type, false);
         });
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound float primitives");

@@ -111,8 +111,8 @@ int main(int count, char *arguments[]) {
             "Give it again for another folder."
         },
         Option{
-            '\0', "assets", "", "DIR", "Input",
-            "Read the fonts and hyphenation patterns from\n"
+            .letter = '\0', .name = "assets", .alias = "", .value = "DIR", .group = "Input",
+            .summary = "Read the fonts and hyphenation patterns from\n"
             "DIR, not from the assets found above this\n"
             "program."
         },

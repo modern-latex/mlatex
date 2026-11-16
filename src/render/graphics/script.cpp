@@ -22,6 +22,7 @@
 #include <memory>
 #include <numbers>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -30,7 +31,6 @@
 
 namespace render::graphics {
     std::optional<Drawing> Drawing::script(const std::string_view file) {
-        // --- The picture's box ---------------------------------------------------------------
 
         // `%%HiResBoundingBox:` if it gives one, `%%BoundingBox:` otherwise;
         // one that says `(atend)` is looked for again further on.
@@ -61,23 +61,22 @@ namespace render::graphics {
         drawing.box = box;
         std::string &out = drawing.content;
 
-        // --- Its objects ---------------------------------------------------------------------
 
         // What the stack and the dictionaries hold. A name is run when it is
         // met; a literal, `/name`, is pushed. A procedure met in a procedure
         // is pushed, and run when something runs it.
         struct Object {
-            enum class Kind : std::uint8_t {
+            enum class Type : std::uint8_t {
                 Null, Number, Boolean, Name, Literal, Text, Procedure, Array, Mark, Table, Font, Source
             };
 
-            Kind kind{Kind::Null};
+            Type type{Type::Null};
             double number{0.0}; // a number's value, a boolean's 1 or 0, a font's size
             std::string text{}; // a name's letters, a string's bytes, a font's name
             std::shared_ptr<std::vector<Object> > items{}; // a procedure's or an array's
             std::shared_ptr<std::map<std::string, Object> > table{}; // a dictionary's
         };
-        using Kind = Object::Kind;
+        using Type = Object::Type;
         using Table = std::map<std::string, Object>;
 
         const auto delimiter = [](const char letter) {
@@ -149,11 +148,11 @@ namespace render::graphics {
                         letters += letter;
                     }
                 }
-                return Object{.kind = Kind::Text, .text = std::move(letters)};
+                return Object{.type = Type::Text, .text = std::move(letters)};
             }
             if (text.substr(at).starts_with("<<") || text.substr(at).starts_with(">>")) {
                 at += 2;
-                return Object{.kind = Kind::Name, .text = std::string(text.substr(at - 2, 2))};
+                return Object{.type = Type::Name, .text = std::string(text.substr(at - 2, 2))};
             }
             if (head == '<') {
                 // In hexadecimal; in ASCII85, `<~ ~>`, its bytes let go.
@@ -161,7 +160,7 @@ namespace render::graphics {
                 if (at < text.size() && text[at] == '~') {
                     const std::size_t end = text.find("~>", at);
                     at = end == std::string_view::npos ? text.size() : end + 2;
-                    return Object{.kind = Kind::Text};
+                    return Object{.type = Type::Text};
                 }
                 std::string letters;
                 int pending = -1;
@@ -184,7 +183,7 @@ namespace render::graphics {
                 }
                 if (pending >= 0) letters += static_cast<char>(pending * 16);
                 ++at;
-                return Object{.kind = Kind::Text, .text = std::move(letters)};
+                return Object{.type = Type::Text, .text = std::move(letters)};
             }
             if (head == '{') {
                 ++at;
@@ -200,7 +199,7 @@ namespace render::graphics {
                     if (!item) break;
                     items->push_back(std::move(*item));
                 }
-                return Object{.kind = Kind::Procedure, .items = std::move(items)};
+                return Object{.type = Type::Procedure, .items = std::move(items)};
             }
             if (head == '}' || head == ')' || head == '>') {
                 ++at;
@@ -208,7 +207,7 @@ namespace render::graphics {
             }
             if (head == '[' || head == ']') {
                 ++at;
-                return Object{.kind = Kind::Name, .text = std::string(1, head)};
+                return Object{.type = Type::Name, .text = std::string(1, head)};
             }
             const bool literal = head == '/';
             if (literal) {
@@ -218,11 +217,11 @@ namespace render::graphics {
             const std::size_t start = at;
             while (at < text.size() && !delimiter(text[at])) ++at;
             const std::string_view word = text.substr(start, at - start);
-            if (literal) return Object{.kind = Kind::Literal, .text = std::string(word)};
+            if (literal) return Object{.type = Type::Literal, .text = std::string(word)};
             double value = 0.0;
             if (const auto [stop, failure] = patch::decimal(word.data(), word.data() + word.size(), value);
                 failure == std::errc{} && stop == word.data() + word.size()) {
-                return Object{.kind = Kind::Number, .number = value};
+                return Object{.type = Type::Number, .number = value};
             }
             // A number in a radix, `16#FF`.
             if (const std::size_t hash = word.find('#'); hash != std::string_view::npos && hash > 0) {
@@ -232,17 +231,16 @@ namespace render::graphics {
                 if (radix >= 2 && radix <= 36 &&
                     std::from_chars(word.data() + hash + 1, word.data() + word.size(), whole, radix).ec == std::errc
                     {}) {
-                    return Object{.kind = Kind::Number, .number = static_cast<double>(whole)};
+                    return Object{.type = Type::Number, .number = static_cast<double>(whole)};
                 }
             }
             if (word.empty()) {
                 ++at;
                 return Object{};
             }
-            return Object{.kind = Kind::Name, .text = std::string(word)};
+            return Object{.type = Type::Name, .text = std::string(word)};
         };
 
-        // --- The graphics state --------------------------------------------------------------
 
         // The transformation, a colour for everything painted, the line's
         // width, ends, joins and dashes, the font, and the path and its
@@ -300,14 +298,14 @@ namespace render::graphics {
             const std::array<double, 6> &m = state.matrix;
             return std::pair{m[0] * x + m[2] * y, m[1] * x + m[3] * y};
         };
-        // The matrix that does `first` and then `then`, and one undone.
-        const auto compose = [](const std::array<double, 6> &first, const std::array<double, 6> &then) {
+        // The matrix that does `initial` and then `then`, and one undone.
+        const auto compose = [](const std::array<double, 6> &initial, const std::array<double, 6> &then) {
             return std::array < double, 6 >
             {
-                then[0] * first[0] + then[2] * first[1], then[1] * first[0] + then[3] * first[1],
-                        then[0] * first[2] + then[2] * first[3], then[1] * first[2] + then[3] * first[3],
-                        then[0] * first[4] + then[2] * first[5] + then[4],
-                        then[1] * first[4] + then[3] * first[5] + then[5]
+                then[0] * initial[0] + then[2] * initial[1], then[1] * initial[0] + then[3] * initial[1],
+                        then[0] * initial[2] + then[2] * initial[3], then[1] * initial[2] + then[3] * initial[3],
+                        then[0] * initial[4] + then[2] * initial[5] + then[4],
+                        then[1] * initial[4] + then[3] * initial[5] + then[5]
             };
         };
         const auto invert = [](const std::array<double, 6> &m) {
@@ -378,7 +376,7 @@ namespace render::graphics {
             } else {
                 while (to < from) to += 360.0;
             }
-            const double turn = std::numbers::pi / 180.0;
+            constexpr double turn = std::numbers::pi / 180.0;
             const int pieces = std::max(1, static_cast<int>(std::ceil(std::abs(to - from) / 90.0 - 1e-9)));
             const double step = (to - from) / pieces * turn;
             double angle = from * turn;
@@ -488,7 +486,6 @@ namespace render::graphics {
             state.current.up += dy;
         };
 
-        // --- The program ---------------------------------------------------------------------
 
         std::vector<Object> stack;
         std::vector<std::shared_ptr<Table> > dictionaries{std::make_shared<Table>()};
@@ -508,17 +505,17 @@ namespace render::graphics {
         };
         const auto number = [&pop]() {
             const Object top = pop();
-            return top.kind == Kind::Number || top.kind == Kind::Boolean ? top.number : 0.0;
+            return top.type == Type::Number || top.type == Type::Boolean ? top.number : 0.0;
         };
         const auto push = [&stack](const double value) {
-            stack.push_back(Object{.kind = Kind::Number, .number = value});
+            stack.push_back(Object{.type = Type::Number, .number = value});
         };
         const auto truth = [&stack](const bool value) {
-            stack.push_back(Object{.kind = Kind::Boolean, .number = value ? 1.0 : 0.0});
+            stack.push_back(Object{.type = Type::Boolean, .number = value ? 1.0 : 0.0});
         };
         const auto lookup = [&dictionaries](const std::string &name) -> const Object * {
-            for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend(); ++dictionary) {
-                if (const auto found = (*dictionary)->find(name); found != (*dictionary)->end()) return &found->second;
+            for (auto & dictionarie : std::views::reverse(dictionaries)) {
+                if (const auto found = dictionarie->find(name); found != dictionarie->end()) return &found->second;
             }
             return nullptr;
         };
@@ -532,8 +529,8 @@ namespace render::graphics {
         };
         const auto numbers = [](const std::array<double, 6> &m) {
             auto items = std::make_shared<std::vector<Object> >();
-            for (const double value: m) items->push_back(Object{.kind = Kind::Number, .number = value});
-            return Object{.kind = Kind::Array, .items = std::move(items)};
+            for (const double value: m) items->push_back(Object{.type = Type::Number, .number = value});
+            return Object{.type = Type::Array, .items = std::move(items)};
         };
         // Bytes read from the file where the program stands: in hexadecimal,
         // as they are, or to a line's end.
@@ -576,7 +573,7 @@ namespace render::graphics {
                 halted = true;
                 return;
             }
-            if (invoked && object.kind == Kind::Procedure) {
+            if (invoked && object.type == Type::Procedure) {
                 ++depth;
                 for (const Object &item: *object.items) {
                     self(item, false);
@@ -585,7 +582,7 @@ namespace render::graphics {
                 --depth;
                 return;
             }
-            if (object.kind != Kind::Name) {
+            if (object.type != Type::Name) {
                 stack.push_back(object);
                 return;
             }
@@ -598,9 +595,9 @@ namespace render::graphics {
             const std::string &name = object.text;
             if (const Object *defined = depth < 200 ? lookup(name) : nullptr) {
                 const Object held = *defined;
-                if (held.kind == Kind::Procedure) {
+                if (held.type == Type::Procedure) {
                     self(held, true);
-                } else if (held.kind == Kind::Name && held.text != name) {
+                } else if (held.type == Type::Name && held.text != name) {
                     self(held, false);
                 } else {
                     stack.push_back(held);
@@ -609,16 +606,19 @@ namespace render::graphics {
             }
 
             // The stack.
-            if (name == "pop") {
+            if (name == "pop" || name == "srand" || name == "setmiterlimit" || name == "setflat" ||
+                name == "setstrokeadjust" || name == "setoverprint" || name == "setsmoothness" ||
+                name == "setpagedevice" || name == "setglobal" || name == "setobjectformat" ||
+                name == "setpacking" || name == "closefile" || name == "flushfile" || name == "print" ||
+                name == "=" || name == "==") {
                 pop();
             } else if (name == "exch") {
                 if (stack.size() >= 2) std::swap(stack[stack.size() - 1], stack[stack.size() - 2]);
             } else if (name == "dup") {
                 if (!stack.empty()) stack.push_back(stack.back());
             } else if (name == "copy") {
-                if (!stack.empty() && stack.back().kind == Kind::Number) {
-                    const auto count = static_cast<std::size_t>(std::max(0.0, number()));
-                    if (count <= stack.size()) {
+                if (!stack.empty() && stack.back().type == Type::Number) {
+                    if (const auto count = static_cast<std::size_t>(std::max(0.0, number())); count <= stack.size()) {
                         const std::size_t begin = stack.size() - count;
                         for (std::size_t index = 0; index < count; ++index) stack.push_back(stack[begin + index]);
                     }
@@ -633,7 +633,7 @@ namespace render::graphics {
                         }
                     } else if (source.table && target.table) {
                         for (const auto &[key, value]: *source.table) (*target.table)[key] = value;
-                    } else if (target.kind == Kind::Text) {
+                    } else if (target.type == Type::Text) {
                         target.text = source.text;
                     }
                     stack.push_back(target);
@@ -654,27 +654,27 @@ namespace render::graphics {
             } else if (name == "count") {
                 push(static_cast<double>(stack.size()));
             } else if (name == "mark" || name == "[" || name == "<<") {
-                stack.push_back(Object{.kind = Kind::Mark});
+                stack.push_back(Object{.type = Type::Mark});
             } else if (name == "cleartomark") {
-                while (!stack.empty() && stack.back().kind != Kind::Mark) stack.pop_back();
+                while (!stack.empty() && stack.back().type != Type::Mark) stack.pop_back();
                 pop();
             } else if (name == "counttomark") {
                 std::size_t count = 0;
-                while (count < stack.size() && stack[stack.size() - 1 - count].kind != Kind::Mark) ++count;
+                while (count < stack.size() && stack[stack.size() - 1 - count].type != Type::Mark) ++count;
                 push(static_cast<double>(count));
             } else if (name == "]") {
                 auto items = std::make_shared<std::vector<Object> >();
-                while (!stack.empty() && stack.back().kind != Kind::Mark) items->insert(items->begin(), pop());
+                while (!stack.empty() && stack.back().type != Type::Mark) items->insert(items->begin(), pop());
                 pop();
-                stack.push_back(Object{.kind = Kind::Array, .items = std::move(items)});
+                stack.push_back(Object{.type = Type::Array, .items = std::move(items)});
             } else if (name == ">>") {
                 auto table = std::make_shared<Table>();
                 std::vector<Object> pairs;
-                while (!stack.empty() && stack.back().kind != Kind::Mark) pairs.insert(pairs.begin(), pop());
+                while (!stack.empty() && stack.back().type != Type::Mark) pairs.insert(pairs.begin(), pop());
                 pop();
                 for (std::size_t index = 0; index + 1 < pairs.size(); index += 2)
                     (*table)[pairs[index].text] = pairs[index + 1];
-                stack.push_back(Object{.kind = Kind::Table, .table = std::move(table)});
+                stack.push_back(Object{.type = Type::Table, .table = std::move(table)});
 
                 // Arithmetic.
             } else if (name == "add" || name == "sub" || name == "mul" || name == "div" || name == "idiv" || name ==
@@ -702,7 +702,7 @@ namespace render::graphics {
                        name == "log" || name == "round" || name == "truncate" || name == "floor" || name == "ceiling" ||
                        name == "cvi" || name == "cvr") {
                 const double value = number();
-                const double turn = std::numbers::pi / 180.0;
+                constexpr double turn = std::numbers::pi / 180.0;
                 push(name == "neg"
                          ? -value
                          : name == "abs"
@@ -728,17 +728,15 @@ namespace render::graphics {
                                                                                    : value);
             } else if (name == "rand" || name == "realtime" || name == "usertime") {
                 push(0.0);
-            } else if (name == "srand") {
-                pop();
 
                 // Comparison and logic.
             } else if (name == "eq" || name == "ne") {
                 const Object right = pop();
                 const Object left = pop();
-                const bool same = left.kind == Kind::Number || left.kind == Kind::Boolean
-                                      ? (right.kind == Kind::Number || right.kind == Kind::Boolean) && left.number ==
+                const bool same = left.type == Type::Number || left.type == Type::Boolean
+                                      ? (right.type == Type::Number || right.type == Type::Boolean) && left.number ==
                                         right.number
-                                      : left.text == right.text && left.kind != Kind::Null && right.kind != Kind::Null;
+                                      : left.text == right.text && left.type != Type::Null && right.type != Type::Null;
                 truth(name == "eq" ? same : !same);
             } else if (name == "gt" || name == "ge" || name == "lt" || name == "le") {
                 const double right = number();
@@ -755,12 +753,11 @@ namespace render::graphics {
                 const Object left = pop();
                 const auto a = static_cast<long long>(left.number);
                 const auto b = static_cast<long long>(right.number);
-                const long long result = name == "and" ? (a & b) : name == "or" ? (a | b) : (a ^ b);
-                if (left.kind == Kind::Boolean) truth(result != 0);
+                const long long result = name == "and" ? a & b : name == "or" ? (a | b) : (a ^ b);
+                if (left.type == Type::Boolean) truth(result != 0);
                 else push(static_cast<double>(result));
             } else if (name == "not") {
-                const Object value = pop();
-                if (value.kind == Kind::Boolean) truth(value.number == 0.0);
+                if (const Object value = pop(); value.type == Type::Boolean) truth(value.number == 0.0);
                 else push(static_cast<double>(~static_cast<long long>(value.number)));
             } else if (name == "true" || name == "false") {
                 truth(name == "true");
@@ -781,13 +778,14 @@ namespace render::graphics {
                 const double increment = number();
                 double value = number();
                 const auto within = [&] { return increment > 0.0 ? value <= limit + 1e-9 : value >= limit - 1e-9; };
-                for (; increment != 0.0 && within() && !halted && !stopping; value += increment) {
+                while (increment != 0.0 && within() && !halted && !stopping) {
                     push(value);
                     self(body, true);
                     if (leaving) {
                         leaving = false;
                         break;
                     }
+                    value += increment;
                 }
             } else if (name == "repeat") {
                 const Object body = pop();
@@ -819,12 +817,12 @@ namespace render::graphics {
                     }
                 } else if (over.table) {
                     for (const auto &[key, value]: *over.table) {
-                        stack.push_back(Object{.kind = Kind::Literal, .text = key});
+                        stack.push_back(Object{.type = Type::Literal, .text = key});
                         stack.push_back(value);
                         self(body, true);
                         if (leaving || halted || stopping) break;
                     }
-                } else if (over.kind == Kind::Text) {
+                } else if (over.type == Type::Text) {
                     for (const char letter: over.text) {
                         push(static_cast<unsigned char>(letter));
                         self(body, true);
@@ -836,9 +834,9 @@ namespace render::graphics {
                 leaving = true;
             } else if (name == "exec") {
                 const Object body = pop();
-                if (body.kind == Kind::Procedure) self(body, true);
-                else if (body.kind == Kind::Name || body.kind == Kind::Literal) self(
-                    Object{.kind = Kind::Name, .text = body.text}, false);
+                if (body.type == Type::Procedure) self(body, true);
+                else if (body.type == Type::Name || body.type == Type::Literal) self(
+                    Object{.type = Type::Name, .text = body.text}, false);
                 else stack.push_back(body);
             } else if (name == "stopped") {
                 const Object body = pop();
@@ -853,7 +851,7 @@ namespace render::graphics {
                 // Dictionaries, arrays and strings.
             } else if (name == "dict") {
                 pop();
-                stack.push_back(Object{.kind = Kind::Table, .table = std::make_shared<Table>()});
+                stack.push_back(Object{.type = Type::Table, .table = std::make_shared<Table>()});
             } else if (name == "begin") {
                 const Object dictionary = pop();
                 dictionaries.push_back(dictionary.table ? dictionary.table : std::make_shared<Table>());
@@ -864,9 +862,9 @@ namespace render::graphics {
                 const Object key = pop();
                 std::shared_ptr<Table> into = dictionaries.back();
                 if (name == "store") {
-                    for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend(); ++dictionary) {
-                        if ((*dictionary)->contains(key.text)) {
-                            into = *dictionary;
+                    for (auto & dictionarie : std::views::reverse(dictionaries)) {
+                        if (dictionarie->contains(key.text)) {
+                            into = dictionarie;
                             break;
                         }
                     }
@@ -875,14 +873,14 @@ namespace render::graphics {
             } else if (name == "load") {
                 const Object key = pop();
                 const Object *found = lookup(key.text);
-                stack.push_back(found ? *found : Object{.kind = Kind::Name, .text = key.text});
+                stack.push_back(found ? *found : Object{.type = Type::Name, .text = key.text});
             } else if (name == "where") {
                 const Object key = pop();
                 bool known = false;
                 for (auto dictionary = dictionaries.rbegin(); dictionary != dictionaries.rend() && !known; ++
                      dictionary) {
                     if ((*dictionary)->contains(key.text)) {
-                        stack.push_back(Object{.kind = Kind::Table, .table = *dictionary});
+                        stack.push_back(Object{.type = Type::Table, .table = *dictionary});
                         known = true;
                     }
                 }
@@ -898,7 +896,7 @@ namespace render::graphics {
             } else if (name == "currentdict" || name == "userdict" || name == "globaldict" || name == "statusdict" ||
                        name == "systemdict" || name == "errordict" || name == "$error") {
                 stack.push_back(Object{
-                    .kind = Kind::Table, .table = name == "currentdict" ? dictionaries.back() : dictionaries.front()
+                    .type = Type::Table, .table = name == "currentdict" ? dictionaries.back() : dictionaries.front()
                 });
             } else if (name == "countdictstack") {
                 push(static_cast<double>(dictionaries.size()));
@@ -932,10 +930,10 @@ namespace render::graphics {
                 push(1000.0);
             } else if (name == "array") {
                 const auto size = static_cast<std::size_t>(std::clamp(number(), 0.0, 100000.0));
-                stack.push_back(Object{.kind = Kind::Array, .items = std::make_shared<std::vector<Object> >(size)});
+                stack.push_back(Object{.type = Type::Array, .items = std::make_shared<std::vector<Object> >(size)});
             } else if (name == "string") {
                 const auto size = static_cast<std::size_t>(std::clamp(number(), 0.0, 1000000.0));
-                stack.push_back(Object{.kind = Kind::Text, .text = std::string(size, '\0')});
+                stack.push_back(Object{.type = Type::Text, .text = std::string(size, '\0')});
             } else if (name == "aload") {
                 const Object array = pop();
                 if (array.items) {
@@ -945,7 +943,7 @@ namespace render::graphics {
             } else if (name == "astore") {
                 Object array = pop();
                 if (array.items) {
-                    for (auto item = array.items->rbegin(); item != array.items->rend(); ++item) *item = pop();
+                    for (auto & item : std::views::reverse(*array.items)) item = pop();
                 }
                 stack.push_back(array);
             } else if (name == "getinterval") {
@@ -964,31 +962,31 @@ namespace render::graphics {
                 stack.push_back(of);
             } else if (name == "cvx") {
                 Object value = pop();
-                if (value.kind == Kind::Array) value.kind = Kind::Procedure;
-                if (value.kind == Kind::Literal) value.kind = Kind::Name;
+                if (value.type == Type::Array) value.type = Type::Procedure;
+                if (value.type == Type::Literal) value.type = Type::Name;
                 stack.push_back(value);
             } else if (name == "cvlit") {
                 Object value = pop();
-                if (value.kind == Kind::Procedure) value.kind = Kind::Array;
-                if (value.kind == Kind::Name) value.kind = Kind::Literal;
+                if (value.type == Type::Procedure) value.type = Type::Array;
+                if (value.type == Type::Name) value.type = Type::Literal;
                 stack.push_back(value);
             } else if (name == "xcheck") {
                 const Object value = pop();
-                truth(value.kind == Kind::Procedure || value.kind == Kind::Name);
+                truth(value.type == Type::Procedure || value.type == Type::Name);
             } else if (name == "cvn") {
                 const Object value = pop();
-                stack.push_back(Object{.kind = Kind::Literal, .text = value.text});
+                stack.push_back(Object{.type = Type::Literal, .text = value.text});
             } else if (name == "cvs" || name == "cvrs") {
                 if (name == "cvrs") pop();
                 pop();
                 const Object value = pop();
                 std::string written = value.text;
-                if (value.kind == Kind::Number) {
+                if (value.type == Type::Number) {
                     written = std::format("{}", value.number);
-                } else if (value.kind == Kind::Boolean) {
+                } else if (value.type == Type::Boolean) {
                     written = value.number != 0.0 ? "true" : "false";
                 }
-                stack.push_back(Object{.kind = Kind::Text, .text = std::move(written)});
+                stack.push_back(Object{.type = Type::Text, .text = std::move(written)});
             } else if (name == "type") {
                 const Object value = pop();
                 static constexpr std::array<std::string_view, 12> types{
@@ -996,16 +994,14 @@ namespace render::graphics {
                     "arraytype", "arraytype", "marktype", "dicttype", "fonttype", "filetype",
                 };
                 stack.push_back(Object{
-                    .kind = Kind::Name, .text = std::string(types[static_cast<std::size_t>(value.kind)])
+                    .type = Type::Name, .text = std::string(types[static_cast<std::size_t>(value.type)])
                 });
-            } else if (name == "bind" || name == "readonly" || name == "executeonly" || name == "noaccess") {
-                // Each leaves what it is given as it is.
 
                 // The graphics state.
             } else if (name == "gsave" || name == "save") {
                 saved.push_back(state);
                 out += "q\n";
-                if (name == "save") stack.push_back(Object{.kind = Kind::Table, .table = std::make_shared<Table>()});
+                if (name == "save") stack.push_back(Object{.type = Type::Table, .table = std::make_shared<Table>()});
             } else if (name == "grestore" || name == "restore") {
                 if (name == "restore") pop();
                 if (!saved.empty()) {
@@ -1034,12 +1030,6 @@ namespace render::graphics {
                 if (pattern.items) {
                     for (const Object &item: *pattern.items) state.dashes.push_back(item.number);
                 }
-            } else if (name == "setmiterlimit" || name == "setflat" || name == "setstrokeadjust" || name ==
-                       "setoverprint" ||
-                       name == "setsmoothness" || name == "setpagedevice" || name == "setglobal" || name ==
-                       "setobjectformat" ||
-                       name == "setpacking") {
-                pop();
             } else if (name == "currentglobal" || name == "currentpacking") {
                 truth(false);
             } else if (name == "languagelevel") {
@@ -1101,7 +1091,7 @@ namespace render::graphics {
             } else if (name == "translate" || name == "scale" || name == "rotate" || name == "concat") {
                 // With a matrix given last, that matrix is changed instead.
                 std::optional<Object> given;
-                if (!stack.empty() && stack.back().kind == Kind::Array && name != "concat") given = pop();
+                if (!stack.empty() && stack.back().type == Type::Array && name != "concat") given = pop();
                 std::array < double, 6 > step{1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
                 if (name == "translate") {
                     const double y = number();
@@ -1142,7 +1132,7 @@ namespace render::graphics {
                 stack.push_back(numbers(compose(matrix(pop()), second)));
             } else if (name == "transform" || name == "dtransform" || name == "itransform" || name == "idtransform") {
                 std::array < double, 6 > m = state.matrix;
-                if (!stack.empty() && stack.back().kind == Kind::Array) m = matrix(pop());
+                if (!stack.empty() && stack.back().type == Type::Array) m = matrix(pop());
                 if (name.starts_with('i')) m = invert(m);
                 const double y = number();
                 const double x = number();
@@ -1236,14 +1226,11 @@ namespace render::graphics {
                 else paint(name == "rectfill" ? "f" : "S", name == "rectstroke");
                 state.path = kept;
                 state.placed = placed;
-            } else if (name == "flattenpath" || name == "reversepath" || name == "strokepath" || name == "showpage" ||
-                       name == "copypage" || name == "erasepage" || name == "initclip") {
-                // Nothing to draw, or the page as it stands.
 
                 // Text.
             } else if (name == "findfont") {
                 const Object key = pop();
-                stack.push_back(Object{.kind = Kind::Font, .number = 1.0, .text = standard(key.text)});
+                stack.push_back(Object{.type = Type::Font, .number = 1.0, .text = standard(key.text)});
             } else if (name == "scalefont") {
                 const double factor = number();
                 Object font = pop();
@@ -1256,19 +1243,19 @@ namespace render::graphics {
                 stack.push_back(font);
             } else if (name == "setfont") {
                 const Object font = pop();
-                state.face = font.kind == Kind::Font ? font.text : standard(font.text);
-                state.size = font.kind == Kind::Font ? font.number : state.size;
+                state.face = font.type == Type::Font ? font.text : standard(font.text);
+                state.size = font.type == Type::Font ? font.number : state.size;
             } else if (name == "selectfont") {
                 const Object size = pop();
                 const Object key = pop();
                 state.face = standard(key.text);
-                state.size = size.kind == Kind::Number ? size.number : 10.0;
+                state.size = size.type == Type::Number ? size.number : 10.0;
             } else if (name == "currentfont") {
-                stack.push_back(Object{.kind = Kind::Font, .number = state.size, .text = state.face});
+                stack.push_back(Object{.type = Type::Font, .number = state.size, .text = state.face});
             } else if (name == "definefont") {
                 const Object font = pop();
                 const Object key = pop();
-                stack.push_back(Object{.kind = Kind::Font, .number = 1.0, .text = standard(key.text)});
+                stack.push_back(Object{.type = Type::Font, .number = 1.0, .text = standard(key.text)});
                 static_cast<void>(font);
             } else if (name == "show" || name == "ashow" || name == "widthshow" || name == "awidthshow" || name ==
                        "kshow" ||
@@ -1276,7 +1263,7 @@ namespace render::graphics {
                 Object letters = pop();
                 if (name == "kshow" || name == "xshow" || name == "xyshow") {
                     // The procedure or the widths before it, let go: the letters are the other.
-                    if (letters.kind != Kind::Text) std::swap(letters, stack.empty() ? letters : stack.back());
+                    if (letters.type != Type::Text) std::swap(letters, stack.empty() ? letters : stack.back());
                     pop();
                 }
                 const std::size_t operands = name == "ashow"
@@ -1287,7 +1274,7 @@ namespace render::graphics {
                                                              ? 5
                                                              : 0;
                 for (std::size_t index = 0; index < operands; ++index) pop();
-                if (letters.kind == Kind::Text) show(letters.text);
+                if (letters.type == Type::Text) show(letters.text);
             } else if (name == "stringwidth") {
                 const Object letters = pop();
                 push(breadth(state.face, letters.text) / 1000.0 * state.size);
@@ -1299,18 +1286,18 @@ namespace render::graphics {
                 // The file the program is read from: its bytes for an image,
                 // and an encrypted font's skipped.
             } else if (name == "currentfile") {
-                stack.push_back(Object{.kind = Kind::Source});
+                stack.push_back(Object{.type = Type::Source});
             } else if (name == "readhexstring" || name == "readstring") {
                 const Object buffer = pop();
                 pop();
-                stack.push_back(Object{.kind = Kind::Text, .text = take(buffer.text.size(), name == "readhexstring")});
+                stack.push_back(Object{.type = Type::Text, .text = take(buffer.text.size(), name == "readhexstring")});
                 truth(true);
             } else if (name == "readline") {
                 pop();
                 pop();
                 const std::size_t end = file.find('\n', cursor);
                 const std::size_t stop = end == std::string_view::npos ? file.size() : end;
-                stack.push_back(Object{.kind = Kind::Text, .text = std::string(file.substr(cursor, stop - cursor))});
+                stack.push_back(Object{.type = Type::Text, .text = std::string(file.substr(cursor, stop - cursor))});
                 cursor = std::min(stop + 1, file.size());
                 truth(true);
             } else if (name == "eexec") {
@@ -1321,8 +1308,6 @@ namespace render::graphics {
                 const std::size_t end = file.find("cleartomark", cursor);
                 cursor = end == std::string_view::npos ? file.size() : end + 11;
                 if (dictionaries.size() > 1) dictionaries.pop_back();
-            } else if (name == "closefile" || name == "flushfile" || name == "print" || name == "=" || name == "==") {
-                pop();
 
                 // Images, whose samples come from a procedure or a string: drawn
                 // inline, in hexadecimal, through the transformation that puts
@@ -1347,7 +1332,7 @@ namespace render::graphics {
                 std::string samples;
                 for (int guard = 0; samples.size() < needed && guard < 1000000 && !halted && !stopping; ++guard) {
                     const Object &source = sources.front();
-                    if (source.kind == Kind::Text) {
+                    if (source.type == Type::Text) {
                         samples += source.text;
                         if (source.text.empty()) break;
                         continue;
@@ -1390,7 +1375,7 @@ namespace render::graphics {
 
                 // Anything else: its operands left, as nothing draws with them.
             } else if (name == "version" || name == "product") {
-                stack.push_back(Object{.kind = Kind::Text, .text = "3010"});
+                stack.push_back(Object{.type = Type::Text, .text = "3010"});
             }
         };
 

@@ -28,11 +28,11 @@ function codes(bytes) {
 		const platform = view.getUint16(record);
 		const encoding = view.getUint16(record + 2);
 		const offset = cmap + view.getUint32(record + 4);
-		const kind = view.getUint16(offset);
+		const type = view.getUint16(offset);
 		const unicode = platform === 0 || (platform === 3 && (encoding === 1 || encoding === 10));
-		if (unicode && (kind === 12 || kind === 4) && kind > format) {
+		if (unicode && (type === 12 || type === 4) && type > format) {
 			best = offset;
-			format = kind;
+			format = type;
 		}
 	}
 	const found = [];

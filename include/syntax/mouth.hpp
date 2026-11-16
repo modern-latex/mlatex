@@ -74,7 +74,7 @@ namespace syntax {
 
             /// xparse's `s` and `t`: the one token looked for, then what the
             /// argument is when that token is there -- #fallbacks being what
-            /// it is when not. Empty for every other kind of parameter.
+            /// it is when not. Empty for every other type of parameter.
             std::vector<Token> present{};
         };
 
@@ -111,17 +111,17 @@ namespace syntax {
         /// @param arena Allocator for anything the expander composes.
         Mouth(Cursor stream, semantics::Union &state, Lexicon &lexicon, memory::Arena &arena);
 
-        /// @brief Opens a scope of a given kind.
+        /// @brief Opens a scope of a given type.
         ///
-        /// The kind is recorded so that pop() can report a mismatch. Passing
-        /// the right kind is what lets `\\begin{a} ... }` be diagnosed.
+        /// The type is recorded so that pop() can report a mismatch. Passing
+        /// the right type is what lets `\\begin{a} ... }` be diagnosed.
         ///
         /// @param type What is being opened; a plain group by default.
         /// @complexity O(1) amortized.
         void push(semantics::Scope::Type type = semantics::Scope::Type::Group);
 
-        /// @brief Closes a scope and checks its kind.
-        /// @param expected The kind the caller believes it is closing.
+        /// @brief Closes a scope and checks its type.
+        /// @param expected The type the caller believes it is closing.
         /// @return True when the open scope matched; false on a mismatch or an
         ///         unbalanced pop, both of which are recorded in traceback().
         /// @complexity O(k) in the number of distinct macros defined inside.

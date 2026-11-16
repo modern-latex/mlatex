@@ -841,9 +841,12 @@ namespace render {
                             bar.rule(stretched);
                             rule(&bar, position, baseline);
                         } else if (const float step = layout::Line::advance(leader); step > 0.0f) {
-                            for (float at = std::ceil(position / step) * step; at + step <= position + span + 0.01f;
-                                 at += step) {
-                                node(leader, at, baseline);
+                            const double first = std::ceil(position / step) * step;
+                            const double end = position + span + 0.01f;
+                            for (std::size_t repetition = 0; ; ++repetition) {
+                                const double at = first + static_cast<double>(repetition) * step;
+                                if (!(at + step <= end)) break;
+                                node(leader, static_cast<float>(at), baseline);
                             }
                         }
                     }
@@ -874,8 +877,7 @@ namespace render {
             }
 
             if (child->type == layout::Node::Type::Glue) {
-                const layout::Node::Glue &glue = child->glue();
-                if (shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
+                if (const layout::Node::Glue &glue = child->glue(); shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
                     baseline += glue.stretch * shape.ratio;
                 } else if (shape.sign == layout::Node::Sign::Shrinking && glue.limit == shape.order) {
                     baseline -= glue.shrink * shape.ratio;

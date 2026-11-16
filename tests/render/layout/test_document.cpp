@@ -52,7 +52,6 @@ int main() {
     const layout::Typesetter typesetter(fonts.arena, fonts.registry, fonts.shaper);
     const render::typography::Font &font = *fonts.text;
 
-    // --- Paragraphs and blocks -----------------------------------------------------
     {
         layout::Document document(fonts.arena, fonts.scratch, fonts.shaper, typesetter);
         document.append("First paragraph.", font, 10.0f);
@@ -77,7 +76,6 @@ int main() {
                "the text carrying straight on from a table does not");
     }
 
-    // --- A word space is not lost to a cached run ----------------------------------
     {
         layout::Document document(fonts.arena, fonts.scratch, fonts.shaper, typesetter);
         // A run that opens a paragraph -- as the text after a display does,
@@ -102,7 +100,6 @@ int main() {
         }
     }
 
-    // --- Columns ----------------------------------------------------------------------
     {
         layout::Document document(fonts.arena, fonts.scratch, fonts.shaper, typesetter);
         document.configuration.columns = 2;
@@ -129,7 +126,6 @@ int main() {
                "and is broken to their width");
     }
 
-    // --- Languages -----------------------------------------------------------------
     {
         const render::typography::Shaper covering(fonts.arena, &fonts.registry);
         layout::Document document(fonts.arena, fonts.scratch, covering, typesetter);
@@ -181,7 +177,6 @@ int main() {
                "a paragraph read right to left ends at the left of its last line");
     }
 
-    // --- A language's own digits and spaces ---------------------------------------------------
     {
         const render::typography::Shaper covering(fonts.arena, &fonts.registry);
         layout::Document document(fonts.arena, fonts.scratch, covering, typesetter);
@@ -232,15 +227,15 @@ int main() {
         // Chinese and Japanese: a line may end between any two characters,
         // but before no mark that closes a phrase and after none that opens one.
         const auto shape = [](const memory::Slice<layout::Node *> nodes) {
-            std::string kinds;
+            std::string types;
             for (const layout::Node *node: nodes) {
-                kinds += node->type == layout::Node::Type::Glyph
+                types += node->type == layout::Node::Type::Glyph
                              ? 'g'
                              : node->type == layout::Node::Type::Glue
                                    ? '_'
                                    : '?';
             }
-            return kinds;
+            return types;
         };
         assert((shape(document.set("日本語", font, true)) == "g_g_g") && "between any two characters");
         assert((shape(document.set("語。", font, true)) == "gg") && "never before a stop");

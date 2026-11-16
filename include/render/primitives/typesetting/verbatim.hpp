@@ -57,7 +57,7 @@ namespace render::primitives::typesetting {
     private:
         /// @brief A block opened and not yet read: what it is, and its options.
         struct Opening {
-            std::string kind; ///< `verbatim`, `lstlisting` or `comment`.
+            std::string type; ///< `verbatim`, `lstlisting` or `comment`.
             std::string options; ///< As written between its brackets.
             bool headed{false}; ///< Its caption, if it has one, has been read.
         };

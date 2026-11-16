@@ -6,8 +6,6 @@
 
 #include <vector>
 
-#include <cstddef>
-
 namespace syntax::primitives::logic {
     /// @brief Iteration and explicit grouping.
     ///

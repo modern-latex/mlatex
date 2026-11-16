@@ -20,7 +20,10 @@
       "node": "./node.js",
       "default": "./mlatex.js"
     },
-    "./mlatex.js": "./mlatex.js",
+    "./mlatex.js": {
+      "types": "./mlatex.d.ts",
+      "default": "./mlatex.js"
+    },
     "./mlatex.wasm": "./mlatex.wasm",
     "./mlatex.data": "./mlatex.data",
     "./fallback/*": "./fallback/*",

@@ -38,8 +38,8 @@ struct Fonts {
 
 namespace layout = render::layout;
 
-/// @brief How many of a run's nodes are of one kind.
-static std::size_t kind(const memory::Slice<layout::Node *> nodes, const layout::Node::Type type) {
+/// @brief How many of a run's nodes are of one type.
+static std::size_t type(const memory::Slice<layout::Node *> nodes, const layout::Node::Type type) {
     std::size_t found = 0;
     for (const layout::Node *node: nodes) found += node && node->type == type;
     return found;
@@ -53,14 +53,14 @@ int main() {
     const memory::Slice<const render::typography::Font *> one{text, 1uz};
 
     const auto office = shaper.shape(one, "office", {});
-    assert((kind(office, layout::Node::Type::Glyph) < 6) && "the face's ligatures join letters");
+    assert((type(office, layout::Node::Type::Glyph) < 6) && "the face's ligatures join letters");
     bool spelled = false;
     for (const layout::Node *node: office) spelled = spelled || node->glyph().letters == "ffi";
     assert((spelled) && "and a ligature still spells the letters it stands for");
 
-    assert((kind(shaper.shape(one, "\xC3\xA9t\xC3\xA9", {}), layout::Node::Type::Glyph) == 3) &&
+    assert((type(shaper.shape(one, "\xC3\xA9t\xC3\xA9", {}), layout::Node::Type::Glyph) == 3) &&
            "a character past ASCII is one glyph");
-    assert((kind(shaper.shape(one, "a b", {}), layout::Node::Type::Glue) == 1) && "a space is glue");
+    assert((type(shaper.shape(one, "a b", {}), layout::Node::Type::Glue) == 1) && "a space is glue");
 
     float plain = 0.0f;
     for (const layout::Node *node: shaper.shape(one, "AV", {})) plain += node->glyph().width;
@@ -69,7 +69,7 @@ int main() {
 
     const render::typography::Font *both[] = {fonts.text, fonts.maths};
     const auto sum = shaper.shape(memory::Slice{both, 2uz}, "\xE2\x88\x91", {});
-    assert((kind(sum, layout::Node::Type::Glyph) == 1 && sum[0]->glyph().font == fonts.maths) &&
+    assert((type(sum, layout::Node::Type::Glyph) == 1 && sum[0]->glyph().font == fonts.maths) &&
            "a character the first face lacks comes from the next");
     assert((shaper.shape(one, "", {}).empty()) && "no text is no glyphs");
 
@@ -77,27 +77,27 @@ int main() {
     // it, shaped whole, every glyph as tall as the face asked for says.
     const render::typography::Shaper covering(fonts.arena, &fonts.registry);
     const auto russian = covering.shape(one, "\xD0\x96\xD1\x83\xD0\xBA", {});
-    bool drawn = kind(russian, layout::Node::Type::Glyph) == 3;
+    bool drawn = type(russian, layout::Node::Type::Glyph) == 3;
     for (const layout::Node *node: russian) {
         drawn = drawn && node->glyph().code != 0 && node->glyph().font->family() == "newcm10-regular" &&
                 node->glyph().height == fonts.text->metrics().ascent;
     }
     assert((drawn) && "a Cyrillic word is drawn by Computer Modern's Cyrillic, at the height of the text's face");
     const auto mixed = covering.shape(one, "a \xD0\x96 b", {});
-    assert((kind(mixed, layout::Node::Type::Glyph) == 3 && kind(mixed, layout::Node::Type::Glue) == 2 &&
+    assert((type(mixed, layout::Node::Type::Glyph) == 3 && type(mixed, layout::Node::Type::Glue) == 2 &&
             mixed[0]->glyph().font == fonts.text && mixed[2]->glyph().font != fonts.text &&
             mixed[4]->glyph().font == fonts.text) && "a run is cut where the face that draws it changes");
     const auto missing = shaper.shape(one, "\xD0\x96", {});
-    assert((kind(missing, layout::Node::Type::Glyph) == 1 && missing[0]->glyph().code == 0) &&
+    assert((type(missing, layout::Node::Type::Glyph) == 1 && missing[0]->glyph().code == 0) &&
            "without a registry, a character no face offered draws is the face's box for none");
 
     // A number reads left to right in any script: Arabic's digits come back
     // in the order written, an Arabic word in the order it is drawn.
     const auto number = covering.shape(one, "\xD9\xA1\xD9\xA2\xD9\xA3", {});
-    assert((kind(number, layout::Node::Type::Glyph) == 3 && number[0]->glyph().point == 0x0661 &&
+    assert((type(number, layout::Node::Type::Glyph) == 3 && number[0]->glyph().point == 0x0661 &&
             number[2]->glyph().point == 0x0663) && "Arabic's digits left to right");
     const auto word = covering.shape(one, "\xD8\xA8\xD8\xA7\xD8\xAA", {});
-    assert((kind(word, layout::Node::Type::Glyph) == 3 && word[0]->glyph().point == 0x062A &&
+    assert((type(word, layout::Node::Type::Glyph) == 3 && word[0]->glyph().point == 0x062A &&
             word[2]->glyph().point == 0x0628) && "an Arabic word right to left, its last letter drawn first");
 
     return 0;

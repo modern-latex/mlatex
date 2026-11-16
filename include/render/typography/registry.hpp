@@ -5,8 +5,6 @@
 #include "typography/face.hpp"
 #include "typography/font.hpp"
 
-#include <cstddef>
-#include <cstdint>
 #include <string_view>
 #include <vector>
 

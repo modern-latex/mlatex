@@ -4,9 +4,6 @@
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
-#include <cstdint>
-#include <string>
-#include <string_view>
 #include <optional>
 #include <vector>
 

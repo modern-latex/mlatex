@@ -67,7 +67,7 @@ int main() {
     {
         const Result result = article("", "{\\bfseries bold} plain \\bgroup\\itshape slanted\\egroup\\ plain "
                                       "\\begingroup\\ttfamily mono\\endgroup\\ plain.");
-        assert((result.clean && holds(result.text, "boldplainslantedplainmonoplain.")) && "every kind of group");
+        assert((result.clean && holds(result.text, "boldplainslantedplainmonoplain.")) && "every type of group");
         assert((count(result.pdf, "/BaseFont") >= 4) &&
                "each face set only inside its group, the text after upright");
     }

@@ -14,9 +14,7 @@
 #include <array>
 #include <charconv>
 #include <optional>
-#include <system_error>
 #include <algorithm>
-#include <cmath>
 #include <format>
 #include <span>
 #include <string>
@@ -243,11 +241,11 @@ namespace render::primitives::typesetting {
             // the selection when it closes.
             // Bound in the parser rather than the expander, so the text read
             // before it is set apart first and keeps the face it was read in.
-            parser.bind(running, [this, &context, select, cut, size](const syntax::Parser &parser) -> syntax::Node * {
+            parser.bind(running, [this, &context, select, cut, size](const syntax::Parser &reader) -> syntax::Node * {
                 const typography::Font *font = select(cut, size);
                 if (!font) {
                     tracebacks.emplace_back(syntax::Traceback::Type::Primitive,
-                                            parser.mouth.lookahead().location,
+                                            reader.mouth.lookahead().location,
                                             "A style needs a text face to change");
                     return nullptr;
                 }
@@ -256,9 +254,9 @@ namespace render::primitives::typesetting {
             });
 
             // The bounded form: the same selection, around one argument.
-            parser.bind(bounded, [this, &context, select, cut, size](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(bounded, [this, &context, select, cut, size](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 syntax::Token open = mouth.read();
@@ -275,7 +273,7 @@ namespace render::primitives::typesetting {
                 }
 
                 mouth.push(syntax::semantics::Scope::Type::Group);
-                const memory::Slice<syntax::Node *> children = parser.parse('}');
+                const memory::Slice<syntax::Node *> children = reader.parse('}');
                 mouth.pop(syntax::semantics::Scope::Type::Group);
 
                 // Marked while the style is still selected. The text is shaped

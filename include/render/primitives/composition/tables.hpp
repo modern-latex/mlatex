@@ -107,7 +107,7 @@ namespace render::primitives::composition {
             ///< Where its baseline falls: t, c or b, as `[t]` says; for a
                                              ///< long table, the side it stands at: l, c or r.
             bool breakable{false};
-            ///< True for longtable and its kind, which a page may end between
+            ///< True for longtable and its type, which a page may end between
                                              ///< any two rows of.
         };
 

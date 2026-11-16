@@ -118,12 +118,10 @@ static bool holds(const std::string_view text, const std::string_view part) {
 }
 
 int main() {
-    // --- The table --------------------------------------------------------------
     assert((syntax::modules::get("main.mtex").has_value()) && "the prelude is compiled in");
     assert((syntax::modules::get("core/main.mtex").has_value()) && "and the core package");
     assert((!syntax::modules::get("nosuch/main.mtex").has_value()) && "a file that is not there is none");
 
-    // --- Every package loads ------------------------------------------------------
     static constexpr std::string_view packages[] = {
         "amsmath", "amssymb", "amsthm", "amsfonts", "mathtools", "graphicx", "xcolor", "color", "hyperref", "url",
         "cleveref", "natbib", "biblatex", "booktabs", "multirow", "array", "tabularx", "longtable", "tabulary",
@@ -162,12 +160,10 @@ int main() {
                "a package under another's name loads that one, and both are loaded");
     }
 
-    // --- The core ---------------------------------------------------------------
     sets("\\include{core/compatibility}\\usepackage{xcolor,lmodern}\\ifpackageloaded{xcolor}{yes}{no}", "yes",
          "the packages the engine does itself are provided by the core");
     sets("\\include{core/shorthand}\\eg the rest", "e.g.~the rest", "the core shorthands");
 
-    // --- etoolbox and ifthen -------------------------------------------------------
     sets("\\usepackage{etoolbox}\\newtoggle{draft}\\iftoggle{draft}{on}{off} \\toggletrue{draft}"
          "\\iftoggle{draft}{on}{off} \\nottoggle{draft}{on}{off}",
          "off on off", "toggles");
@@ -188,7 +184,6 @@ int main() {
          "euro even", "\\ifthenelse with \\equal and \\isodd");
     sets("\\usepackage{ifthen}\\ifpackageloaded{etoolbox}{yes}{no}", "yes", "ifthen brings etoolbox with it");
 
-    // --- acronym, xfp, csquotes and lipsum ------------------------------------------
     // The kernel's loops, \@for over commas and \@tfor over tokens.
     {
         const Result result = article("", "\\@for\\x:=a,b\\do{<\\x>} \\@tfor\\x:=cd\\do{[\\x]}");
@@ -245,7 +240,6 @@ int main() {
                "\\lipsum[5] is the fifth");
     }
 
-    // --- siunitx ----------------------------------------------------------------
     sets("\\usepackage{siunitx}\\variable{siunitx.per-mode}", "power", "units after \\per raised by default");
     sets("\\usepackage[per-mode=symbol]{siunitx}\\variable{siunitx.per-mode}", "symbol",
          "a package option chooses a solidus");
@@ -270,7 +264,6 @@ int main() {
         assert((symbol.clean && holds(symbol.text, "3m/s")) && "per-mode=symbol sets a solidus");
     }
 
-    // --- datetime ---------------------------------------------------------------
     {
         const std::time_t now = std::time(nullptr);
         std::tm local{};
@@ -294,7 +287,6 @@ int main() {
              "month names");
     }
 
-    // --- Packages that set text -------------------------------------------------------
     {
         const Result result = article(
             "\\usepackage{soul,ulem,gensymb,eurosym,units,nicefrac,xfrac,bbm,upgreek,stmaryrd,glossaries,fancybox}"
@@ -332,7 +324,6 @@ int main() {
                "an epigraph and its source");
     }
 
-    // --- The kernel's ways of defining, in the core package ------------------------
     {
         const Result result = article(
             "\\newif\\ifdraft"

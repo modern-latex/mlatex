@@ -45,7 +45,6 @@ int main() {
     memory::Arena arena(1u << 20);
     using Line = layout::Line;
 
-    // --- Across --------------------------------------------------------------------
     {
         const layout::Node *natural =
                 Line::horizontal(
@@ -90,7 +89,6 @@ int main() {
         assert((line->box().height == 7.0f) && "a box raised in a line raises the line's height with it");
     }
 
-    // --- Down ------------------------------------------------------------------------
     {
         const layout::Node *column =
                 Line::vertical(arena, list(arena, {block(arena, 30, 7, 2), block(arena, 50, 6, 3)}), 0);
@@ -105,7 +103,6 @@ int main() {
         assert((centred->box().list[0]->box().offset == 20.0f) && "a centred column moves each box to the middle");
     }
 
-    // --- Measures ----------------------------------------------------------------------
     {
         auto *kern = arena.compose<layout::Node>(layout::Node::Type::Kern);
         kern->kern({.width = -3.0f});
@@ -116,7 +113,6 @@ int main() {
                "a rule by its width, and stands its height and depth");
     }
 
-    // --- The order a line is drawn in ---------------------------------------------------
     {
         // A word of one letter, standing for any word in that letter's script.
         const auto word = [&arena](const std::uint32_t point) {
@@ -184,7 +180,6 @@ int main() {
                "the kashida stays between the letters it joins");
     }
 
-    // --- A word in two faces, read right to left ----------------------------------------
     {
         memory::Arena faces(1u << 24);
         render::typography::Collection collection(faces);

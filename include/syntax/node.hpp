@@ -49,14 +49,14 @@ namespace syntax {
         Node() = default;
 
         /// @brief Builds a node.
-        /// @param kind     What the node is.
+        /// @param type     What the node is.
         /// @param text     Its literal text, if any.
         /// @param where    Source position.
         /// @param children Child nodes, if any.
         /// @param block    True for display math rather than inline.
-        Node(const Type kind, const std::string_view text, const memory::Location where,
+        Node(const Type type, const std::string_view text, const memory::Location where,
              const memory::Slice<Node *> children = {}, const bool block = false)
-            : type(kind), value(text), location(where), nodes(children), display(block) {
+            : type(type), value(text), location(where), nodes(children), display(block) {
         }
     };
 }

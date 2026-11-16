@@ -8,7 +8,6 @@
 #include "jit/watcher.hpp"
 
 namespace jit {
-    // -------------------------------------------------------------------
     // Windows: ReadDirectoryChangesW, one directory handle per folder.
     //
     // Opened for listing with FILE_FLAG_OVERLAPPED, so every folder is
@@ -46,7 +45,6 @@ namespace jit {
     // calls CancelIoEx and CloseHandle for each, and CloseHandle on each
     // event.
     //
-    // -------------------------------------------------------------------
     // Linux: inotify, one descriptor for every folder.
     //
     //     int descriptor{-1};                               // inotify_init1(IN_NONBLOCK | IN_CLOEXEC)
@@ -60,7 +58,6 @@ namespace jit {
     // records (each sizeof(inotify_event) + len bytes, its name inside), and
     // joins the folder of `wd` with `name`.
     //
-    // -------------------------------------------------------------------
     // macOS: FSEvents, one stream over every folder.
     //
     // FSEventStreamCreate with kFSEventStreamCreateFlagFileEvents (so the
@@ -79,7 +76,6 @@ namespace jit {
     // kqueue would need no framework, but it watches open files, and a save
     // by rename leaves it watching the old one.
     //
-    // -------------------------------------------------------------------
     // Testing it (tests/jit/test_watcher.cpp): post a folder under
     // std::filesystem::temp_directory_path(), write a file there from a
     // std::jthread, and assert get() returns it within a second; then write

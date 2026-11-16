@@ -6,8 +6,6 @@
 #include "syntax/tokens.hpp"
 #include "logger.hpp"
 
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -24,7 +22,7 @@ namespace syntax {
     /// #ceiling for integers, #maximum for dimensions. Nothing here can
     /// overflow a 32-bit intermediate.
     ///
-    /// @par Two kinds of stream
+    /// @par Two types of stream
     /// Every scanner has a Cursor overload, which reads tokens exactly as
     /// written and is what \\evaluate's own arithmetic parser scans its
     /// operands with, and a Mouth overload, which expands the one thing at
@@ -244,13 +242,13 @@ namespace syntax {
                     held && held->type != semantics::Registers::Type::Count) {
                     cursor.advance();
                     measure = Measure{registers.get(held->type, held->slot), 1};
-                } else if (const auto kind = registers.bank(after.symbol);
-                    kind && *kind != semantics::Registers::Type::Count) {
+                } else if (const auto type = registers.bank(after.symbol);
+                    type && *type != semantics::Registers::Type::Count) {
                     // A bank and its slot: `0.5\wd0`.
                     cursor.advance();
                     const auto index = integer(cursor, registers);
                     if (index && *index >= 0 && *index <= 255) {
-                        measure = Measure{registers.get(*kind, static_cast<std::size_t>(*index)), 1};
+                        measure = Measure{registers.get(*type, static_cast<std::size_t>(*index)), 1};
                     }
                 }
             }

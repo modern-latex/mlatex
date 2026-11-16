@@ -81,7 +81,6 @@ static void reports(const std::string_view document, const std::string_view need
 }
 
 int main() {
-    // --- The tests ------------------------------------------------------------------------
     sets("\\IfSubStr{banana}{nan}{yes}{no}", "yes", "a piece inside");
     sets("\\IfSubStr{banana}{xyz}{yes}{no}", "no", "a piece not inside");
     sets("\\IfSubStr[3]{banana}{a}{yes}{no} \\IfSubStr[4]{banana}{a}{yes}{no}", "yes no",
@@ -97,7 +96,6 @@ int main() {
     sets("\\define\\plan{gold}\\IfSubStr{\\plan}{old}{expanded}{as written}", "expanded",
          "arguments expanded first");
 
-    // --- The functions --------------------------------------------------------------------
     sets("\\StrLen{hello} \\StrLen{café} \\StrLen{}", "5 4 0", "lengths in characters");
     sets("\\StrLeft{hello}{2} \\StrRight{hello}{2} \\StrLeft{hi}{9}", "he lo hi", "characters off either end");
     sets("\\StrGobbleLeft{hello}{1} \\StrGobbleRight{hello}{2}", "ello hel", "characters let go");

@@ -20,6 +20,23 @@ once, in compiled code.
 > promise that every feature of it is drawn exactly, so check the PDF before
 > you rely on it.
 
+## Contents
+
+[Highlights](#highlights) ·
+[How it works](#how-it-works) ·
+[Features](#features) ·
+[How it compares](#how-it-compares) ·
+[Roadmap](#roadmap) ·
+[Platforms](#platforms) ·
+[Building from source](#building-from-source) ·
+[Usage](#usage) ·
+[Embedding](#embedding) ·
+[Documentation](#documentation) ·
+[Project layout](#project-layout) ·
+[Security](#security) ·
+[Contributing](#contributing) ·
+[License](#license)
+
 ## Highlights
 
 - **Reads existing LaTeX.** 509 packages and 14 document classes, each
@@ -137,24 +154,34 @@ may fall out of date. If something in it is wrong, please open an issue.
 
 ## Roadmap
 
-**Next**
-- Fonts loaded in the browser as a document asks for them, rather than all
+### Done in 0.2.0-beta.2
+- [x] The engine as an npm package and as Python wheels, with their fonts
+- [x] Errors that name the file they are in: `appendix.tex:3:5: error (macro): ...`
+- [x] Releases made by GitHub Actions from what the Build workflow tested
+
+### Next
+- [ ] Fonts loaded in the browser as a document asks for them, rather than all
   of `mlatex.data` before the first page
-- Less memory: blocks committed as they fill, and a session that gives
+- [ ] Less memory: blocks committed as they fill, and a session that gives
   memory back between documents
-- The `jit` target: an engine kept warm between runs, with what it built
+- [ ] The `jit` target: an engine kept warm between runs, with what it built
   cached, that sets a document again as its files change
 
-**Later**
-- A `mlatex.Session` for Python, as JavaScript has
-- `\printglossary` printing its list
-- More classes with layouts of their own: Elsevier's `cas-sc` and `cas-dc`,
+### Later
+- [ ] A `mlatex.Session` for Python, as JavaScript has
+- [ ] `\printglossary` printing its list
+- [ ] More classes with layouts of their own: Elsevier's `cas-sc` and `cas-dc`,
   `mdpi`, `siamart`, `apa7`, `exam`, `moderncv`, `tikzposter`, `ctexart`
   and others, and the NeurIPS, ICML, ACL and CVPR styles
 
-Some things are left out by choice and will not come: `\write18`, reading a
-`.sty` or `.cls` from disk, and a second run's `.aux`. See
-[CHANGELOG.md](CHANGELOG.md) for what is left out and why.
+### Not planned
+- `\write18`, or any other way for a document to run a program.
+- Reading a `.sty` or `.cls` from disk.
+- A second run's `.aux` file.
+
+Every release's notes are in [releases/](releases/), and
+[CHANGELOG.md](CHANGELOG.md) describes every feature and what is left out and
+why.
 
 ## Platforms
 
@@ -229,26 +256,43 @@ vcpkg install harfbuzz libpng libjpeg-turbo libwebp zlib asmjit
 ### Build and test
 
 ```bash
-cmake -B cmake-build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake
+git clone https://github.com/modern-latex/mlatex.git
 ```
 
 ```bash
-cmake --build cmake-build-release
+cmake --preset release
 ```
 
 ```bash
-ctest --test-dir cmake-build-release --output-on-failure
+cmake --build --preset release
 ```
 
-On Windows, the `debug`, `release` and `wasm` presets in
-`CMakePresets.json` set all of this up (`cmake --preset release`). If you
-leave out the toolchain file, the build looks for vcpkg in `VCPKG_ROOT` and
-then in `C:/vcpkg`.
+```bash
+ctest --preset release
+```
 
-The build produces three targets: `latex` (the command-line program, built as `mlatex`), `core`
+If you leave out a toolchain file, the build looks for vcpkg in `VCPKG_ROOT`
+and then in `C:/vcpkg`. A CLion profile works as well as a preset: on
+Windows, name `clang-cl` (or let the build pick it) with any generator, Ninja
+or Unix Makefiles, and the vcpkg toolchain file.
+
+The build produces three targets: `mlatex` (the command-line program), `core`
 (the engine as a static library, which every other target links) and `ffi`
 (the C library, `latex_ffi`). Every source file has a matching test under
 `tests/`.
+
+### Presets
+
+| Preset | What it builds |
+| --- | --- |
+| `release` | The build that ships: optimised across the whole engine, stripped, asserts off. |
+| `debug` | A checked build: asserts on, no optimisation. |
+| `wasm` | `mlatex.js`, `mlatex.wasm` and `mlatex.data`, with Emscripten. |
+| `sanitize` | The engine under AddressSanitizer and UndefinedBehaviorSanitizer. |
+| `analyze` | clang-tidy and the Clang Static Analyzer over the engine's own sources. |
+
+What belongs to your machine alone -- a compiler path, a toolchain -- goes in
+`CMakeUserPresets.json`, which is never committed.
 
 ### Packaging
 
@@ -259,8 +303,7 @@ cpack --config cmake-build-release/CPackConfig.cmake
 ```
 
 This puts the packages listed under [Platforms](#platforms) for the
-platform and architecture of the build into the `release/` folder at the
-top of the project. To package another
+platform and architecture of the build into `bin/`. To package another
 architecture, run a separate build for it, for example `clang-cl` targeting
 ARM64 with the `arm64-windows` triplet. On macOS,
 `-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` with universal libraries
@@ -329,12 +372,13 @@ bibliography before citing it.
 A package is a folder containing `main.mtex`, written in the same language
 as a document. See [src/modules/packages.md](src/modules/packages.md).
 
-## Embedding the engine
+## Embedding
 
-The command line is a thin layer over `latex::Session`, and every binding
-exposes that same interface under the same names.
+Compose a session to keep values, commands, and files across documents.
+Use `typeset` for a document and `snippet` for a standalone piece of LaTeX.
+Dispose of the session when you are done.
 
-**C++**
+**C++** constructs a `latex::Session` and disposes of it when it goes out of scope.
 
 ```cpp
 latex::Session session(latex::locate(program));
@@ -365,24 +409,36 @@ Rust, Go). The library exports a single function, `engine()`, declared in
 `include/protocols/ffi.hpp`:
 
 ```c
-const Latex* table = engine();
-Session* session = table->compose(NULL);
-table->set(session, "customer", "Acme Ltd.");
+const Latex* system = engine();
+Session* session = system->compose(NULL);
+system->set(session, "customer", "Acme Ltd.");
 
 const unsigned char* pdf;
 size_t size;
-if (!table->typeset(session, source, strlen(source), &pdf, &size)) {
-    fprintf(stderr, "%s", table->error(session));
+if (!system->typeset(session, source, strlen(source), &pdf, &size)) {
+    fprintf(stderr, "%s", system->error(session));
 }
 
 const char* formula = "\\[ e^{i\\pi} + 1 = 0 \\]";
-table->snippet(session, formula, strlen(formula), &pdf, &size);
-table->dispose(session);
+system->snippet(session, formula, strlen(formula), &pdf, &size);
+system->dispose(session);
 ```
 
 The library ships in every package: `latex_ffi.dll` on Windows,
 `liblatex_ffi.dylib` on macOS and `liblatex_ffi.so` on Linux, with
-`include/latex/ffi.hpp`.
+`include/protocols/ffi.hpp`. Copy any PDF bytes you want to keep before
+the next call to `typeset` or `snippet`, or before you dispose of the session.
+
+**Python** ships the native library and fonts in the `mlatex` wheel.
+
+```python
+import mlatex
+
+pdf = mlatex.typeset(document)
+```
+
+Use `mlatex.compose()` as a context manager when you want to reuse a session.
+See the [Python binding README](bindings/python/README.md).
 
 **JavaScript**, through the WebAssembly module: `mlatex.js`, `mlatex.wasm` and
 `mlatex.data` (the fonts), from the `mlatex-<version>-wasm.zip` of a release
@@ -390,15 +446,15 @@ or built with the `wasm` preset (see `include/render/wasm.hpp`). It runs in a
 web page, a worker or Node:
 
 ```js
-const engine = await mLatex();
-const session = new engine.Session();
+const system = await mLatex();
+const session = system.compose();
 session.set("customer", "Acme Ltd.");
 if (!session.typeset(source)) console.error(session.error());
 const pdf = session.pdf();
 
 session.snippet("\\[ e^{i\\pi} + 1 = 0 \\]");
 const formula = session.pdf();   // a Uint8Array: hand it to PDF.js, or offer it as a download
-session.delete();
+session.dispose();
 ```
 
 ## Documentation
@@ -406,7 +462,7 @@ session.delete();
 The API reference is generated from the sources with Doxygen:
 
 ```bash
-cmake --build cmake-build-release --target docs
+cmake --build --preset release --target docs
 ```
 
 It is written to `cmake-build-release/docs/html`. The reference and
@@ -424,6 +480,8 @@ detail.
 | `assets/`          | Fonts, hyphenation patterns and the command glossary                                                                                                       |
 | `build/`           | The sample paper, `main.mtex`                                                                                                                              |
 | `tests/`           | One test per source file, at the same relative path, and in `tests/packages/` one sample document per package                                              |
+| `releases/`        | Every release's notes                                                                                                                                      |
+| `bin/`             | What a build leaves; never committed                                                                                                                       |
 
 ## Security
 

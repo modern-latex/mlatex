@@ -51,8 +51,8 @@ namespace syntax::primitives::arithmetic {
             return bound;
         }
 
-        const auto kind = context.registers.bank(symbol);
-        if (!kind) {
+        const auto type = context.registers.bank(symbol);
+        if (!type) {
             tracebacks.emplace_back(Traceback::Type::Register, location,
                                     std::format("{} is not a register", text));
             return std::nullopt;
@@ -67,7 +67,7 @@ namespace syntax::primitives::arithmetic {
         }
 
         return semantics::Registers::Target{
-            .type = *kind, .slot = static_cast<std::size_t>(*index), .character = false
+            .type = *type, .slot = static_cast<std::size_t>(*index), .character = false
         };
     }
 
@@ -119,10 +119,10 @@ namespace syntax::primitives::arithmetic {
 
         // Reading a value depends on the bank: an integer slot scans an
         // integer, a dimension or glue slot scans a dimension.
-        const auto quantity = [this, &context](Mouth &mouth, const Type kind) -> std::optional<std::int32_t> {
+        const auto quantity = [this, &context](Mouth &mouth, const Type type) -> std::optional<std::int32_t> {
             // A value may be produced by \evaluate or a macro; Number scans
             // rather than expands, so the stream is settled first.
-            if (kind == Type::Count) {
+            if (type == Type::Count) {
                 return Number::integer(mouth, context.registers);
             }
 
@@ -130,7 +130,7 @@ namespace syntax::primitives::arithmetic {
             // may stretch and shrink by with it.
             flex = {};
             if (const auto held = context.registers.target(mouth.lookahead().symbol);
-                kind == Type::Glue && held && held->type == Type::Glue) {
+                type == Type::Glue && held && held->type == Type::Glue) {
                 for (std::size_t part = 0; part < flex.size(); ++part) {
                     flex[part] = context.registers.get(
                         static_cast<Type>(static_cast<std::size_t>(Type::Stretch) + part),
@@ -142,7 +142,7 @@ namespace syntax::primitives::arithmetic {
             // Glue keeps what it may stretch or shrink by beside its natural
             // width -- `plus 2pt minus 1pt`, or `plus 1fil` at an order of
             // infinity counted by the l's -- which an assignment keeps.
-            if (kind == Type::Glue) {
+            if (type == Type::Glue) {
                 for (std::size_t part = 0; part < 2; ++part) {
                     const std::string_view keyword = part == 0 ? "plus" : "minus";
                     while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();

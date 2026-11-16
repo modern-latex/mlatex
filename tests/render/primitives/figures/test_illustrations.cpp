@@ -98,7 +98,6 @@ static std::string dot() {
 }
 
 int main() {
-    // --- Pictures ------------------------------------------------------------------
     {
         latex::Host host;
         host.files["dot.png"] = dot();
@@ -143,7 +142,7 @@ int main() {
     }
     {
         // Offline, a picture from the network is refused before a request
-        // is made; one handed in under the same kind of name is not.
+        // is made; one handed in under the same type of name is not.
         latex::Host offline;
         offline.offline = true;
         const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
@@ -160,7 +159,6 @@ int main() {
                "a picture that is not there is named");
     }
 
-    // --- The picture block ------------------------------------------------------------
     {
         const Result result = article("", "\\begin{picture}{100pt}{50pt}\\linecolor{#FF0000}\\line{0pt}{0pt}"
                                       "{100pt}{50pt}\\linestyle{dashed}\\lineweight{2pt}"
@@ -190,7 +188,6 @@ int main() {
                "the text after a picture starts below all of its drawing");
     }
 
-    // --- TikZ -------------------------------------------------------------------------
     {
         const Result result = article("\\usepackage{tikz}", R"(\begin{tikzpicture}[scale=1.5]
     \draw[thick, ->] (0,0) -- (3,0);
@@ -205,7 +202,7 @@ int main() {
     \node at (1,1) {label};
 \end{tikzpicture}
 \tikz{\draw (0,0) -- (1,1);})");
-        assert((result.clean) && "TikZ paths of every kind");
+        assert((result.clean) && "TikZ paths of every type");
         assert((count(result.pdf, " l S") > 100) && "drawn as strokes, curves included");
         assert((holds(result.pdf, "1 0 0 RG")) && "each in its own color");
         assert((holds(result.text, "label")) && "a node's text is set");

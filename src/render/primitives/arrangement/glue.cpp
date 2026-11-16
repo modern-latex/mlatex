@@ -2,7 +2,7 @@
 /// @brief Glue primitives: glue and kerns.
 ///
 /// The spaces are bound from two tables rather than one closure each: they
-/// differ only in which kind of node they make, how wide it is, and whether it
+/// differ only in which type of node they make, how wide it is, and whether it
 /// goes across the line or down the page. Writing that as a row keeps the
 /// dimensioned ones honest with each other. `~` is bound on its own, since it
 /// alone measures itself from the face rather than from a dimension or an em.
@@ -91,9 +91,9 @@ namespace render::primitives::arrangement {
         };
 
         for (const auto &[name, elastic, block]: measured) {
-            parser.bind(name, [&context, elastic, block](const syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [&context, elastic, block](const syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 // A glue register -- `\\vskip\\topsep` -- brings what it may
@@ -209,9 +209,9 @@ namespace render::primitives::arrangement {
 
         for (const auto &[name, width, stretch, shrink, order, block]: named) {
             parser.bind(
-                name, [&context, width, stretch, shrink, order, block](const syntax::Parser &parser) -> syntax::Node * {
-                    memory::Arena &arena = parser.arena;
-                    const memory::Location origin = parser.mouth.lookahead().location;
+                name, [&context, width, stretch, shrink, order, block](const syntax::Parser &reader) -> syntax::Node * {
+                    memory::Arena &arena = reader.arena;
+                    const memory::Location origin = reader.mouth.lookahead().location;
 
                     // An em of whatever face the text is in where the space is
                     // written, so a quad in a heading is a heading's quad.
@@ -241,9 +241,9 @@ namespace render::primitives::arrangement {
         // TeX's tie: an ordinary word space that a line may not break at,
         // for "Mr.~Smith" and "Figure~3". Measured from the face itself
         // rather than an em fraction, so it matches the spaces around it.
-        parser.bind("~", [&context](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        parser.bind("~", [&context](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
 
             const typography::Font *font = context.selection.text();
             float width = font ? font->size() * 0.25f : 2.5f; // a plausible space, if there is no face yet
@@ -267,9 +267,9 @@ namespace render::primitives::arrangement {
         // in a box .44em wide, as LaTeX's own.
         for (const bool dotted: {false, true}) {
             parser.bind(dotted ? "\\dotfill" : "\\hrulefill",
-                        [&context, dotted](const syntax::Parser &parser) -> syntax::Node * {
-                            memory::Arena &arena = parser.arena;
-                            const memory::Location origin = parser.mouth.lookahead().location;
+                        [&context, dotted](const syntax::Parser &reader) -> syntax::Node * {
+                            memory::Arena &arena = reader.arena;
+                            const memory::Location origin = reader.mouth.lookahead().location;
 
                             auto *leader = arena.compose<layout::Node>(layout::Node::Type::Rule);
                             leader->rule({.height = 0.4f});
@@ -301,9 +301,9 @@ namespace render::primitives::arrangement {
         // makes for a space, so it stretches, shrinks and breaks as the
         // spaces around it do. A backslash ending a line is the same thing,
         // the line's end standing for the space.
-        const auto spaced = [&context](const syntax::Parser &parser) -> syntax::Node * {
-            memory::Arena &arena = parser.arena;
-            const memory::Location origin = parser.mouth.lookahead().location;
+        const auto spaced = [&context](const syntax::Parser &reader) -> syntax::Node * {
+            memory::Arena &arena = reader.arena;
+            const memory::Location origin = reader.mouth.lookahead().location;
 
             if (const typography::Font *font = context.selection.text()) {
                 const typography::Font *fonts[] = {font};
@@ -324,8 +324,8 @@ namespace render::primitives::arrangement {
         // TeX's \ignorespaces: the blanks after it are the source's layout,
         // and are read past -- expanding as it goes, so a `\label` standing
         // between them is still run.
-        parser.bind("\\ignorespaces", [](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\ignorespaces", [](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) {
                 if (token.category == syntax::Catcodes::Category::Space) continue;
                 mouth.stream().inject(std::span{&token, 1});

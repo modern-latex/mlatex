@@ -5,7 +5,6 @@
 #include "syntax/traceback.hpp"
 #include "memory/dictionary.hpp"
 
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>

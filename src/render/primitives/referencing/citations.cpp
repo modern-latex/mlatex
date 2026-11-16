@@ -145,9 +145,9 @@ namespace render::primitives::referencing {
                 mouth.ingest(context.arena.copy(R"(\par\leftskip=0pt\noindent )"));
             });
 
-        parser.bind("\\bibitem", [this, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
-            memory::Arena &arena = parser.arena;
+        parser.bind("\\bibitem", [this, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
+            memory::Arena &arena = reader.arena;
             const memory::Location origin = mouth.lookahead().location;
 
             // `\\bibitem[Knu84]{knuth}`: a label of the document's own, which
@@ -290,9 +290,9 @@ namespace render::primitives::referencing {
             }
         };
         for (const auto &[name, form]: forms) {
-            parser.bind(name, [this, &context, form, name](syntax::Parser &parser) -> syntax::Node * {
-                syntax::Mouth &mouth = parser.mouth;
-                memory::Arena &arena = parser.arena;
+            parser.bind(name, [this, &context, form, name](syntax::Parser &reader) -> syntax::Node * {
+                syntax::Mouth &mouth = reader.mouth;
+                memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
 
                 if (mouth.lookahead().is('*')) mouth.read();
@@ -309,8 +309,7 @@ namespace render::primitives::referencing {
                 citation.before = given == 2 ? notes[0] : std::string{};
                 citation.note = given == 2 ? notes[1] : notes[0];
 
-                const std::string written = syntax::Argument::text(mouth);
-                for (const auto piece: std::views::split(written, ',')) {
+                for (const std::string written = syntax::Argument::text(mouth); const auto piece: std::views::split(written, ',')) {
                     std::string_view key(piece.data(), piece.size());
                     while (!key.empty() && key.front() == ' ') key.remove_prefix(1);
                     while (!key.empty() && key.back() == ' ') key.remove_suffix(1);
@@ -1151,8 +1150,8 @@ namespace render::primitives::referencing {
                     add(std::format("{}{}{}{}", type == "phdthesis" ? "PhD thesis" : "Master's thesis",
                                     with(field(entry, "school"), ", "), with(address, ", "), with(when, ", ")));
                 } else if (type == "techreport") {
-                    const std::string kind = field(entry, "type");
-                    add(std::format("{}{}{}{}", kind.empty() ? "Technical Report" : kind, with(number, " "),
+                    const std::string report = field(entry, "type");
+                    add(std::format("{}{}{}{}", report.empty() ? "Technical Report" : report, with(number, " "),
                                     with(field(entry, "institution"), ", "), with(when, ", ")));
                 } else if (type == "manual") {
                     add(std::format("{}{}{}", field(entry, "organization"), with(address, ", "), with(when, ", ")));
@@ -1186,8 +1185,8 @@ namespace render::primitives::referencing {
             mouth.ingest(context.arena.copy(written));
         };
 
-        parser.bind("\\bibliography", [this, compile, &context](const syntax::Parser &parser) -> syntax::Node * {
-            syntax::Mouth &mouth = parser.mouth;
+        parser.bind("\\bibliography", [this, compile, &context](const syntax::Parser &reader) -> syntax::Node * {
+            syntax::Mouth &mouth = reader.mouth;
             std::vector<std::string> files;
             for (const auto piece: std::views::split(syntax::Argument::text(mouth), ',')) {
                 std::string file(piece.begin(), piece.end());
@@ -1238,14 +1237,14 @@ namespace render::primitives::referencing {
         });
         // biblatex's list, its heading as its options say: `heading=none`
         // for none, `bibintoc` listed in the contents, `title={...}` its own.
-        parser.bind("\\printbibliography", [this, compile](const syntax::Parser &parser) -> syntax::Node * {
+        parser.bind("\\printbibliography", [this, compile](const syntax::Parser &reader) -> syntax::Node * {
             std::string options;
-            for (const syntax::Token &token: parser.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token: reader.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') options += ' ';
             }
             std::string title = "\\@bibtitle";
-            std::string kind;
+            std::string type;
             for (const auto piece: std::views::split(std::string_view(options), ',')) {
                 std::string_view option(piece.begin(), piece.end());
                 while (!option.empty() && option.front() == ' ') option.remove_prefix(1);
@@ -1257,17 +1256,17 @@ namespace render::primitives::referencing {
                 while (!value.empty() && value.back() == ' ') value.remove_suffix(1);
                 if (value.size() >= 2 && value.front() == '{' && value.back() == '}')
                     value = value.substr(1, value.size() - 2);
-                if (key.starts_with("heading")) kind = value;
+                if (key.starts_with("heading")) type = value;
                 if (key.starts_with("title")) title = value;
             }
-            if (kind == "none") heading = std::string{};
-            else if (kind.contains("intoc") || title != "\\@bibtitle") {
-                const std::string listed = kind.contains("intoc")
+            if (type == "none") heading = std::string{};
+            else if (type.contains("intoc") || title != "\\@bibtitle") {
+                const std::string listed = type.contains("intoc")
                                                ? std::format(R"(\addcontentsline{{toc}}{{\@bibkind}}{{{}}})", title)
                                                : std::string{};
                 heading = std::format(R"(\csname\@bibkind\endcsname*{{{}}}{})", title, listed);
             }
-            compile(parser.mouth, resources);
+            compile(reader.mouth, resources);
             return nullptr;
         });
 
