@@ -425,7 +425,7 @@ system->dispose(session);
 ```
 
 The library ships in every package: `mlatex_ffi.dll` on Windows,
-`libm.dylib` on macOS and `libm.so` on Linux, with
+`libmlatex_ffi.dylib` on macOS and `libmlatex_ffi.so` on Linux, with
 `include/protocols/ffi.hpp`. Copy any PDF bytes you want to keep before
 the next call to `typeset` or `snippet`, or before you dispose of the session.
 

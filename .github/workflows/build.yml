@@ -275,7 +275,7 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp stage/bin/*.dll bindings/python/mlatex
           else
-            cp stage/lib/libm.* bindings/python/mlatex
+            cp stage/lib/libmlatex_ffi.* bindings/python/mlatex
           fi
           cp -R stage/assets bindings/python/mlatex
           cp LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/python
