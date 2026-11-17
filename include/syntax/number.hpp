@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Scans TeX numerals and dimensions out of the token stream.
+
 #include "logger.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/mouth.hpp"
@@ -174,7 +177,7 @@ namespace syntax {
 
             std::int64_t whole = 0;
             std::size_t counted = 0;
-            bool factored = false; // an internal integer still needs a unit
+            bool factored = false; ///< an internal integer still needs a unit
 
             if (named == semantics::Registers::Type::Count) {
                 const auto scanned = integer(cursor, registers);
@@ -393,7 +396,7 @@ namespace syntax {
             else
                 return false;
 
-            return digit < base; // rejects 8 and 9 in octal
+            return digit < base; ///< rejects 8 and 9 in octal
         }
 
         /// @brief Consumes a run of digit tokens.
@@ -488,38 +491,38 @@ namespace syntax {
             switch (key) {
             case 'p' << 8 | 't':
                 consume(cursor);
-                return Measure{scale, 1}; // 1 pt
+                return Measure{scale, 1}; ///< 1 pt
             case 's' << 8 | 'p':
                 consume(cursor);
-                return Measure{1, 1}; // 1 sp
+                return Measure{1, 1}; ///< 1 sp
             case 'p' << 8 | 'c':
                 consume(cursor);
-                return Measure{scale * 12LL, 1}; // 1 pc = 12 pt
+                return Measure{scale * 12LL, 1}; ///< 1 pc = 12 pt
             case 'i' << 8 | 'n':
                 consume(cursor);
-                return Measure{scale * 7227LL, 100}; // 1 in = 72.27 pt
+                return Measure{scale * 7227LL, 100}; ///< 1 in = 72.27 pt
             case 'b' << 8 | 'p':
                 consume(cursor);
-                return Measure{scale * 7227LL, 7200}; // 1 bp = 72.27/72 pt
+                return Measure{scale * 7227LL, 7200}; ///< 1 bp = 72.27/72 pt
             case 'c' << 8 | 'm':
                 consume(cursor);
-                return Measure{scale * 7227LL, 254}; // 1 cm = 72.27/2.54 pt
+                return Measure{scale * 7227LL, 254}; ///< 1 cm = 72.27/2.54 pt
             case 'm' << 8 | 'm':
                 consume(cursor);
-                return Measure{scale * 7227LL, 2540}; // 1 mm = 72.27/25.4 pt
+                return Measure{scale * 7227LL, 2540}; ///< 1 mm = 72.27/25.4 pt
             case 'd' << 8 | 'd':
                 consume(cursor);
-                return Measure{scale * 1238LL, 1157}; // 1 dd = 1238/1157 pt
+                return Measure{scale * 1238LL, 1157}; ///< 1 dd = 1238/1157 pt
             case 'c' << 8 | 'c':
                 consume(cursor);
-                return Measure{scale * 14856LL, 1157}; // 1 cc = 12 dd
+                return Measure{scale * 14856LL, 1157}; ///< 1 cc = 12 dd
 
             case 'e' << 8 | 'm':
                 consume(cursor);
-                return Measure{quad, 1}; // 1 em
+                return Measure{quad, 1}; ///< 1 em
             case 'e' << 8 | 'x':
                 consume(cursor);
-                return Measure{quad * 43LL, 100}; // 1 ex = 0.43 em
+                return Measure{quad * 43LL, 100}; ///< 1 ex = 0.43 em
 
             default:
                 Logger::log(Logger::Type::Semantics, Logger::Level::Error, "Illegal unit of measure; pt assumed");

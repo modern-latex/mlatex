@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Headings, and the numbering that runs through them.
+
 #include "render/primitives/context.hpp"
 #include "render/primitives/typesetting/styles.hpp"
 #include "syntax/parser.hpp"

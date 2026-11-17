@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Named texts fixed at compile time, found in O(1).
+
 #include <array>
 #include <bit>
 #include <cstddef>

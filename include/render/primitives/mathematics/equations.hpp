@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Mathematics: formulas in a line and displayed, and their numbering.
+
 #include "render/primitives/context.hpp"
 #include "syntax/expression/parser.hpp"
 #include "syntax/parser.hpp"

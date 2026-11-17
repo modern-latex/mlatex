@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Integer arithmetic.
+
 #include "syntax/cursor.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"

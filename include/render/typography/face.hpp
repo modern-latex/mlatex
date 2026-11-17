@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One font file, opened for measuring and shaping.
+
 #include <harfbuzz/hb.h>
 
 #include <cstdint>

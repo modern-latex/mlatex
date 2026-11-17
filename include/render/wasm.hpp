@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The engine compiled to WebAssembly, for a web page, a worker or Node.
+
 #include "mlatex.hpp"
 
 #include <string>

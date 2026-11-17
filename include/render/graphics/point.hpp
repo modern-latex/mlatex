@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A point on the page a canvas draws to.
+
 namespace render::graphics {
     /// @brief A point on the page a canvas draws to.
     struct Point2 {

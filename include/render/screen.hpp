@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Laid-out pages kept to be drawn on a screen.
+
 #include "render/composer.hpp"
 #include "render/layout/document.hpp"
 
@@ -17,7 +20,7 @@ namespace render {
     /// description, as the composer writes it, and the faces, opacities and
     /// pictures it names -- and do two things with it. The writer wraps it in
     /// a file for a reader to open. This keeps it, with the outline of every
-    /// glyph the pages drew, and replays it onto a #Target whenever a page is
+    /// glyph the pages drew, and replays it onto a `Target` whenever a page is
     /// wanted at a size: a canvas in a browser, which draws it as vectors, as
     /// sharp at any zoom as the file would be, without a PDF reader in
     /// between.

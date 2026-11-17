@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Plots, as pgfplots draws them.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

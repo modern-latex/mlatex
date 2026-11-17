@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Conditionals: TeX's `\if` family, and LaTeX's tests built on it.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

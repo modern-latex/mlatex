@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Named places one package leaves open for another to fill.
+
 #include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"

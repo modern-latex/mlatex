@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief Just in time: an engine kept warm between runs, setting a document again as its files
+///       change.
+
 #include "mlatex.hpp"
 
 #include <filesystem>

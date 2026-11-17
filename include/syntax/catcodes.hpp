@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Character category table with group-scoped assignment.
+
 #include <array>
 #include <vector>
 

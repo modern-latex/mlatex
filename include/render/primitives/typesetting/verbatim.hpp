@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Text set as it was typed.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

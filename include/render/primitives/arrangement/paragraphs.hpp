@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The shape of a paragraph.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

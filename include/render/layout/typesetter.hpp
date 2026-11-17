@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Turns a formula into boxes, and a document into pages.
+
 #include "layout/document.hpp"
 #include "layout/node.hpp"
 #include "layout/pager.hpp"

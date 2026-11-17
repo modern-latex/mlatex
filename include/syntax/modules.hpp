@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Finds an embedded prelude file's text by name.
+
 #include <optional>
 #include <string_view>
 

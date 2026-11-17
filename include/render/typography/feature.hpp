@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One OpenType feature, turned on or off for a whole run.
+
 #include <harfbuzz/hb.h>
 
 #include <string_view>

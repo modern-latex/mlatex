@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Colored text, and the colors a document names.
+
 #include "render/graphics/color.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"

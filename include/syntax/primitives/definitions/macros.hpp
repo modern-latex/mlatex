@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Definition primitives: macros, and the commands that make them.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

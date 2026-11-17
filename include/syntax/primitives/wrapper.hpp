@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Every core primitive, installed in one call.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/arithmetic/decimals.hpp"
 #include "syntax/primitives/arithmetic/integers.hpp"
@@ -68,8 +71,8 @@ namespace syntax::primitives {
         /// @complexity O(n) in the number of errors reported.
         [[nodiscard]] std::vector<Traceback> traceback() const;
 
-        // Declared first because Context is built from the conditionals and the
-        // other modules are handed that same Context.
+        /// Declared first because Context is built from the conditionals and the
+        /// other modules are handed that same Context.
         logic::Conditionals conditionals; ///< Conditionals; Context holds a reference to this.
         logic::Environments environments; ///< `\\enter` and `\\leave`; its depth() reports unclosed blocks.
         definitions::Macros macros;       ///< `\\define`, `\\forget`, `\\alias` and the prefixes.

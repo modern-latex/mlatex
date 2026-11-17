@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief A plot's formula read once and worked out at every point -- in machine code, by asmjit,
+///       when there are enough points to be worth it.
+
 namespace jit {
     /// @brief A plot's formula read once and worked out at every point --
     ///        in machine code, by asmjit, when there are enough points to be

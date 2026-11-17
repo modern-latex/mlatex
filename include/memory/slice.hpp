@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A pointer and a count: a view of memory an arena owns.
+
 #include <cstddef>
 
 namespace memory {

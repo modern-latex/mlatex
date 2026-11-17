@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Every piece of state a group saves and restores.
+
 #include "syntax/catcodes.hpp"
 #include "syntax/semantics/registers.hpp"
 

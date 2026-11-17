@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Packs a run of nodes into one box.
+
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"

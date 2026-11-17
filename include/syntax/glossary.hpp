@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What CTAN's packages define, for the commands the engine gives no meaning of its own.
+
 #include "syntax/tokens.hpp"
 
 #include <optional>

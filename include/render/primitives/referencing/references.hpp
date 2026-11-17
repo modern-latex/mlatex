@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Cross-references: labels, and the references that name them.
+
 #include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"

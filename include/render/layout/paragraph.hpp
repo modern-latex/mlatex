@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One paragraph.
+
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"

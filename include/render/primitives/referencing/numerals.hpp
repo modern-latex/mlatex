@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Formats a counter's value the way LaTeX's numbering commands do.
+
 #include <string>
 
 namespace render::primitives::referencing {

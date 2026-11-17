@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Space: glue that stretches and shrinks, and kerns that do not.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Pulls in another file of the language, and whole packages of them.
+
 #include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"

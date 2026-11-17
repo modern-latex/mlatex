@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Files a program embedding the engine hands it from memory, by name.
+
 #include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 

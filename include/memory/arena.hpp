@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A region allocator: memory handed out in order and given back all at once.
+
 #include "memory/slice.hpp"
 
 #include <cstddef>

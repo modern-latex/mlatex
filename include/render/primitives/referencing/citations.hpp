@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Citations and the list they cite.
+
 #include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"

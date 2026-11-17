@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What type of open group a scope is, for diagnostics.
+
 #include <cstdint>
 #include <string_view>
 

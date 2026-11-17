@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Writes laid-out pages out as a PDF.
+
 #include "layout/pager.hpp"
 #include "memory/slice.hpp"
 #include "render/composer.hpp"

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Named values a document reads.
+
 #include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"

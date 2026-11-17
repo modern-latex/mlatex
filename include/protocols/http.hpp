@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Everything the engine sends or reads over a wire, or off disk in its place.
+
 #include <cstdint>
 #include <optional>
 #include <string_view>

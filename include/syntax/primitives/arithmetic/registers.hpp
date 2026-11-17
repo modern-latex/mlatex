@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Register primitives: TeX's counts, dimensions, skips and token lists.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

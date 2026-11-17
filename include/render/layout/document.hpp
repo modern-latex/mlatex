@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A document laid out: its pages, and what was set on each.
+
 #include "layout/ledger.hpp"
 #include "layout/node.hpp"
 #include "layout/pager.hpp"
@@ -19,10 +22,10 @@
 #include <vector>
 
 namespace render::layout {
-    // Forward declared, not included: typesetter.hpp includes this header, so
-    // including it back would close the cycle. A document only lowers formulas
-    // through the reference it is handed, which needs the name and not the
-    // definition.
+    /// Forward declared, not included: typesetter.hpp includes this header, so
+    /// including it back would close the cycle. A document only lowers formulas
+    /// through the reference it is handed, which needs the name and not the
+    /// definition.
     class Typesetter;
 
     /// @brief Everything a document is made of, in the order it was written.

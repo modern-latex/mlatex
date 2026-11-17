@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Reads source text into tokens, as TeX's eyes do.
+
 #include "memory/location.hpp"
 #include "syntax/catcodes.hpp"
 #include "syntax/lexicon.hpp"
@@ -11,8 +14,10 @@
 #include <vector>
 
 namespace syntax {
+    /// @brief Reads source text into tokens, as TeX's eyes do: a character's category decides what it becomes.
     class Lexer {
     public:
+        /// @brief Which of TeX's three reading states the lexer is in, and the one after a paragraph break.
         enum class Type {
             Newline, ///< State N: line start; an end-of-line here is \\par
             Skip,    ///< State S: skipping blanks; an end-of-line here starts a new line and nothing more

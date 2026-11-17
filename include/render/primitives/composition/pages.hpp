@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The page: its size, margins, headers and footers.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

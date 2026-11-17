@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Flattens three dimensions onto two, the way a drafting board does.
+
 #include "render/graphics/point.hpp"
 
 namespace render::graphics {

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Floats and their captions.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

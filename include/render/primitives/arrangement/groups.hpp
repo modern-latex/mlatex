@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Braces, and everything they hold together.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 

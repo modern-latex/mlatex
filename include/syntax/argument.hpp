@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Reads a macro argument back as plain text.
+
 #include "syntax/mouth.hpp"
 
 #include <span>
@@ -58,7 +61,7 @@ namespace syntax {
             mouth.stream().inject(gathered);
 
             std::string joined;
-            bool word = false; // the last thing written was a control word
+            bool word = false; ///< the last thing written was a control word
             for (;;) {
                 const Token token = mouth.expand();
                 if (token.symbol == marker || token.empty() || mouth.error) break;

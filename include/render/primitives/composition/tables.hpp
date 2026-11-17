@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Aligned material.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

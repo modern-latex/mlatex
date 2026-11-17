@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief What a standard library gets wrong on one platform, put right for every platform the same
+///       way.
+
 #include <charconv>
 
 /// @brief What a standard library gets wrong on one platform, put right for

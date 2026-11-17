@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Breaks a run of glyphs into lines, optimally.
+
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A raster image.
+
 #include <cstddef>
 #include <cstdint>
 #include <optional>

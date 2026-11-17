@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What a formula is read by.
+
 #include "memory/arena.hpp"
 #include "syntax/expression/node.hpp"
 #include "syntax/mouth.hpp"

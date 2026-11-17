@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One node of a formula's tree.
+
 #include "memory/slice.hpp"
 #include "syntax/expression/unicodes.hpp"
 

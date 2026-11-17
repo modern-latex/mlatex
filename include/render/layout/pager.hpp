@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Cuts a column of blocks into pages.
+
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"

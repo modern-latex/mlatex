@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The characters and marks a document cannot type directly.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 

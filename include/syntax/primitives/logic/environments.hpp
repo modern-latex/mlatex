@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Named block structure.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"
@@ -87,7 +90,7 @@ namespace syntax::primitives::logic {
         ///                    an Equations scope through `\\[`, and a second,
         ///                    Environment one around that would only have to
         ///                    close before it, which nothing here can arrange.
-        /// @param lingering   True when the block's scope is to stay open while
+        /// @param persisting  True when the block's scope is to stay open while
         ///                    what its closing hooks put in front of the stream
         ///                    is read, and close after: the document's, whose
         ///                    `\\AtEndDocument` code sees what the document

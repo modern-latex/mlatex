@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Footnotes, set at the foot of the page that calls them.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

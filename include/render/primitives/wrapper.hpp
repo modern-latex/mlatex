@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Every render primitive, installed in one call.
+
 #include "render/primitives/arrangement/boxes.hpp"
 #include "render/primitives/arrangement/glue.hpp"
 #include "render/primitives/arrangement/groups.hpp"

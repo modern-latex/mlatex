@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Turns a page's boxes into the marks that print it.
+
 #include "layout/document.hpp"
 #include "layout/node.hpp"
 #include "layout/typesetter.hpp"
@@ -263,14 +266,14 @@ namespace render {
         std::string content{};    ///< The page description being built.
         std::string transcript{}; ///< The text of the page being drawn.
 
-        // The open run: which face and size it is in, and where its pen is.
+        /// The open run: which face and size it is in, and where its pen is.
         const typography::Font *running{nullptr}; ///< Its font, or null when no run is open.
         std::size_t index{0};                     ///< Its resource index.
         float pen{0.0f};                          ///< Where its pen has reached from the left.
         float line{0.0f};                         ///< Its baseline from the top.
 
-        // The color last set, so a page of the one color -- nearly every one
-        // -- costs one operator rather than one per glyph and rule.
+        /// The color last set, so a page of the one color -- nearly every one
+        /// -- costs one operator rather than one per glyph and rule.
         layout::Node::Color filling{};  ///< Fill color in use.
         layout::Node::Color stroking{}; ///< Stroke color in use.
         float opacity = 1.0f;           ///< Opacity in use.

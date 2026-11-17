@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Fonts already built, reached by what was asked for.
+
 #include "memory/arena.hpp"
 #include "typography/collection.hpp"
 #include "typography/face.hpp"

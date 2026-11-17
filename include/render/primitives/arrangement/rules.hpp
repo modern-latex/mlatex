@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Rules: solid lines and boxes of ink.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 

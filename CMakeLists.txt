@@ -252,8 +252,9 @@ if (DOXYGEN_FOUND)
     # the changelog and the code of conduct. Everything is generated into
     # the build tree's docs/; the source tree keeps no docs folder.
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${source}/README.md")
-    doxygen_add_docs(docs "${source}/README.md" "${source}/include" "${source}/src"
-            "${source}/SECURITY.md" "${source}/CHANGELOG.md" "${source}/CODE_OF_CONDUCT.md"
+    file(GLOB pages CONFIGURE_DEPENDS "${source}/*.md" "${source}/bindings/*/README.md" "${source}/frontend/README.md"
+            "${source}/benchmarks/*.md" "${source}/tests/*.md" "${source}/assets/*/*.md")
+    doxygen_add_docs(docs ${pages} "${source}/include" "${source}/src"
             COMMENT "Generating documentation")
 endif ()
 

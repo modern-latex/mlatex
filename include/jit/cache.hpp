@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief What a run worked out that the next run would work out the same.
+
 namespace jit {
     /// @brief What a run worked out that the next run would work out the
     ///        same: each face's cut for the PDF, and each word's glyphs --

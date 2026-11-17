@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The token stack the expander reads from.
+
 #include "syntax/tokens.hpp"
 
 #include <span>

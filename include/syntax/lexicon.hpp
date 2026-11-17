@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Interned names: every control sequence and word, stored once.
+
 #include "memory/arena.hpp"
 
 #include <array>

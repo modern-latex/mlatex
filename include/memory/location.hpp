@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A position in source text, kept for diagnostics.
+
 #include <cstdint>
 
 namespace memory {

@@ -1,4 +1,4 @@
-# Writing packages {#packages}
+# Writing packages {#package-guide}
 
 A package here is a folder with one file in it, `main.mtex`, written in the
 same language a document is. There are no `.sty` files and no class files:

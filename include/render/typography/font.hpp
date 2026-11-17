@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A face at one size.
+
 #include "typography/face.hpp"
 
 #include <harfbuzz/hb.h>

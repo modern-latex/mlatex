@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A sheet a document draws straight lines onto.
+
 #include "memory/arena.hpp"
 #include "render/graphics/color.hpp"
 #include "render/graphics/point.hpp"

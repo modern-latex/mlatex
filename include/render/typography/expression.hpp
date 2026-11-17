@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The OpenType MATH table, read in points.
+
 #include "typography/font.hpp"
 
 #include <cstdint>

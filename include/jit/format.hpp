@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief The JIT's whole state on disk, beside the document, so the first run after the program
+///       starts is warm too.
+
 namespace jit {
     /// @brief The JIT's whole state on disk, beside the document, so the
     ///        first run after the program starts is warm too: piece 9 of

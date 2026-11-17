@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Runs of text already shaped, so they are shaped once.
+
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"

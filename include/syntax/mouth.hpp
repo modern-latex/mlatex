@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The macro expander.
+
 #include "memory/arena.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/glossary.hpp"

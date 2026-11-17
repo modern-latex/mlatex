@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The engine's own reports.
+
 #include <atomic>
 #include <cstdint>
 #include <format>
@@ -19,6 +22,7 @@
 /// release build drops everything below #floor when it is compiled.
 class Logger {
 public:
+    /// @brief The engine's subsystems, as flags: which a run's reports are followed for.
     enum class Type : std::uint32_t {
         None = 0,
         Lexer = 1u << 0,
@@ -30,6 +34,7 @@ public:
         All = 0x3Fu
     };
 
+    /// @brief How severe a report is, from a traceback to an error.
     enum class Level : std::uint8_t { Traceback = 0, Debug = 1, Informative = 2, Warning = 3, Error = 4, Silent = 5 };
 
     /// @brief The least severe level this build keeps at all.
@@ -146,7 +151,7 @@ private:
     static void write(Type target, Level value, std::string_view text, const std::source_location &location) noexcept;
 
     inline static std::mutex mutex{};
-    inline static std::atomic<Type> mask{Type::None}; // read by check() without the lock
+    inline static std::atomic<Type> mask{Type::None}; ///< read by check() without the lock
     inline static std::atomic<Level> threshold{Level::Error};
     inline static std::atomic<bool> ansi{true};
     inline static std::ofstream stream{};

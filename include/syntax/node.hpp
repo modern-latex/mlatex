@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One node of the parsed document, as the parser hands it to layout.
+
 #include "memory/location.hpp"
 #include "memory/slice.hpp"
 
@@ -10,7 +13,9 @@ namespace syntax::expression {
 }
 
 namespace syntax {
+    /// @brief One node of the parsed document, as the parser hands it to layout.
     struct Node {
+        /// @brief What a node is: text, a paragraph break, a formula, a group, a command or an environment.
         enum class Type {
             Text,        ///< Plain unformatted character stream
             Paragraph,   ///< Explicit paragraph break (\\par)

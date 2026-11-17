@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Penalties: where a line or page may, must or must not break.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 

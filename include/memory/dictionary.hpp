@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief A string hash that hashes a view the same way, so a table keyed by strings is searched
+///       with a view and never builds a string.
+
 #include <cstddef>
 #include <functional>
 #include <string>

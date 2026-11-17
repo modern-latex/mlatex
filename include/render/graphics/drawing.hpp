@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One page of another PDF, kept to be drawn as a form.
+
 #include <array>
 #include <cstddef>
 #include <cstdint>

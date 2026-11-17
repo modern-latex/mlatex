@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Named counters, as LaTeX keeps them.
+
 #include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"

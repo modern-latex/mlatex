@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Languages: hyphenation, quotation marks and each language's own words.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One recorded error and the position that caused it.
+
 #include "memory/location.hpp"
 
 #include <cstdint>

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Turns the expander's tokens into a flat list of nodes.
+
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 #include "syntax/lexicon.hpp"

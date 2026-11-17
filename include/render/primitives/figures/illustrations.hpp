@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Line drawing.
+
 #include "render/graphics/canvas.hpp"
 #include "render/graphics/color.hpp"
 #include "render/graphics/drawing.hpp"
@@ -188,16 +191,16 @@ namespace render::primitives::figures {
         mutable std::vector<std::string> folders{}; ///< Where \\graphicspath says pictures are, each ending in a slash.
         mutable std::vector<graphics::Canvas> canvases{}; ///< Open pictures, outermost first.
 
-        // Parallel to #canvases: how much room each open one takes -- an
-        // overlay the room it declared, pinned where #anchors says; a picture
-        // its declared room, grown to hold its drawing; a TikZ picture just
-        // its drawing -- and how much its TikZ coordinates are scaled by.
+        /// Parallel to #canvases: how much room each open one takes -- an
+        /// overlay the room it declared, pinned where #anchors says; a picture
+        /// its declared room, grown to hold its drawing; a TikZ picture just
+        /// its drawing -- and how much its TikZ coordinates are scaled by.
         mutable std::vector<graphics::Canvas::Room> rooms{};
         mutable std::vector<layout::Node::Point> anchors{};
         mutable std::vector<float> scales{};
-        // And the height each stands on the baseline at: TikZ's `baseline`
-        // option as written -- a length, or a node and its anchor, `([yshift=-.5ex]cd.center)`
-        // -- or nothing for its bottom.
+        /// And the height each stands on the baseline at: TikZ's `baseline`
+        /// option as written -- a length, or a node and its anchor, `([yshift=-.5ex]cd.center)`
+        /// -- or nothing for its bottom.
         mutable std::vector<std::string> baselines{};
 
         mutable graphics::Color color{graphics::black};                        ///< Current stroke color.
@@ -206,10 +209,10 @@ namespace render::primitives::figures {
         mutable graphics::Projection view = graphics::Projection::isometric(); ///< Current 3D view.
         mutable layout::Node *pending = nullptr; ///< The picture just closed, awaiting flush.
 
-        // A deque, not a vector: every decoded image is kept for the whole
-        // run, since a Node::Bitmap points straight into one of these rather
-        // than copying its pixels, and a vector's own growth would move them
-        // out from under every pointer already handed out.
+        /// A deque, not a vector: every decoded image is kept for the whole
+        /// run, since a Node::Bitmap points straight into one of these rather
+        /// than copying its pixels, and a vector's own growth would move them
+        /// out from under every pointer already handed out.
         mutable std::deque<graphics::Image> images{};
 
         /// Each picture already decoded, by where its bytes lie -- a file

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Font selection.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

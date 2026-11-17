@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief A color, as a document writes one.
+
 #include <string_view>
 
 namespace render::graphics {
@@ -38,8 +41,8 @@ namespace render::graphics {
         [[nodiscard]] friend bool operator==(const Color &, const Color &) noexcept = default;
     };
 
-    // xcolor's nineteen base colors, exactly as it defines them, so a
-    // document written for LaTeX gets the same red it got there.
+    /// xcolor's nineteen base colors, exactly as it defines them, so a
+    /// document written for LaTeX gets the same red it got there.
     inline constexpr Color black{0.0f, 0.0f, 0.0f};
     inline constexpr Color white{1.0f, 1.0f, 1.0f};
     inline constexpr Color red{1.0f, 0.0f, 0.0f};

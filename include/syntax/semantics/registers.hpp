@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief TeX's numbered register banks, with group-scoped assignment.
+
 #include "syntax/lexicon.hpp"
 
 #include <array>

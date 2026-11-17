@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The font collection, indexed once and resident in memory.
+
 #include "memory/arena.hpp"
 
 #include <memory>

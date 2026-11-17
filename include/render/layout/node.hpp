@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One node of a laid-out page: a box, glue, a kern, a penalty or a glyph run.
+
 #include "font.hpp"
 #include "memory/slice.hpp"
 #include "render/graphics/drawing.hpp"
@@ -11,37 +14,42 @@
 #include <string_view>
 
 namespace render::typography {
-    // Forward declared: a directive only points at the patterns a
-    // language's words break by, and needs nothing else of them.
+    /// Forward declared: a directive only points at the patterns a
+    /// language's words break by, and needs nothing else of them.
     class Hyphenator;
 }
 
 namespace render::layout {
+    /// @brief One piece of a laid-out page: a box, glue, a kern, a penalty, a rule, a glyph run, a path, a picture or a
+    /// directive.
     class Node {
     public:
+        /// @brief What a node is, and so which of its data it holds.
         enum class Type : std::uint8_t {
-            Box,      // Container holding horizontal or vertical lists of child nodes
-            Glue,     // Elastic spacing that stretches or shrinks during line or page breaking
-            Kern,     // Fixed non-breakable spacing between layout elements
-            Penalty,  // Breakpoint evaluation node with an attached penalty value
-            Rule,     // Solid rectangular geometric shape like lines or rules
-            Glyph,    // Individual rendered typographic character or symbol
-            Path,     // A straight stroke between two points, for a canvas's own drawing
-            Bitmap,   // A decoded raster image, drawn at a given size
-            Pause,    // Explicit break directive or breakpoint container
-            Directive // An instruction to the document rather than something drawn
+            Box,      ///< Container holding horizontal or vertical lists of child nodes
+            Glue,     ///< Elastic spacing that stretches or shrinks during line or page breaking
+            Kern,     ///< Fixed non-breakable spacing between layout elements
+            Penalty,  ///< Breakpoint evaluation node with an attached penalty value
+            Rule,     ///< Solid rectangular geometric shape like lines or rules
+            Glyph,    ///< Individual rendered typographic character or symbol
+            Path,     ///< A straight stroke between two points, for a canvas's own drawing
+            Bitmap,   ///< A decoded raster image, drawn at a given size
+            Pause,    ///< Explicit break directive or breakpoint container
+            Directive ///< An instruction to the document rather than something drawn
         };
 
+        /// @brief How infinite a glue's stretch or shrink is, as TeX's fil, fill and filll.
         enum class Order : std::uint8_t {
-            Normal, // Standard finite elasticity order
-            Fil,    // First level infinite elasticity overriding normal
-            Fill,   // Second level infinite elasticity overriding fil
-            Filll   // Third level infinite elasticity overriding fill
+            Normal, ///< Standard finite elasticity order
+            Fil,    ///< First level infinite elasticity overriding normal
+            Fill,   ///< Second level infinite elasticity overriding fil
+            Filll   ///< Third level infinite elasticity overriding fill
         };
 
+        /// @brief Whether a box lays its children out across or down.
         enum class Alignment : std::uint8_t {
-            Horizontal, // Horizontal list box alignment mode
-            Vertical    // Vertical list box alignment mode
+            Horizontal, ///< Horizontal list box alignment mode
+            Vertical    ///< Vertical list box alignment mode
         };
 
         /// @brief How the lines of a paragraph sit in their column.
@@ -52,10 +60,11 @@ namespace render::layout {
             Center ///< Every line centred: `\\centering` and `center`.
         };
 
+        /// @brief Whether a box's glue is set at its width, stretched or shrunk.
         enum class Sign : std::uint8_t {
-            None,       // Baseline glue state with zero scaling
-            Stretching, // Glue expanded beyond baseline width
-            Shrinking   // Glue compressed below baseline width
+            None,       ///< Baseline glue state with zero scaling
+            Stretching, ///< Glue expanded beyond baseline width
+            Shrinking   ///< Glue compressed below baseline width
         };
 
         /// @brief A place on the page, measured from its top left corner.
@@ -64,6 +73,7 @@ namespace render::layout {
             float down{0.0f};   ///< Down the page.
         };
 
+        /// @brief A width and a height, in points.
         struct Size {
             float width{0.0f};
             float height{0.0f};
@@ -137,6 +147,8 @@ namespace render::layout {
             const Transform *transform{nullptr};
         };
 
+        /// @brief Space that stretches and shrinks, as TeX's glue: its natural width, how far it gives, and how
+        /// infinitely.
         struct Glue {
             float width{0.0f};
             float stretch{0.0f};
@@ -147,15 +159,18 @@ namespace render::layout {
             ///< Drawn along the glue: a rule stretched to its width, or a box repeated on a grid -- TeX's `\\leaders`.
         };
 
+        /// @brief Space that never stretches, shrinks or breaks.
         struct Kern {
             float width{0.0f};
         };
 
+        /// @brief What breaking a line or page here costs: TeX's \\penalty, and whether it is a flagged one.
         struct Penalty {
             std::int32_t value{0};
             bool flag{false};
         };
 
+        /// @brief A solid rectangle of ink: its width, height and depth.
         struct Rule {
             float width{0.0f};
             float height{0.0f};
@@ -413,6 +428,7 @@ namespace render::layout {
         Type type{Type::Box}; ///< What the node is, and so which of its data it holds.
 
     private:
+        /// @brief The data of whichever type the node is, in the space of the largest.
         union Data {
             Box box;
             Glue glue;

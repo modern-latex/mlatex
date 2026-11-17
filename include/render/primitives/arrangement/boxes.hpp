@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Explicit boxes: material set in a box of its own and placed whole.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

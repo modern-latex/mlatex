@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Theorems and proofs, as amsthm has them.
+
 #include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"

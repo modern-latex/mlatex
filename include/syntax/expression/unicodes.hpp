@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Maths symbol names to the characters they stand for.
+
 #include <cstdint>
 #include <optional>
 #include <string_view>

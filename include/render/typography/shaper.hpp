@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Shapes runs of text into positioned glyphs with HarfBuzz.
+
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 #include "render/layout/node.hpp"
@@ -10,7 +13,7 @@
 #include <string_view>
 
 namespace render::typography {
-    // Forward declared: the registry builds fonts, and needs nothing from here.
+    /// Forward declared: the registry builds fonts, and needs nothing from here.
     class Registry;
 
     /// @brief Turns text into positioned glyphs.

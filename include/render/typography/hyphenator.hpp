@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Liang's hyphenation algorithm, over a trie of patterns.
+
 #include "memory/arena.hpp"
 #include "memory/slice.hpp"
 

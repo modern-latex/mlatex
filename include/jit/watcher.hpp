@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief Tells the moment a file a document reads is saved, from the operating system rather than
+///       by asking.
+
 namespace jit {
     /// @brief Tells the moment a file a document reads is saved, from the
     ///        operating system rather than by asking: piece 1 of jit::Jit.

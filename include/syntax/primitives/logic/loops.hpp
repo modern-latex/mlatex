@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Iteration and explicit grouping.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Text taken apart and tested.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

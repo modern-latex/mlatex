@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief One lexed character or control sequence.
+
 #include "memory/location.hpp"
 #include "syntax/catcodes.hpp"
 #include "syntax/lexicon.hpp"

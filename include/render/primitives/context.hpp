@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Which font a primitive should be using right now.
+
 #include "layout/document.hpp"
 #include "layout/typesetter.hpp"
 #include "memory/arena.hpp"
@@ -358,11 +361,11 @@ namespace render::primitives {
             return amount * context.document.configuration.indent;
         }
 
-        // Read as an expression, so a length may be written as the calc
-        // package lets it be: `\\textwidth-2cm`, `0.5\\linewidth+1em`. Past
-        // its end is a mark no document can write, and whatever of the text
-        // is left before it -- a glue's `plus 2pt` -- is read and let go,
-        // never set as words.
+        /// Read as an expression, so a length may be written as the calc
+        /// package lets it be: `\\textwidth-2cm`, `0.5\\linewidth+1em`. Past
+        /// its end is a mark no document can write, and whatever of the text
+        /// is left before it -- a glue's `plus 2pt` -- is read and let go,
+        /// never set as words.
         const syntax::Symbol end = mouth.lexicon.intern("\\measure:end");
         const syntax::Token mark{
                 .symbol = end, .category = syntax::Catcodes::Category::Escape, .text = mouth.lexicon.resolve(end)};
@@ -396,8 +399,8 @@ namespace render::primitives {
             return;
         }
 
-        // The face the text was read under, where one was recorded, and
-        // whatever is in use otherwise.
+        /// The face the text was read under, where one was recorded, and
+        /// whatever is in use otherwise.
         const auto *font = child->face ? static_cast<const typography::Font *>(child->face) : context.selection.text();
 
         // Set as running text is, its words broken where the language in

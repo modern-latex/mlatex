@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Tables of data in a document.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

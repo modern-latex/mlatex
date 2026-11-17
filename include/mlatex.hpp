@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief The whole pipeline, callable by more than `main()`.
+
 #include "render/screen.hpp"
 #include "syntax/primitives/context.hpp"
 

@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Diagrams the packages for them write.
+
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"

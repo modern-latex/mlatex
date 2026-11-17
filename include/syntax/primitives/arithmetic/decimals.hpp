@@ -1,5 +1,8 @@
 #pragma once
 
+/// @file
+/// @brief Money-safe arithmetic and the formatting of amounts.
+
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"

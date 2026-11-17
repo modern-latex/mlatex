@@ -1,5 +1,9 @@
 #pragma once
 
+/// @file
+/// @brief The engine's whole state at one point of a document, kept to start from instead of from
+///       the first byte.
+
 namespace jit {
     /// @brief The engine's whole state at one point of a document, kept to
     ///        start from instead of from the first byte: pieces 7 and 8 of
