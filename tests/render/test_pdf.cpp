@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <charconv>
@@ -27,13 +27,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -66,11 +66,10 @@ static std::size_t count(const std::string_view text, const std::string_view par
 /// A one-pixel PNG, for a picture handed in from memory.
 static std::string dot() {
     static constexpr unsigned char bytes[] = {
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F,
-        0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-        0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00,
+            0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+            0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F, 0x0F, 0x00, 0x02, 0x87, 0x01, 0x80,
+            0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     };
     return std::string(reinterpret_cast<const char *>(bytes), sizeof bytes);
 }
@@ -115,19 +114,21 @@ int main() {
     }
     {
         std::string words;
-        for (int index = 0; index < 1500; ++index) words += "incomprehensibilities ";
+        for (int index = 0; index < 1500; ++index)
+            words += "incomprehensibilities ";
         const Result result = article("", words);
         assert((result.clean && valid(result.pdf) && count(result.pdf, "/Type /Page\n") > 1) &&
                "a long run of text flows onto more pages, each an object of its own");
     }
     {
-        latex::Host host;
+        mlatex::Host host;
         host.files["dot.png"] = dot();
         const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                       "\\includegraphics{dot.png}\\end{document}",
                                       host);
         assert((result.clean && valid(result.pdf) && holds(result.pdf, "/Subtype /Image") &&
-                holds(result.pdf, "/FlateDecode")) && "a picture embedded, compressed");
+                holds(result.pdf, "/FlateDecode")) &&
+               "a picture embedded, compressed");
     }
     {
         const Result once = article("", "The same words.");
@@ -140,8 +141,8 @@ int main() {
     }
     {
         const Result result = typeset("\\DocumentMetadata{pdfstandard=A-2b}\\documentclass{article}"
-            "\\usepackage{hyperref}\\hypersetup{pdftitle={A Title}, pdfauthor={A. Writer}}"
-            "\\begin{document}Archived.\\end{document}");
+                                      "\\usepackage{hyperref}\\hypersetup{pdftitle={A Title}, pdfauthor={A. Writer}}"
+                                      "\\begin{document}Archived.\\end{document}");
         assert((result.clean && valid(result.pdf)) && "a PDF/A document is a valid PDF");
         assert((holds(result.pdf, "/OutputIntents") && holds(result.pdf, "<pdfaid:part>2</pdfaid:part>") &&
                 holds(result.pdf, "/Metadata") && holds(result.pdf, "/ID [<")) &&
@@ -152,22 +153,23 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
-            "\\title{On \\emph{Flows}}\\author{A. Writer\\thanks{Funded.} \\and B. Writer}"
-            "\\begin{document}\\maketitle Read.\\end{document}");
+                                      "\\title{On \\emph{Flows}}\\author{A. Writer\\thanks{Funded.} \\and B. Writer}"
+                                      "\\begin{document}\\maketitle Read.\\end{document}");
         assert((result.clean && holds(result.pdf, "/Title (On Flows)") &&
                 holds(result.pdf, "/Author (A. Writer, B. Writer)")) &&
                "pdfusetitle: \\title and \\author are the file's own, as plain words");
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
-            "\\title{A--B}\\begin{document}Read.\\end{document}");
+                                      "\\title{A--B}\\begin{document}Read.\\end{document}");
         assert((holds(result.pdf, "/Title <FEFF004120130042>")) && "its dash as the dash it sets");
     }
     {
-        const Result given = typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
-            "\\hypersetup{pdftitle={Given}}\\title{Written}\\begin{document}Read.\\end{document}");
+        const Result given =
+                typeset("\\documentclass{article}\\usepackage[pdfusetitle]{hyperref}"
+                        "\\hypersetup{pdftitle={Given}}\\title{Written}\\begin{document}Read.\\end{document}");
         const Result unasked = typeset("\\documentclass{article}\\usepackage{hyperref}"
-            "\\title{Written}\\begin{document}Read.\\end{document}");
+                                       "\\title{Written}\\begin{document}Read.\\end{document}");
         assert((holds(given.pdf, "/Title (Given)") && !holds(unasked.pdf, "/Title")) &&
                "what \\hypersetup gave comes first, and without pdfusetitle \\title stays the page's");
     }

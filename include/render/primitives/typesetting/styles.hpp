@@ -59,38 +59,36 @@ namespace render::primitives::typesetting {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief One change to the face in use.
         enum class Cut : std::uint8_t {
             Current, ///< None: a change of size alone.
-            Normal, ///< `\\normalfont`: roman, medium, upright -- the body's face.
-            Roman, ///< `\\rmfamily`: the serif family, series and shape kept.
-            Sans, ///< `\\sffamily`.
-            Mono, ///< `\\ttfamily`.
-            Medium, ///< `\\mdseries`: the normal weight, family and shape kept.
-            Bold, ///< `\\bfseries`.
+            Normal,  ///< `\\normalfont`: roman, medium, upright -- the body's face.
+            Roman,   ///< `\\rmfamily`: the serif family, series and shape kept.
+            Sans,    ///< `\\sffamily`.
+            Mono,    ///< `\\ttfamily`.
+            Medium,  ///< `\\mdseries`: the normal weight, family and shape kept.
+            Bold,    ///< `\\bfseries`.
             Upright, ///< `\\upshape`.
-            Italic, ///< `\\itshape`.
+            Italic,  ///< `\\itshape`.
             Slanted, ///< `\\slshape`.
-            Caps, ///< `\\scshape`.
+            Caps,    ///< `\\scshape`.
             Emphasis ///< `\\em`: italic in upright text, upright in italic.
         };
 
         /// @brief One of LaTeX's ten size steps.
         enum class Size : std::uint8_t {
-            Tiny, ///< `\\tiny`.
-            Script, ///< `\\scriptsize`.
+            Tiny,     ///< `\\tiny`.
+            Script,   ///< `\\scriptsize`.
             Footnote, ///< `\\footnotesize`.
-            Small, ///< `\\small`.
-            Normal, ///< `\\normalsize`: the class's body size.
-            Large, ///< `\\large`.
-            Larger, ///< `\\Large`.
-            Largest, ///< `\\LARGE`.
-            Huge, ///< `\\huge`.
-            Hugest ///< `\\Huge`.
+            Small,    ///< `\\small`.
+            Normal,   ///< `\\normalsize`: the class's body size.
+            Large,    ///< `\\large`.
+            Larger,   ///< `\\Large`.
+            Largest,  ///< `\\LARGE`.
+            Huge,     ///< `\\huge`.
+            Hugest    ///< `\\Huge`.
         };
 
         /// @brief The face for a change to the face in use, at a size.
@@ -103,11 +101,7 @@ namespace render::primitives::typesetting {
         /// @param cut     The change wanted.
         /// @param size    Size wanted, in points.
         /// @return A font, never null while a text face is selected.
-        [[nodiscard]] static const typography::Font *resolve(
-            const Context &context,
-            Cut cut,
-            float size
-        );
+        [[nodiscard]] static const typography::Font *resolve(const Context &context, Cut cut, float size);
 
         /// @brief A size step in points, for a body size.
         ///
@@ -130,7 +124,7 @@ namespace render::primitives::typesetting {
             std::optional<float> size{}; ///< In points.
             std::optional<Cut> family{}; ///< Roman, sans or typewriter.
             std::optional<Cut> series{}; ///< Bold or medium.
-            std::optional<Cut> shape{}; ///< Italic, slanted, small capitals or upright.
+            std::optional<Cut> shape{};  ///< Italic, slanted, small capitals or upright.
         };
 
         mutable Pending pending{}; ///< What \\selectfont selects next.

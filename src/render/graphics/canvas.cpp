@@ -5,18 +5,14 @@
 #include <algorithm>
 
 namespace render::graphics {
-    void Canvas::line(
-        const Point2 from, const Point2 to,
-        const Color color, const float width, const bool dashed
-    ) {
+    void Canvas::line(const Point2 from, const Point2 to, const Color color, const float width, const bool dashed) {
         segments.push_back({.from = from, .to = to, .color = color, .width = width, .dashed = dashed});
     }
 
-    void Canvas::line(
-        const Point3 &from, const Point3 &to, const Projection &view,
-        const Color color, const float width, const bool dashed
-    ) {
-        segments.push_back({.from = view.project(from), .to = view.project(to), .color = color, .width = width, .dashed = dashed});
+    void Canvas::line(const Point3 &from, const Point3 &to, const Projection &view, const Color color,
+                      const float width, const bool dashed) {
+        segments.push_back(
+                {.from = view.project(from), .to = view.project(to), .color = color, .width = width, .dashed = dashed});
     }
 
     void Canvas::place(const Point2 at, layout::Node *box, const int across, const int up, const float gap) {
@@ -26,11 +22,9 @@ namespace render::graphics {
         const float tall = shape.height + shape.depth;
 
         // The corner that lands on the point, and the gap kept from it.
-        const float left = across < 0
-                               ? at.across + gap
-                               : across > 0
-                                     ? at.across - gap - width
-                                     : at.across - width * 0.5f;
+        const float left = across < 0   ? at.across + gap
+                           : across > 0 ? at.across - gap - width
+                                        : at.across - width * 0.5f;
         const float bottom = up < 0 ? at.up + gap : up > 0 ? at.up - gap - tall : at.up - tall * 0.5f;
         labels.push_back(Label{.corner = {.across = left, .up = bottom}, .box = box});
     }
@@ -66,14 +60,15 @@ namespace render::graphics {
                 bottom = std::min(bottom, point.up);
                 top = std::max(top, point.up);
             };
-            for (const Segment &segment: segments) {
+            for (const Segment &segment : segments) {
                 take(segment.from);
                 take(segment.to);
             }
-            for (const auto &[corners, color]: regions) {
-                for (const Point2 corner: corners) take(corner);
+            for (const auto &[corners, color] : regions) {
+                for (const Point2 corner : corners)
+                    take(corner);
             }
-            for (const auto &[corner, box]: labels) {
+            for (const auto &[corner, box] : labels) {
                 const layout::Node::Box &shape = box->box();
                 take(corner);
                 take({.across = corner.across + shape.width, .up = corner.up + shape.height + shape.depth});
@@ -84,15 +79,15 @@ namespace render::graphics {
         const memory::Slice<layout::Node *> strokes =
                 arena.allocate<layout::Node *>(regions.size() + segments.size() + labels.size());
         std::size_t filled = 0;
-        for (const auto &[corners, color]: regions) {
+        for (const auto &[corners, color] : regions) {
             const memory::Slice<layout::Node::Point> area = arena.allocate<layout::Node::Point>(corners.size());
             for (std::size_t index = 0; index < corners.size(); ++index) {
                 area[index] = {.across = corners[index].across - left, .down = top - corners[index].up};
             }
             auto *shape = arena.compose<layout::Node>();
             shape->path({
-                .color = {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha},
-                .area = area,
+                    .color = {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha},
+                    .area = area,
             });
             strokes[filled++] = shape;
         }
@@ -105,11 +100,11 @@ namespace render::graphics {
             // does, so a point's offset from that edge is the distance down
             // from the area's top, and across from its left.
             stroke->path({
-                .start = {segment.from.across - left, top - segment.from.up},
-                .end = {segment.to.across - left, top - segment.to.up},
-                .width = segment.width,
-                .dashed = segment.dashed,
-                .color = {segment.color.red, segment.color.green, segment.color.blue, segment.color.alpha},
+                    .start = {segment.from.across - left, top - segment.from.up},
+                    .end = {segment.to.across - left, top - segment.to.up},
+                    .width = segment.width,
+                    .dashed = segment.dashed,
+                    .color = {segment.color.red, segment.color.green, segment.color.blue, segment.color.alpha},
             });
             strokes[filled + index] = stroke;
         }
@@ -128,12 +123,12 @@ namespace render::graphics {
 
         auto *canvas = arena.compose<layout::Node>();
         canvas->box({
-            .width = right - left,
-            .height = 0.0f,
-            .depth = top - bottom,
-            .alignment = layout::Node::Alignment::Horizontal,
-            .list = strokes,
-            .absolute = true,
+                .width = right - left,
+                .height = 0.0f,
+                .depth = top - bottom,
+                .alignment = layout::Node::Alignment::Horizontal,
+                .list = strokes,
+                .absolute = true,
         });
         // Raised to stand on the baseline where the text sets it: its bottom
         // there, or the height asked for. An overlay is pinned instead.

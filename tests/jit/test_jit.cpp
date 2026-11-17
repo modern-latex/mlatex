@@ -1,5 +1,5 @@
 #include "jit/jit.hpp"
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -10,12 +10,12 @@
 #include <vector>
 
 // The jit target's session: today the ahead-of-time run behind a session
-// kept alive, so a document set through it reads as latex::typeset sets it,
+// kept alive, so a document set through it reads as mlatex::typeset sets it,
 // run after run. Each piece the JIT gains adds an edit here, followed by
 // the same comparison -- the test src/jit/implementation.md describes.
 
 int main() {
-    const std::filesystem::path assets = latex::locate(__FILE__);
+    const std::filesystem::path assets = mlatex::locate(__FILE__);
     const std::filesystem::path folder = std::filesystem::temp_directory_path() / "mlatex-test-jit";
     std::filesystem::create_directories(folder);
     const std::filesystem::path source = folder / "paper.mtex";
@@ -32,7 +32,7 @@ int main() {
     std::string pdf;
     std::vector<std::string> expected;
     std::ostringstream ahead;
-    assert(latex::typeset(assets, text, pdf, latex::Host{}, ahead, &expected) && "the document sets ahead of time");
+    assert(mlatex::typeset(assets, text, pdf, mlatex::Host{}, ahead, &expected) && "the document sets ahead of time");
 
     jit::Jit jit(assets);
     {
@@ -56,7 +56,7 @@ int main() {
     {
         // The session's own in-memory typeset is still there beside the
         // Jit's, and is the ahead-of-time one.
-        assert(jit.typeset(text) && jit.pages == expected && "the in-memory typeset is latex::Session's");
+        assert(jit.typeset(text) && jit.pages == expected && "the in-memory typeset is mlatex::Session's");
     }
 
     // The steps to add, one per piece, each an edit to `paper.mtex` and the

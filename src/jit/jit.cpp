@@ -21,7 +21,7 @@ namespace jit {
                       std::ostream *report, std::ostream &errors, std::vector<std::string> *texts) {
         // Piece 2: keep the engine warm.
         //
-        // `run()` in src/latex.cpp builds everything a run needs as locals
+        // `run()` in src/mlatex.cpp builds everything a run needs as locals
         // and lets them go at its end: two arenas, the font Collection, the
         // Registry, the Shaper, the Typesetter, the Composer, the English
         // Hyphenator, the Lexicon, the Mouth, the Parser and both Wrappers
@@ -30,10 +30,10 @@ namespace jit {
         // millisecond a run, and the fresh 20 MB of arenas a page fault for
         // every 4 KB the run touches.
         //
-        // 1. Make `run()` a protected member of latex::Session -- declared in
-        //    latex.hpp under `protected:`, its body where it is -- so this
-        //    class, a child, can call it. The free latex::compose() and
-        //    latex::typeset() call it through a Session as they call it now.
+        // 1. Make `run()` a protected member of mlatex::Session -- declared in
+        //    mlatex.hpp under `protected:`, its body where it is -- so this
+        //    class, a child, can call it. The free mlatex::compose() and
+        //    mlatex::typeset() call it through a Session as they call it now.
         //
         // 2. Hand it what this class keeps, and let it build only what is
         //    missing. One struct of pointers does it -- the part of the
@@ -136,9 +136,9 @@ namespace jit {
         // The C library (protocols/ffi.hpp) adds operations only after the
         // last one, `snippet`, so a program built against an older header
         // finds each where it was: a warm session there is a new
-        // constructor at the end of struct Latex, returning a Session that is
+        // constructor at the end of struct Mlatex, returning a Session that is
         // a jit::Jit. WebAssembly is in jit/jit.hpp and implementation.md.
-        const bool ok = latex::compose(assets, source, destination, host, report, errors, &pages);
+        const bool ok = mlatex::compose(assets, source, destination, host, report, errors, &pages);
         if (texts) *texts = pages;
         return ok;
     }

@@ -16,12 +16,12 @@ namespace syntax::semantics {
     public:
         /// @brief Which type of group is open.
         enum class Type : std::uint8_t {
-            Group, ///< A brace group or `\\begingroup ... \\endgroup`.
+            Group,       ///< A brace group or `\\begingroup ... \\endgroup`.
             Environment, ///< `\\begin{name} ... \\end{name}`.
-            Equations, ///< A formula: `$...$`, `$$...$$`, `\\(...\\)`, `\\[...\\]`.
-            Box, ///< `\\hbox`, `\\vbox`, `\\vtop`.
+            Equations,   ///< A formula: `$...$`, `$$...$$`, `\\(...\\)`, `\\[...\\]`.
+            Box,         ///< `\\hbox`, `\\vbox`, `\\vtop`.
             Conditional, ///< `\\if`, `\\ifx`, `\\else`, `\\fi`.
-            Alignment ///< `\\halign`, `\\valign`, a table.
+            Alignment    ///< `\\halign`, `\\valign`, a table.
         };
 
         /// @brief One name per Type, for a traceback message.

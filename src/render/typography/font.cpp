@@ -15,19 +15,13 @@ namespace render::typography {
     /// HarfBuzz's fixed-point denominator: 26.6 means sixty-fourths.
     static constexpr float grain = 1.0f / 64.0f;
 
-    Font::~Font() noexcept {
-        dispose();
-    }
+    Font::~Font() noexcept { dispose(); }
 
     Font::Font(Font &&input) noexcept
-        : parent(std::exchange(input.parent, nullptr)),
-          name(std::exchange(input.name, {})),
-          shaper(std::exchange(input.shaper, nullptr)),
-          points(std::exchange(input.points, 0.0f)),
-          ascent(std::exchange(input.ascent, 0.0f)),
-          descent(std::exchange(input.descent, 0.0f)),
-          gap(std::exchange(input.gap, 0.0f)) {
-    }
+        : parent(std::exchange(input.parent, nullptr)), name(std::exchange(input.name, {})),
+          shaper(std::exchange(input.shaper, nullptr)), points(std::exchange(input.points, 0.0f)),
+          ascent(std::exchange(input.ascent, 0.0f)), descent(std::exchange(input.descent, 0.0f)),
+          gap(std::exchange(input.gap, 0.0f)) {}
 
     Font &Font::operator=(Font &&input) noexcept {
         if (this != &input) {
@@ -45,8 +39,7 @@ namespace render::typography {
 
     bool Font::compose(const Face &face, const float size, const std::string_view family) noexcept {
         if (!face.handle() || size <= 0.0f) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                        "Cannot build a font from an unopened face");
+            Logger::log(Logger::Type::Layout, Logger::Level::Error, "Cannot build a font from an unopened face");
             return false;
         }
 
@@ -92,13 +85,7 @@ namespace render::typography {
 
     Font::Metric Font::metrics() const noexcept {
         if (!shaper) return {};
-        return Metric{
-            .ascent = ascent,
-            .descent = descent,
-            .gap = gap,
-            .height = ascent - descent,
-            .size = points
-        };
+        return Metric{.ascent = ascent, .descent = descent, .gap = gap, .height = ascent - descent, .size = points};
     }
 
     Font::Box Font::bounds(const std::uint32_t glyph) const noexcept {
@@ -108,15 +95,13 @@ namespace render::typography {
         // its sizes; this size is that, scaled.
         const hb_glyph_extents_t extents = parent->extents(glyph);
         const float scale = points / parent->units();
-        return Box{
-            .bearing = static_cast<float>(extents.x_bearing) * scale,
-            .top = static_cast<float>(extents.y_bearing) * scale,
-            .width = static_cast<float>(extents.width) * scale,
-            // HarfBuzz reports height downwards from the bearing, so it is
-            // negative for ink that sits above the baseline. Callers want a
-            // span, not a direction.
-            .height = -static_cast<float>(extents.height) * scale
-        };
+        return Box{.bearing = static_cast<float>(extents.x_bearing) * scale,
+                   .top = static_cast<float>(extents.y_bearing) * scale,
+                   .width = static_cast<float>(extents.width) * scale,
+                   // HarfBuzz reports height downwards from the bearing, so it is
+                   // negative for ink that sits above the baseline. Callers want a
+                   // span, not a direction.
+                   .height = -static_cast<float>(extents.height) * scale};
     }
 
     std::uint32_t Font::index(const std::uint32_t codepoint) const noexcept {

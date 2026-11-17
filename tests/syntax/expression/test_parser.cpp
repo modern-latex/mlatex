@@ -27,10 +27,8 @@ static void print(const expression::Node *node, std::string &text) {
         return;
     }
     using Type = expression::Node::Type;
-    static constexpr const char *types[] = {
-        "var", "bin", "un", "group", "script", "frac", "root", "accent", "seq",
-        "grid", "text"
-    };
+    static constexpr const char *types[] = {"var",  "bin",    "un",  "group", "script", "frac",
+                                            "root", "accent", "seq", "grid",  "text"};
     text += types[static_cast<std::size_t>(node->type)];
     if (!node->value.empty()) {
         text += '(';
@@ -39,19 +37,20 @@ static void print(const expression::Node *node, std::string &text) {
     }
     std::vector<const expression::Node *> children;
     switch (node->type) {
-        case Type::Script:
-            children = {node->left, node->subscript, node->superscript};
-            break;
-        case Type::Sequence:
-        case Type::Matrix:
-            for (const expression::Node *child: node->arguments) children.push_back(child);
-            break;
-        case Type::Variable:
-        case Type::Text:
-            break;
-        default:
-            if (node->left || node->right) children = {node->left, node->right};
-            break;
+    case Type::Script:
+        children = {node->left, node->subscript, node->superscript};
+        break;
+    case Type::Sequence:
+    case Type::Matrix:
+        for (const expression::Node *child : node->arguments)
+            children.push_back(child);
+        break;
+    case Type::Variable:
+    case Type::Text:
+        break;
+    default:
+        if (node->left || node->right) children = {node->left, node->right};
+        break;
     }
     if (children.empty()) return;
     text += '[';
@@ -65,7 +64,7 @@ static void print(const expression::Node *node, std::string &text) {
 /// @brief What one formula parsed to, and whether it reported anything.
 struct Tree {
     std::string text{}; ///< The tree, printed.
-    bool quiet{true}; ///< Nothing reported.
+    bool quiet{true};   ///< Nothing reported.
 };
 
 /// @brief Parses a formula as `$...$` holds one.
@@ -124,7 +123,8 @@ int main() {
     {
         const Tree grid = parse("\\pmatrix{a & b \\\\ c & d}");
         assert((grid.quiet && grid.text.starts_with("grid") &&
-                grid.text.find("var(a),var(b),var(c),var(d)") != std::string::npos) && "a matrix holds its four cells");
+                grid.text.find("var(a),var(b),var(c),var(d)") != std::string::npos) &&
+               "a matrix holds its four cells");
     }
     {
         const Tree broken = parse("\\frac{a}");

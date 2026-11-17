@@ -96,19 +96,19 @@ namespace render::primitives::figures {
         /// @param commas True when cells are parted by commas.
         /// @return Its rows, each its cells, the first the names if written.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string> > rows(std::string_view data, bool commas);
+        [[nodiscard]] static std::vector<std::vector<std::string>> rows(std::string_view data, bool commas);
 
     private:
         /// @brief One plot, as `\\addplot` gave it.
         struct Plot {
-            std::string options{}; ///< As written.
-            bool cycled{false}; ///< Takes the next of pgfplots' colors and marks.
-            std::vector<std::pair<double, double> > points{}; ///< Its data: x and y, NaN for a gap.
+            std::string options{};                           ///< As written.
+            bool cycled{false};                              ///< Takes the next of pgfplots' colors and marks.
+            std::vector<std::pair<double, double>> points{}; ///< Its data: x and y, NaN for a gap.
 
             /// Each point's errors as its data gave them -- `+- (0,0.2)`, a
             /// table's `y error` column -- below and above across, then below
             /// and above up; NaN where none was given. Empty for a function.
-            std::vector<std::array<double, 4> > errors{};
+            std::vector<std::array<double, 4>> errors{};
 
             /// For `fill between[of=f and g]`, what its brackets hold: the
             /// region between two plots named with `name path`. Empty for a
@@ -117,7 +117,7 @@ namespace render::primitives::figures {
 
             /// `\\addplot3`'s points: x, y and z, NaN for a gap. Empty for a
             /// plot in two dimensions.
-            std::vector<std::array<double, 3> > solid{};
+            std::vector<std::array<double, 3>> solid{};
 
             /// How many of #solid stand in each row of a surface's grid -- a
             /// function's samples across, or the points of a table or a list
@@ -127,13 +127,13 @@ namespace render::primitives::figures {
 
         /// @brief One axis being read: its type, its options and its plots.
         struct Axis {
-            std::string type{}; ///< `axis`, `semilogyaxis` and the rest.
-            std::string options{}; ///< As written.
-            std::vector<Plot> plots{}; ///< In the order given.
+            std::string type{};                 ///< `axis`, `semilogyaxis` and the rest.
+            std::string options{};              ///< As written.
+            std::vector<Plot> plots{};          ///< In the order given.
             std::vector<std::string> legends{}; ///< Each plot's entry, in order.
         };
 
-        mutable std::vector<Axis> axes{}; ///< The axes open, innermost last.
+        mutable std::vector<Axis> axes{};                    ///< The axes open, innermost last.
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
     };
 }

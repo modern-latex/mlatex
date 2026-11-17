@@ -74,12 +74,12 @@ namespace syntax::primitives::logic {
 
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
-        Symbol finish{}; ///< `\\fi`, the close of every conditional.
+        Symbol finish{};      ///< `\\fi`, the close of every conditional.
         Symbol alternative{}; ///< `\\else`, the branch taken when a test fails.
-        Symbol branch{}; ///< `\\or`, a case separator inside `\\ifcase`.
-        Symbol integer{}; ///< `\\integer`, so a test may read a register.
-        Symbol length{}; ///< `\\length`, so `\\ifdim` may read a register.
-        Symbol terminate{}; ///< `\\endcsname`, the close of an `\\ifcsname` name.
+        Symbol branch{};      ///< `\\or`, a case separator inside `\\ifcase`.
+        Symbol integer{};     ///< `\\integer`, so a test may read a register.
+        Symbol length{};      ///< `\\length`, so `\\ifdim` may read a register.
+        Symbol terminate{};   ///< `\\endcsname`, the close of an `\\ifcsname` name.
 
         /// The tests named `\\if...` that take their branches as arguments
         /// -- `\\ifstar`, `\\ifnextchar`, `\\ifstrequal`, `\\ifvariable`,

@@ -15,7 +15,8 @@ int main() {
     layout::Ledger ledger(arena, 16);
 
     const memory::Slice<layout::Node *> glyphs = arena.allocate<layout::Node *>(3);
-    for (layout::Node *&glyph: glyphs) glyph = arena.compose<layout::Node>(layout::Node::Type::Glyph);
+    for (layout::Node *&glyph : glyphs)
+        glyph = arena.compose<layout::Node>(layout::Node::Type::Glyph);
 
     const layout::Ledger::Key key{.font = nullptr, .text = "word", .size = 10.0f};
     assert((ledger.get(key).empty()) && "a run never shaped is not found");
@@ -40,7 +41,8 @@ int main() {
         ledger.set({.text = names[index], .size = 10.0f}, glyphs);
     }
     std::size_t kept = 0;
-    for (const std::string &name: names) kept += !ledger.get({.text = name, .size = 10.0f}).empty();
+    for (const std::string &name : names)
+        kept += !ledger.get({.text = name, .size = 10.0f}).empty();
     assert((kept == 12) && "a table of sixteen keeps twelve runs and stops");
 
     return 0;

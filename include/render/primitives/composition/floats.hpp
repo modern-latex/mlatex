@@ -65,18 +65,16 @@ namespace render::primitives::composition {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One float being read.
         struct Open {
-            std::string type{}; ///< Its counter: `figure`, `table`, `algorithm` or a type of the document's own.
-            bool ruled{false}; ///< Set between rules, its caption at the head, as an algorithm is.
+            std::string type{};    ///< Its counter: `figure`, `table`, `algorithm` or a type of the document's own.
+            bool ruled{false};     ///< Set between rules, its caption at the head, as an algorithm is.
             bool captioned{false}; ///< Its own caption has been read, and its counter stepped.
             std::uint8_t place{0}; ///< Where it may go, as layout::Node::Directive::Place bits.
-            bool across{false}; ///< Starred: across the columns of a page of several.
+            bool across{false};    ///< Starred: across the columns of a page of several.
         };
 
         /// @brief Reads one caption and sets it.
@@ -89,7 +87,7 @@ namespace render::primitives::composition {
                                             bool ruled) const;
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Open> floats{}; ///< The floats being read, innermost last.
+        mutable std::vector<Open> floats{};                  ///< The floats being read, innermost last.
 
         /// The two marks put around a float's blocks, which a document
         /// cannot write: each name has a colon in it, where the lexer ends a

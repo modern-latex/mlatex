@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 #include "patch.hpp"
 
 #include <cassert>
@@ -27,13 +27,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -66,10 +66,9 @@ static std::size_t count(const std::string_view text, const std::string_view par
 int main() {
     {
         const Result result = article("", "{\\bfseries bold} plain \\bgroup\\itshape slanted\\egroup\\ plain "
-                                      "\\begingroup\\ttfamily mono\\endgroup\\ plain.");
+                                          "\\begingroup\\ttfamily mono\\endgroup\\ plain.");
         assert((result.clean && holds(result.text, "boldplainslantedplainmonoplain.")) && "every type of group");
-        assert((count(result.pdf, "/BaseFont") >= 4) &&
-               "each face set only inside its group, the text after upright");
+        assert((count(result.pdf, "/BaseFont") >= 4) && "each face set only inside its group, the text after upright");
     }
     {
         const Result result = article("", "{\\def\\inner{in}\\inner} \\ifdefined\\inner kept\\else gone\\fi.");

@@ -22,12 +22,10 @@
 #endif
 
 namespace memory {
-    Arena::Arena(const std::size_t size) : capacity(std::max<std::size_t>(size, 4096)) {
-        grow(0, 1);
-    }
+    Arena::Arena(const std::size_t size) : capacity(std::max<std::size_t>(size, 4096)) { grow(0, 1); }
 
     Arena::~Arena() {
-        for (const auto &[data, length]: blocks) {
+        for (const auto &[data, length] : blocks) {
 #if defined(_WIN32)
             VirtualFree(data, 0, MEM_RELEASE);
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
@@ -39,13 +37,14 @@ namespace memory {
     }
 
     void *Arena::grow(const std::size_t size, const std::size_t alignment) {
-        while (capacity < size + alignment) capacity *= 2;
+        while (capacity < size + alignment)
+            capacity *= 2;
 
         // Zeroed, writable memory straight from the system: mapped where it
         // maps, and from the C heap only where nothing else is to be had.
 #if defined(_WIN32)
-        auto *data = static_cast<std::byte *>(
-            VirtualAlloc(nullptr, capacity, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
+        auto *data =
+                static_cast<std::byte *>(VirtualAlloc(nullptr, capacity, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
         void *mapped = mmap(nullptr, capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         auto *data = mapped == MAP_FAILED ? nullptr : static_cast<std::byte *>(mapped);

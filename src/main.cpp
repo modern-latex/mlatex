@@ -1,7 +1,7 @@
 /// @file
 /// @brief The command line: `mlatex [options] [document]`.
 ///
-/// Everything the engine does is latex::compose(), in latex.cpp. What is
+/// Everything the engine does is mlatex::compose(), in mlatex.cpp. What is
 /// here is only what the command line owns: where the executable is and its
 /// assets with it, which document to set and where its PDF goes, what it is
 /// made into, and the options. Each option is a row of main's `options` -- its
@@ -11,7 +11,7 @@
 /// `--interaction=batch-mode`; TeX's own run-together spellings, `-jobname`,
 /// `batchmode`, are taken too, so a script that runs pdflatex runs this the
 /// same way. Values and commands a program hands a document are the
-/// bindings' (latex::Session, the C library, mlatex.js), not this.
+/// bindings' (mlatex::Session, the C library, mlatex.js), not this.
 ///
 /// @code
 /// mlatex paper                                  # paper.mtex, or paper.tex, into paper.pdf
@@ -21,8 +21,8 @@
 /// mlatex --watch --open paper                   # set again on every save, the PDF shown
 /// mlatex --time paper                           # how long it took
 /// @endcode
-#include "latex.hpp"
 #include "logger.hpp"
+#include "mlatex.hpp"
 
 #include <algorithm>
 #include <array>
@@ -40,7 +40,9 @@
 #include <vector>
 
 #if defined(_WIN32)
+// windows.h first: shellapi.h uses its types without including it.
 #include <windows.h>
+
 #include <shellapi.h>
 #else
 #include <spawn.h>
@@ -50,22 +52,20 @@
 extern char **environ;
 #endif
 
-#if !defined(LATEX_VERSION)
-#error "LATEX_VERSION is the VERSION file's, defined by CMakeLists.txt"
+#if !defined(MLATEX_VERSION)
+#error "MLATEX_VERSION is the VERSION file's, defined by CMakeLists.txt"
 #endif
 
 /// Every option, in the order `--help` lists them. A new one is a row here
 /// and a branch where main() reads its name.
 
 /// The interaction modes, each in words and as TeX runs it together.
-static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> modes{
-    {
+static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> modes{{
         {"batch-mode", "batchmode"},
         {"non-stop-mode", "nonstopmode"},
         {"scroll-mode", "scrollmode"},
         {"error-stop-mode", "errorstopmode"},
-    }
-};
+}};
 
 /// @brief Typesets the document the command line names.
 /// @param count     How many arguments there are, the program's own name first.
@@ -79,80 +79,151 @@ int main(int count, char *arguments[]) {
 
     // One option the command line takes, as `--help` lists it.
     struct Option {
-        char letter{'\0'}; // Its letter, `-o`; none when '\0'.
-        std::string_view name{}; // Its name, `output-directory`.
-        std::string_view alias{}; // TeX's spelling it answers to as well, `jobname`; empty for none.
-        std::string_view value{}; // What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
-        std::string_view group{}; // The heading `--help` lists it under.
+        char letter{'\0'};          // Its letter, `-o`; none when '\0'.
+        std::string_view name{};    // Its name, `output-directory`.
+        std::string_view alias{};   // TeX's spelling it answers to as well, `jobname`; empty for none.
+        std::string_view value{};   // What it takes, `DIR`; `[PARTS]` when it may go without; empty for a switch.
+        std::string_view group{};   // The heading `--help` lists it under.
         std::string_view summary{}; // What `--help` says of it; a line break starts its next line.
     };
 
     static constexpr std::array options{
-        Option{
-            .letter = 't', .name = "target", .alias = "", .value = "TARGET", .group = "Target",
-            .summary = "How the document is made: aot, a PDF now (the\n"
-            "default); jit, just in time, which is taken and\n"
-            "does nothing yet."
-        },
-        Option{
-            .letter = 'o', .name = "output-directory", .alias = "", .value = "DIR", .group = "Output",
-            .summary = "Write the PDF into DIR, made if it is not there;\n"
-            "beside the document otherwise."
-        },
-        Option{.letter = 'j', .name = "job-name", .alias = "jobname", .value = "NAME", .group = "Output", .summary = "Name the PDF NAME.pdf, not after the document."},
-        Option{.letter = 'n', .name = "draft-mode", .alias = "draftmode", .value = "", .group = "Output", .summary = "Read and set the document; write no PDF."},
-        Option{.letter = '\0', .name = "halt-on-error", .alias = "", .value = "", .group = "Output", .summary = "Leave no PDF when the document has an error."},
-        Option{.letter = 'O', .name = "open", .alias = "", .value = "", .group = "Output", .summary = "Show the PDF in the system's viewer once written."},
-        Option{
-            .letter = 'I', .name = "include-directory", .alias = "", .value = "DIR", .group = "Input",
-            .summary = "Look in DIR, after the document's own folder,\n"
-            "for what it inputs: \\input, \\include,\n"
-            "\\usepackage, \\includegraphics, a bibliography.\n"
-            "Give it again for another folder."
-        },
-        Option{
-            .letter = '\0', .name = "assets", .alias = "", .value = "DIR", .group = "Input",
-            .summary = "Read the fonts and hyphenation patterns from\n"
-            "DIR, not from the assets found above this\n"
-            "program."
-        },
-        Option{
-            '\0', "offline", "", "", "Input",
-            "Reach no network: \\httpget, \\httppost and a\n"
-            "picture from https:// are errors, and nothing is\n"
-            "sent. For a document you did not write."
-        },
-        Option{
-            'w', "watch", "", "", "Input",
-            "Set the document again each time it is saved,\n"
-            "until interrupted."
-        },
-        Option{
-            'i', "interaction", "", "MODE", "Messages",
-            "batch-mode prints nothing but errors;\n"
-            "non-stop-mode, scroll-mode and error-stop-mode\n"
-            "print what was done."
-        },
-        Option{.letter = 'q', .name = "quiet", .alias = "", .value = "", .group = "Messages", .summary = "The same as --interaction=batch-mode."},
-        Option{.letter = '\0', .name = "file-line-error", .alias = "", .value = "", .group = "Messages", .summary = "Print each error as file:line:column: message."},
-        Option{.letter = 'T', .name = "time", .alias = "", .value = "", .group = "Messages", .summary = "Print how long each part of the run took."},
-        Option{
-            .letter = '\0', .name = "time-statistics", .alias = "", .value = "", .group = "Messages",
-            .summary = "Print every step the engine took, what it made\n"
-            "and how long each step took."
-        },
-        Option{.letter = 'h', .name = "help", .alias = "", .value = "", .group = "Messages", .summary = "Print this help and exit."},
-        Option{.letter = 'v', .name = "version", .alias = "", .value = "", .group = "Messages", .summary = "Print the version and exit."},
-        Option{
-            .letter = 'd', .name = "debug", .alias = "", .value = "[PARTS]", .group = "Diagnostics",
-            .summary = "Log the engine's steps: every part, or those\n"
-            "named -- lexer, mouth, parser, layout, memory,\n"
-            "semantics."
-        },
-        Option{.letter = '\0', .name = "trace", .alias = "", .value = "", .group = "Diagnostics", .summary = "Log every step, in full."},
-        Option{.letter = '\0', .name = "log-level", .alias = "", .value = "LEVEL", .group = "Diagnostics", .summary = "traceback, debug, info, warn, error or silent."},
-        Option{.letter = '\0', .name = "log-file", .alias = "", .value = "FILE", .group = "Diagnostics", .summary = "Write the log to FILE."},
-        Option{.letter = '\0', .name = "no-color", .alias = "", .value = "", .group = "Diagnostics", .summary = "Log without colour."},
+            Option{.letter = 't',
+                   .name = "target",
+                   .alias = "",
+                   .value = "TARGET",
+                   .group = "Target",
+                   .summary = "How the document is made: aot, a PDF now (the\n"
+                              "default); jit, just in time, which is taken and\n"
+                              "does nothing yet."},
+            Option{.letter = 'o',
+                   .name = "output-directory",
+                   .alias = "",
+                   .value = "DIR",
+                   .group = "Output",
+                   .summary = "Write the PDF into DIR, made if it is not there;\n"
+                              "beside the document otherwise."},
+            Option{.letter = 'j',
+                   .name = "job-name",
+                   .alias = "jobname",
+                   .value = "NAME",
+                   .group = "Output",
+                   .summary = "Name the PDF NAME.pdf, not after the document."},
+            Option{.letter = 'n',
+                   .name = "draft-mode",
+                   .alias = "draftmode",
+                   .value = "",
+                   .group = "Output",
+                   .summary = "Read and set the document; write no PDF."},
+            Option{.letter = '\0',
+                   .name = "halt-on-error",
+                   .alias = "",
+                   .value = "",
+                   .group = "Output",
+                   .summary = "Leave no PDF when the document has an error."},
+            Option{.letter = 'O',
+                   .name = "open",
+                   .alias = "",
+                   .value = "",
+                   .group = "Output",
+                   .summary = "Show the PDF in the system's viewer once written."},
+            Option{.letter = 'I',
+                   .name = "include-directory",
+                   .alias = "",
+                   .value = "DIR",
+                   .group = "Input",
+                   .summary = "Look in DIR, after the document's own folder,\n"
+                              "for what it inputs: \\input, \\include,\n"
+                              "\\usepackage, \\includegraphics, a bibliography.\n"
+                              "Give it again for another folder."},
+            Option{.letter = '\0',
+                   .name = "assets",
+                   .alias = "",
+                   .value = "DIR",
+                   .group = "Input",
+                   .summary = "Read the fonts and hyphenation patterns from\n"
+                              "DIR, not from the assets found above this\n"
+                              "program."},
+            Option{'\0', "offline", "", "", "Input",
+                   "Reach no network: \\httpget, \\httppost and a\n"
+                   "picture from https:// are errors, and nothing is\n"
+                   "sent. For a document you did not write."},
+            Option{'w', "watch", "", "", "Input",
+                   "Set the document again each time it is saved,\n"
+                   "until interrupted."},
+            Option{'i', "interaction", "", "MODE", "Messages",
+                   "batch-mode prints nothing but errors;\n"
+                   "non-stop-mode, scroll-mode and error-stop-mode\n"
+                   "print what was done."},
+            Option{.letter = 'q',
+                   .name = "quiet",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "The same as --interaction=batch-mode."},
+            Option{.letter = '\0',
+                   .name = "file-line-error",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "Print each error as file:line:column: message."},
+            Option{.letter = 'T',
+                   .name = "time",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "Print how long each part of the run took."},
+            Option{.letter = '\0',
+                   .name = "time-statistics",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "Print every step the engine took, what it made\n"
+                              "and how long each step took."},
+            Option{.letter = 'h',
+                   .name = "help",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "Print this help and exit."},
+            Option{.letter = 'v',
+                   .name = "version",
+                   .alias = "",
+                   .value = "",
+                   .group = "Messages",
+                   .summary = "Print the version and exit."},
+            Option{.letter = 'd',
+                   .name = "debug",
+                   .alias = "",
+                   .value = "[PARTS]",
+                   .group = "Diagnostics",
+                   .summary = "Log the engine's steps: every part, or those\n"
+                              "named -- lexer, mouth, parser, layout, memory,\n"
+                              "semantics."},
+            Option{.letter = '\0',
+                   .name = "trace",
+                   .alias = "",
+                   .value = "",
+                   .group = "Diagnostics",
+                   .summary = "Log every step, in full."},
+            Option{.letter = '\0',
+                   .name = "log-level",
+                   .alias = "",
+                   .value = "LEVEL",
+                   .group = "Diagnostics",
+                   .summary = "traceback, debug, info, warn, error or silent."},
+            Option{.letter = '\0',
+                   .name = "log-file",
+                   .alias = "",
+                   .value = "FILE",
+                   .group = "Diagnostics",
+                   .summary = "Write the log to FILE."},
+            Option{.letter = '\0',
+                   .name = "no-color",
+                   .alias = "",
+                   .value = "",
+                   .group = "Diagnostics",
+                   .summary = "Log without colour."},
     };
 
     // The logger's file, closed on every way out.
@@ -162,20 +233,20 @@ int main(int count, char *arguments[]) {
 
     // What the command line asks for.
     std::string_view target = "aot"; // --target
-    std::filesystem::path source; // the document, when one is named
+    std::filesystem::path source;    // the document, when one is named
     std::filesystem::path directory; // --output-directory
-    std::filesystem::path assets; // --assets
-    std::string job; // --job-name
-    bool quiet = false; // --interaction=batch-mode, --quiet
-    bool halting = false; // --halt-on-error
-    bool draft = false; // --draft-mode
-    bool opening = false; // --open
-    bool watching = false; // --watch
-    bool placed = false; // --file-line-error
-    bool timed = false; // --time
-    bool statistics = false; // --time-statistics
-    bool ended = false; // past `--`
-    latex::Host host;
+    std::filesystem::path assets;    // --assets
+    std::string job;                 // --job-name
+    bool quiet = false;              // --interaction=batch-mode, --quiet
+    bool halting = false;            // --halt-on-error
+    bool draft = false;              // --draft-mode
+    bool opening = false;            // --open
+    bool watching = false;           // --watch
+    bool placed = false;             // --file-line-error
+    bool timed = false;              // --time
+    bool statistics = false;         // --time-statistics
+    bool ended = false;              // past `--`
+    mlatex::Host host;
     std::error_code failure;
 
     for (int index = 1; index < count; ++index) {
@@ -208,7 +279,7 @@ int main(int count, char *arguments[]) {
             name = name.substr(0, equals);
         }
         const Option *option = nullptr;
-        for (const Option &each: options) {
+        for (const Option &each : options) {
             const bool lettered = !doubled && name.size() == 1 && each.letter == name.front();
             if (lettered || each.name == name || (!each.alias.empty() && each.alias == name)) {
                 option = &each;
@@ -231,19 +302,18 @@ int main(int count, char *arguments[]) {
             // The options under their headings, each name and value in a
             // column of their own and what it does beside them.
             std::cout << "Usage: mlatex [options] [document]\n\n"
-                    "Typesets a document into a PDF. A document named without an extension is\n"
-                    "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
-                    "set as a list of every entry it holds; with none named, the engine's own\n"
-                    "sample, build/main.mtex, is set.\n";
+                         "Typesets a document into a PDF. A document named without an extension is\n"
+                         "looked for as NAME.mtex, then NAME.tex, then NAME.bib -- a bibliography,\n"
+                         "set as a list of every entry it holds; with none named, the engine's own\n"
+                         "sample, build/main.mtex, is set.\n";
             std::string_view heading;
-            for (const Option &each: options) {
+            for (const Option &each : options) {
                 if (each.group != heading) {
                     heading = each.group;
                     std::cout << '\n' << heading << ":\n";
                 }
-                std::string written = each.letter
-                                          ? std::format("  -{}, --{}", each.letter, each.name)
-                                          : std::format("      --{}", each.name);
+                std::string written = each.letter ? std::format("  -{}, --{}", each.letter, each.name)
+                                                  : std::format("      --{}", each.name);
                 if (each.value.starts_with('[')) {
                     written += std::format("[={}]", each.value.substr(1, each.value.size() - 2));
                 } else if (!each.value.empty()) {
@@ -257,16 +327,16 @@ int main(int count, char *arguments[]) {
                 }
             }
             std::cout << "\nOptions start with one dash or two: -interaction=batch-mode is\n"
-                    "--interaction=batch-mode, and TeX's own spellings -- -jobname, -draftmode,\n"
-                    "batchmode -- are taken too. A value follows its option after `=` or as the\n"
-                    "next argument; `--` ends the options. The exit status is 0 when the document\n"
-                    "set cleanly, 1 when it had an error, and 2 when the command line did.\n";
+                         "--interaction=batch-mode, and TeX's own spellings -- -jobname, -draftmode,\n"
+                         "batchmode -- are taken too. A value follows its option after `=` or as the\n"
+                         "next argument; `--` ends the options. The exit status is 0 when the document\n"
+                         "set cleanly, 1 when it had an error, and 2 when the command line did.\n";
             return 0;
         }
         if (called == "version") {
 #if defined(__clang__)
-            const std::string compiler = std::format("Clang {}.{}.{}", __clang_major__, __clang_minor__,
-                                                     __clang_patchlevel__);
+            const std::string compiler =
+                    std::format("Clang {}.{}.{}", __clang_major__, __clang_minor__, __clang_patchlevel__);
 #elif defined(__GNUC__)
             const std::string compiler = std::format("GCC {}.{}.{}", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 #elif defined(_MSC_VER)
@@ -281,17 +351,17 @@ int main(int count, char *arguments[]) {
 #else
             constexpr std::string_view system = "Linux";
 #endif
-#if defined(LATEX_RELEASE)
+#if defined(MLATEX_RELEASE)
             constexpr std::string_view build = "release";
 #else
             constexpr std::string_view build = "debug";
 #endif
             // C++26 is 202400 until the standard is out; past C++23 it is 26.
             constexpr int standard = __cplusplus > 202302L ? 26 : __cplusplus > 202002L ? 23 : 20;
-            std::cout << "mlatex " << LATEX_VERSION << '\n'
-                    << "Typesets LaTeX into PDF: one program, no TeX installation behind it.\n"
-                    << "Built with " << compiler << " for " << system << ", C++" << standard << ", " << build
-                    << ".\n";
+            std::cout << "mlatex " << MLATEX_VERSION << '\n'
+                      << "Typesets LaTeX into PDF: one program, no TeX installation behind it.\n"
+                      << "Built with " << compiler << " for " << system << ", C++" << standard << ", " << build
+                      << ".\n";
             return 0;
         }
 
@@ -326,18 +396,17 @@ int main(int count, char *arguments[]) {
             assets = *given;
             if (!std::filesystem::is_directory(assets / "fonts", failure)) {
                 std::cerr << "mlatex: " << assets.string() << " holds no fonts folder; --assets names the engine's "
-                        << "assets, as the source tree's assets folder is\n";
+                          << "assets, as the source tree's assets folder is\n";
                 return 2;
             }
         } else if (called == "interaction") {
             const auto given = take();
             if (!given) return 2;
-            const auto mode = std::ranges::find_if(modes, [&given](const auto &pair) {
-                return pair.first == *given || pair.second == *given;
-            });
+            const auto mode = std::ranges::find_if(
+                    modes, [&given](const auto &pair) { return pair.first == *given || pair.second == *given; });
             if (mode == modes.end()) {
                 std::cerr << "mlatex: --interaction is batch-mode, non-stop-mode, scroll-mode or error-stop-mode, not "
-                        << *given << '\n';
+                          << *given << '\n';
                 return 2;
             }
             quiet = mode == modes.begin();
@@ -363,7 +432,7 @@ int main(int count, char *arguments[]) {
             // The logger's own are read already, and only with their value
             // after `=`.
             std::cerr << "mlatex: --" << called << " takes its value after `=`: --" << called << '=' << option->value
-                    << '\n';
+                      << '\n';
             return 2;
         }
     }
@@ -406,7 +475,7 @@ int main(int count, char *arguments[]) {
             if (auto resolved = std::filesystem::absolute(arguments[0], failure); !failure) binary = resolved;
         }
         if (binary.empty()) binary = std::filesystem::current_path();
-        assets = latex::locate(binary);
+        assets = mlatex::locate(binary);
         if (assets.empty()) {
             std::cerr << "mlatex: no assets directory found above " << binary.string() << "; name one with --assets\n";
             return 1;
@@ -419,7 +488,7 @@ int main(int count, char *arguments[]) {
     if (source.empty()) {
         source = assets.parent_path() / "build" / "main.mtex";
     } else if (!source.has_extension() && !std::filesystem::exists(source, failure)) {
-        for (const std::string_view extension: {".mtex", ".tex", ".bib"}) {
+        for (const std::string_view extension : {".mtex", ".tex", ".bib"}) {
             if (std::filesystem::path named = std::filesystem::path(source).replace_extension(extension);
                 std::filesystem::exists(named, failure)) {
                 source = named;
@@ -442,7 +511,7 @@ int main(int count, char *arguments[]) {
     }
     const Clock::time_point found = Clock::now();
 
-    if (!quiet) std::cout << "This is mLaTeX " << LATEX_VERSION << ".\n";
+    if (!quiet) std::cout << "This is mLaTeX " << MLATEX_VERSION << ".\n";
 
     // One run: the document set and its PDF written, each error with its
     // file before it when -file-line-error asks, the PDF left out when
@@ -453,8 +522,8 @@ int main(int count, char *arguments[]) {
         const Clock::time_point started = Clock::now();
         std::ostringstream held;
         std::vector<std::string> pages;
-        const bool ok = latex::compose(assets, source, destination, host, statistics ? &std::cout : nullptr,
-                                       placed ? static_cast<std::ostream &>(held) : std::cerr, &pages);
+        const bool ok = mlatex::compose(assets, source, destination, host, statistics ? &std::cout : nullptr,
+                                        placed ? static_cast<std::ostream &>(held) : std::cerr, &pages);
         const Clock::time_point finished = Clock::now();
         if (placed) {
             std::istringstream lines(held.str());
@@ -472,7 +541,7 @@ int main(int count, char *arguments[]) {
                 std::cout << "No PDF written: --draft-mode.\n";
             } else if (const std::uintmax_t bytes = std::filesystem::file_size(destination, failure); !failure) {
                 std::cout << "Output written on " << destination.string() << " (" << pages.size()
-                        << (pages.size() == 1 ? " page, " : " pages, ") << bytes << " bytes).\n";
+                          << (pages.size() == 1 ? " page, " : " pages, ") << bytes << " bytes).\n";
             }
         }
 
@@ -487,7 +556,7 @@ int main(int count, char *arguments[]) {
             }
             std::cout << std::format("  {:<36}{:>10.1f} ms\n", "Setting it and writing its PDF",
                                      milliseconds(finished - started))
-                    << std::format("  {:<36}{:>10.1f} ms\n", "In all", milliseconds(finished - since));
+                      << std::format("  {:<36}{:>10.1f} ms\n", "In all", milliseconds(finished - since));
         }
         return ok;
     };

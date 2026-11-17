@@ -31,8 +31,7 @@ namespace memory {
     /// @endcode
     ///
     /// @tparam Count How many entries it holds.
-    template<std::size_t Count>
-    class Catalog {
+    template <std::size_t Count> class Catalog {
     public:
         static_assert(Count < 0xFFFF, "a catalog indexes its entries in sixteen bits");
 
@@ -48,7 +47,8 @@ namespace memory {
             slots.fill(empty);
             for (std::size_t index = 0; index < Count; ++index) {
                 std::size_t at = hash(entries[index].name) & mask;
-                while (slots[at] != empty) at = (at + 1) & mask;
+                while (slots[at] != empty)
+                    at = (at + 1) & mask;
                 slots[at] = static_cast<std::uint16_t>(index);
             }
         }
@@ -78,7 +78,7 @@ namespace memory {
         /// @return Its hash.
         [[nodiscard]] static constexpr std::uint64_t hash(const std::string_view name) noexcept {
             std::uint64_t value = 0xCBF29CE484222325ull;
-            for (const char letter: name) {
+            for (const char letter : name) {
                 value ^= static_cast<unsigned char>(letter);
                 value *= 0x100000001B3ull;
             }
@@ -89,9 +89,9 @@ namespace memory {
         /// an empty slot for a search to stop at and the mask replaces a modulo.
         static constexpr std::size_t capacity = std::bit_ceil(Count * 2 + 1);
         static constexpr std::size_t mask = capacity - 1; ///< Slot index from a hash.
-        static constexpr std::uint16_t empty = 0xFFFF; ///< A slot with no entry.
+        static constexpr std::uint16_t empty = 0xFFFF;    ///< A slot with no entry.
 
-        std::array<Entry, Count> entries{}; ///< The entries, as listed.
+        std::array<Entry, Count> entries{};          ///< The entries, as listed.
         std::array<std::uint16_t, capacity> slots{}; ///< Entry index by hash; #empty for none.
     };
 }

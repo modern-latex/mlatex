@@ -16,13 +16,8 @@
 #include <limits>
 
 namespace render::layout {
-    Breaker::Breaker(
-        memory::Arena &arena,
-        memory::Arena &scratch,
-        const Configuration &configuration
-    ) noexcept
-        : arena(arena), scratch(scratch), rules(configuration) {
-    }
+    Breaker::Breaker(memory::Arena &arena, memory::Arena &scratch, const Configuration &configuration) noexcept
+        : arena(arena), scratch(scratch), rules(configuration) {}
 
     memory::Slice<Node *> Breaker::compose(const memory::Slice<Node *> input) const {
         const std::size_t count = input.size();
@@ -51,8 +46,7 @@ namespace render::layout {
 
             // Glue of an infinite order, counted apart from the finite type:
             // a line holding any can always be filled, and is never loose.
-            infinite[index + 1] = infinite[index] +
-                                  (elastic && item->glue().expand != Node::Order::Normal ? 1u : 0u);
+            infinite[index + 1] = infinite[index] + (elastic && item->glue().expand != Node::Order::Normal ? 1u : 0u);
         }
 
         // Ragged and centred lines carry infinite glue at an edge, whatever
@@ -61,12 +55,12 @@ namespace render::layout {
 
         /// @brief One break still worth continuing a paragraph from.
         struct Candidate {
-            std::size_t index{0}; ///< Where the next line starts.
-            std::size_t line{0}; ///< How many lines precede it.
-            float demerits{0.0f}; ///< Total cost of getting here.
+            std::size_t index{0};           ///< Where the next line starts.
+            std::size_t line{0};            ///< How many lines precede it.
+            float demerits{0.0f};           ///< Total cost of getting here.
             const Candidate *link{nullptr}; ///< The break before this one.
-            bool hyphenated{false}; ///< The line before it ends at a hyphen.
-            int fitness{2}; ///< How that line sits: 0 very loose, 1 loose, 2 decent, 3 tight.
+            bool hyphenated{false};         ///< The line before it ends at a hyphen.
+            int fitness{2};                 ///< How that line sits: 0 very loose, 1 loose, 2 decent, 3 tight.
         };
 
         // One pass over the paragraph, as TeX makes one: every break within
@@ -118,23 +112,19 @@ namespace render::layout {
                     cost = static_cast<float>(node->pause().penalty.value);
                 } else if (node->type == Node::Type::Glue && cursor > 0) {
                     const Node *prior = input[cursor - 1];
-                    allowed = prior && (prior->type == Node::Type::Glyph ||
-                                        prior->type == Node::Type::Box ||
+                    allowed = prior && (prior->type == Node::Type::Glyph || prior->type == Node::Type::Box ||
                                         prior->type == Node::Type::Rule);
                 }
 
                 const bool forced = cursor + 1 == count ||
-                                    (node->type == Node::Type::Penalty &&
-                                     node->penalty().value <= -10000) ||
-                                    (node->type == Node::Type::Pause &&
-                                     node->pause().penalty.value <= -10000);
+                                    (node->type == Node::Type::Penalty && node->penalty().value <= -10000) ||
+                                    (node->type == Node::Type::Pause && node->pause().penalty.value <= -10000);
                 if (forced) allowed = true;
                 if (!allowed) continue;
 
                 // Glue and penalties at a break are discardable: the line ends
                 // before them, and they do not print at the start of the next.
-                const bool discarded = node->type == Node::Type::Glue ||
-                                       node->type == Node::Type::Penalty ||
+                const bool discarded = node->type == Node::Type::Glue || node->type == Node::Type::Penalty ||
                                        node->type == Node::Type::Pause;
                 const std::size_t reach = discarded ? cursor : cursor + 1;
 
@@ -225,14 +215,12 @@ namespace render::layout {
                 }
                 if (!best) continue;
 
-                pool[taken] = Candidate{
-                    .index = cursor + 1,
-                    .line = best->line + 1,
-                    .demerits = lowest,
-                    .link = best,
-                    .hyphenated = hyphen,
-                    .fitness = fit
-                };
+                pool[taken] = Candidate{.index = cursor + 1,
+                                        .line = best->line + 1,
+                                        .demerits = lowest,
+                                        .link = best,
+                                        .hyphenated = hyphen,
+                                        .fitness = fit};
                 last = &pool[taken];
 
                 // Every way through the paragraph has to break at a forced
@@ -281,8 +269,7 @@ namespace render::layout {
             const std::size_t mark = current->index - 1;
 
             const Node *border = input[mark];
-            const bool discarded = border && (border->type == Node::Type::Glue ||
-                                              border->type == Node::Type::Penalty ||
+            const bool discarded = border && (border->type == Node::Type::Glue || border->type == Node::Type::Penalty ||
                                               border->type == Node::Type::Pause);
             const std::size_t stop = discarded ? mark : current->index;
 
@@ -291,8 +278,7 @@ namespace render::layout {
             // start of the next line, as TeX drops it. Not at the start of the
             // paragraph, whose indentation is a kern that has to stay.
             while (start > 0 && start < stop && input[start] &&
-                   (input[start]->type == Node::Type::Glue ||
-                    input[start]->type == Node::Type::Kern ||
+                   (input[start]->type == Node::Type::Glue || input[start]->type == Node::Type::Kern ||
                     input[start]->type == Node::Type::Penalty)) {
                 ++start;
             }
@@ -302,8 +288,7 @@ namespace render::layout {
             const Node *preceding = nullptr;
             if (border && border->type == Node::Type::Penalty && border->penalty().flag) {
                 for (std::size_t index = stop; index > start; --index) {
-                    if (input[index - 1]->type == Node::Type::Glyph &&
-                        input[index - 1]->glyph().font) {
+                    if (input[index - 1]->type == Node::Type::Glyph && input[index - 1]->glyph().font) {
                         preceding = input[index - 1];
                         break;
                     }
@@ -325,10 +310,9 @@ namespace render::layout {
             // proof's mark is. Every other line fills the column with the
             // glue between words when justified, and with the edge glue above
             // when not.
-            const bool forced = border && ((border->type == Node::Type::Penalty &&
-                                            border->penalty().value <= -10000) ||
-                                           (border->type == Node::Type::Pause &&
-                                            border->pause().penalty.value <= -10000));
+            const bool forced =
+                    border && ((border->type == Node::Type::Penalty && border->penalty().value <= -10000) ||
+                               (border->type == Node::Type::Pause && border->pause().penalty.value <= -10000));
             const bool natural = !ragged && (current == last || forced);
 
             Node *origin = nullptr;
@@ -339,8 +323,8 @@ namespace render::layout {
                 }
             }
 
-            const std::size_t length = stop - start + (origin ? 1 : 0) + (preceding ? 1 : 0) +
-                                       (leading ? 1 : 0) + (trailing ? 1 : 0) + (natural ? 1 : 0);
+            const std::size_t length = stop - start + (origin ? 1 : 0) + (preceding ? 1 : 0) + (leading ? 1 : 0) +
+                                       (trailing ? 1 : 0) + (natural ? 1 : 0);
             const memory::Slice<Node *> row = arena.allocate<Node *>(length);
             std::size_t filled = 0;
 
@@ -359,14 +343,12 @@ namespace render::layout {
                 const std::uint32_t glyph = font->index('-');
 
                 auto *hyphen = arena.compose<Node>(Node::Type::Glyph);
-                hyphen->glyph({
-                    .width = font->advance(glyph),
-                    .height = preceding->glyph().height,
-                    .depth = preceding->glyph().depth,
-                    .code = glyph,
-                    .point = '-',
-                    .font = font
-                });
+                hyphen->glyph({.width = font->advance(glyph),
+                               .height = preceding->glyph().height,
+                               .depth = preceding->glyph().depth,
+                               .code = glyph,
+                               .point = '-',
+                               .font = font});
                 row[filled++] = hyphen;
             }
 

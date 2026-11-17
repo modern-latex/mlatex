@@ -13,9 +13,8 @@ namespace memory {
     /// elements. Use `Slice<const T>` to forbid writing through it.
     ///
     /// @tparam Type Element type.
-    template<typename Type>
-    struct Slice {
-        Type *data = nullptr; ///< First element, or nullptr when empty.
+    template <typename Type> struct Slice {
+        Type *data = nullptr;  ///< First element, or nullptr when empty.
         std::size_t count = 0; ///< Number of elements.
 
         /// @brief Reports whether the slice has no elements.
@@ -32,8 +31,6 @@ namespace memory {
 
         /// @brief Unchecked element access.
         /// @param index Element index; out of range is undefined behaviour.
-        [[nodiscard]] constexpr Type &operator[](const std::size_t index) const noexcept {
-            return data[index];
-        }
+        [[nodiscard]] constexpr Type &operator[](const std::size_t index) const noexcept { return data[index]; }
     };
 }

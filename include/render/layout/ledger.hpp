@@ -34,8 +34,8 @@ namespace render::layout {
         /// @brief What identifies a shaped run.
         struct Key {
             const typography::Font *font{nullptr}; ///< Font it was shaped in.
-            std::string_view text{}; ///< The text itself.
-            float size{0.0f}; ///< Size in points.
+            std::string_view text{};               ///< The text itself.
+            float size{0.0f};                      ///< Size in points.
 
             /// @brief Do two keys name the same run?
             [[nodiscard]] bool operator==(const Key &other) const noexcept;
@@ -43,9 +43,9 @@ namespace render::layout {
 
         /// @brief One slot in the table.
         struct Entry {
-            Key key{}; ///< What was shaped.
+            Key key{};                     ///< What was shaped.
             memory::Slice<Node *> nodes{}; ///< The glyphs it produced.
-            bool occupied{false}; ///< False for a slot never filled.
+            bool occupied{false};          ///< False for a slot never filled.
         };
 
         /// @brief Builds an empty cache.
@@ -85,8 +85,8 @@ namespace render::layout {
         /// @complexity O(n) in the text's length.
         [[nodiscard]] static std::size_t digest(const Key &key) noexcept;
 
-        std::size_t limit{0}; ///< Slots, always a power of two.
-        std::size_t entries{0}; ///< Slots filled.
+        std::size_t limit{0};         ///< Slots, always a power of two.
+        std::size_t entries{0};       ///< Slots filled.
         memory::Slice<Entry> slots{}; ///< The table.
     };
 }

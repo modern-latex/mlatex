@@ -29,8 +29,7 @@ int main() {
         constexpr std::string_view text = "-0.75";
         double value = 0.0;
         const auto [stop, failure] = patch::decimal(text.data(), text.data() + text.size(), value);
-        assert((failure == std::errc{} && stop == text.data() + text.size() && value == -0.75) &&
-               "a negative double");
+        assert((failure == std::errc{} && stop == text.data() + text.size() && value == -0.75) && "a negative double");
     }
     {
         constexpr std::string_view text = "pt";

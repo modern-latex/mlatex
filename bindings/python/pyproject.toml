@@ -1,5 +1,5 @@
 # The wheel carries what an installed mLaTeX's library is, laid out the way
-# it finds its fonts: latex_ffi beside an assets folder, both copied in by the
+# it finds its fonts: mlatex_ffi beside an assets folder, both copied in by the
 # release. One wheel per system and architecture, for every Python, since
 # ctypes loads the library and nothing is compiled against Python itself.
 [build-system]

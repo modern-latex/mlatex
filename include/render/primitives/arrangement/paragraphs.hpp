@@ -68,9 +68,7 @@ namespace render::primitives::arrangement {
 
         /// @brief Errors this module has recorded: a `\\leftskip` with no
         ///        dimension after it.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.

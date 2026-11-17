@@ -63,22 +63,20 @@ namespace render::primitives::mathematics {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief How the display being opened sets its lines.
         enum class Layout : std::uint8_t {
-            Single, ///< One formula: `\\[`, `equation`, and every inline formula.
-            Rows, ///< A grid whose rows are lines of their own: `align`, `gather`.
+            Single,  ///< One formula: `\\[`, `equation`, and every inline formula.
+            Rows,    ///< A grid whose rows are lines of their own: `align`, `gather`.
             Multline ///< One formula broken over lines: `multline`.
         };
 
         /// @brief One row of a display that numbers its rows.
         struct Row {
             std::string number{}; ///< Its equation number as printed, or empty for none.
-            std::string tag{}; ///< What `\\tag` printed in its place, or empty.
+            std::string tag{};    ///< What `\\tag` printed in its place, or empty.
         };
 
         /// @brief Gives the display being opened the next equation number,
@@ -123,13 +121,8 @@ namespace render::primitives::mathematics {
         /// @param delimiter Character that ends it, or 0 when a name does.
         /// @param stop      Control sequence that ends it, or none.
         /// @return The expression, as a node.
-        [[nodiscard]] syntax::Node *enter(
-            syntax::Parser &parser,
-            Context &context,
-            bool display,
-            char delimiter,
-            syntax::Symbol stop
-        ) const;
+        [[nodiscard]] syntax::Node *enter(syntax::Parser &parser, Context &context, bool display, char delimiter,
+                                          syntax::Symbol stop) const;
 
     public:
         /// The grammar every formula is read by: built once, here, rather
@@ -145,8 +138,8 @@ namespace render::primitives::mathematics {
         mutable std::string numbered{};
 
         mutable Layout setting{Layout::Single}; ///< How the next display sets its lines.
-        mutable bool counting{false}; ///< True when that display numbers them.
-        mutable std::vector<Row> lines{}; ///< The rows of the display being read.
-        mutable std::string tagged{}; ///< A `\\tag` for the display being read, or empty.
+        mutable bool counting{false};           ///< True when that display numbers them.
+        mutable std::vector<Row> lines{};       ///< The rows of the display being read.
+        mutable std::string tagged{};           ///< A `\\tag` for the display being read, or empty.
     };
 }

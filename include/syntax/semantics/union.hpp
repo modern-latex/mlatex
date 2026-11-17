@@ -25,7 +25,7 @@ namespace syntax::semantics {
         /// Opaque here: the syntax layer only carries them, and the render
         /// layer, which owns fonts, is the only one that looks inside.
         struct Fonts {
-            const void *text{nullptr}; ///< Face for running text.
+            const void *text{nullptr};    ///< Face for running text.
             const void *formula{nullptr}; ///< Face for formulas.
         };
 
@@ -45,9 +45,9 @@ namespace syntax::semantics {
             saved.pop_back();
         }
 
-        Catcodes catcodes{}; ///< Category table.
+        Catcodes catcodes{};   ///< Category table.
         Registers registers{}; ///< Register banks.
-        Fonts fonts{}; ///< Current faces.
+        Fonts fonts{};         ///< Current faces.
 
     private:
         std::vector<Fonts> saved{}; ///< Faces to restore, one per open group.

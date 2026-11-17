@@ -10,8 +10,8 @@
 #include "syntax/node.hpp"
 #include "syntax/number.hpp"
 #include "syntax/parser.hpp"
-#include "syntax/primitives/logic/environments.hpp"
 #include "syntax/primitives/definitions/variables.hpp"
+#include "syntax/primitives/logic/environments.hpp"
 #include "syntax/semantics/registers.hpp"
 #include "typography/collection.hpp"
 #include "typography/font.hpp"
@@ -79,9 +79,7 @@ namespace render::primitives {
         /// Falls back to the text face when none was selected, which keeps a
         /// formula visible in a document that never asked for a maths family
         /// even though the result will not be proper mathematics.
-        [[nodiscard]] const typography::Font *formula() const noexcept {
-            return maths ? maths : prose;
-        }
+        [[nodiscard]] const typography::Font *formula() const noexcept { return maths ? maths : prose; }
 
         /// @brief Selects the face formulas are set in.
         /// @param font Font to use; must outlive the document.
@@ -129,11 +127,11 @@ namespace render::primitives {
 
     private:
         const layout::Node::Color *tint{nullptr}; ///< Color for running text.
-        const typography::Font *prose{nullptr}; ///< Face for running text.
-        const typography::Font *maths{nullptr}; ///< Face for formulas.
-        bool concealed{false}; ///< Whether what follows is hidden, to its group's end.
-        bool stopped{false}; ///< Whether the rest of the frame is hidden.
-        std::uint64_t count{0}; ///< Changes so far; see changes().
+        const typography::Font *prose{nullptr};   ///< Face for running text.
+        const typography::Font *maths{nullptr};   ///< Face for formulas.
+        bool concealed{false};                    ///< Whether what follows is hidden, to its group's end.
+        bool stopped{false};                      ///< Whether the rest of the frame is hidden.
+        std::uint64_t count{0};                   ///< Changes so far; see changes().
     };
 
     /// @brief Everything a render primitive needs that is not the parser.
@@ -143,13 +141,13 @@ namespace render::primitives {
     /// layer's counterpart to syntax::primitives::Context, and it is built the
     /// same way: one instance, shared.
     struct Context {
-        layout::Document &document; ///< What the primitives fill.
-        const layout::Typesetter &typesetter; ///< Lowers formulas into boxes.
-        syntax::semantics::Registers &registers; ///< The register bank, scoped by Union.
-        typography::Registry &registry; ///< Fonts already built.
-        typography::Collection &collection; ///< Where font files come from.
-        const typography::Shaper &shaper; ///< Text into positioned glyphs.
-        const syntax::expression::Unicodes &unicodes; ///< Maths symbol names.
+        layout::Document &document;                                  ///< What the primitives fill.
+        const layout::Typesetter &typesetter;                        ///< Lowers formulas into boxes.
+        syntax::semantics::Registers &registers;                     ///< The register bank, scoped by Union.
+        typography::Registry &registry;                              ///< Fonts already built.
+        typography::Collection &collection;                          ///< Where font files come from.
+        const typography::Shaper &shaper;                            ///< Text into positioned glyphs.
+        const syntax::expression::Unicodes &unicodes;                ///< Maths symbol names.
         const syntax::primitives::logic::Environments &environments; ///< Named blocks, for a module that hooks one.
         const syntax::primitives::definitions::Variables &variables;
         ///< Named values: colors a document defined, among others.
@@ -180,11 +178,11 @@ namespace render::primitives {
         ///        the table of contents, a caption in the list of figures or
         ///        of tables, or one \\addcontentsline wrote.
         struct Entry {
-            std::string list{}; ///< `toc`, `lof` or `lot`, as LaTeX names its files.
-            std::size_t level{0}; ///< 0 for a chapter, down to 3; 1 for a figure or a table.
-            std::string number{}; ///< As its heading or caption printed it; empty for none.
+            std::string list{};                    ///< `toc`, `lof` or `lot`, as LaTeX names its files.
+            std::size_t level{0};                  ///< 0 for a chapter, down to 3; 1 for a figure or a table.
+            std::string number{};                  ///< As its heading or caption printed it; empty for none.
             memory::Slice<syntax::Node *> title{}; ///< What the line says, as it was read.
-            std::size_t anchor{0}; ///< Where it stands, for its page.
+            std::size_t anchor{0};                 ///< Where it stands, for its page.
         };
 
         /// @brief Every such line, in the order written; the lists are set
@@ -213,7 +211,7 @@ namespace render::primitives {
 
         /// @brief Whether the run may not reach the network: `\\httpget`,
         ///        `\\httppost` and an `https://` picture are refused, each
-        ///        named in an error, and nothing is sent. latex::Host::offline.
+        ///        named in an error, and nothing is sent. mlatex::Host::offline.
         bool offline{false};
 
         /// @brief Where hyphenation patterns are read from: the assets' own
@@ -246,7 +244,7 @@ namespace render::primitives {
     /// Render modules take the Parser rather than the Mouth because most of
     /// them produce a node. The ones that only assign -- the page geometry,
     /// the font selection -- reach the expander through `parser.mouth`.
-    template<typename Module>
+    template <typename Module>
     concept Primitive = std::invocable<Module, syntax::Parser &, Context &>;
 
     /// @brief Installs every module given, in order.
@@ -256,10 +254,9 @@ namespace render::primitives {
     /// @param modules The modules to install; later ones win a name clash.
     /// @complexity O(1) in the number of modules -- the fold is expanded at
     ///             compile time, so this is a straight run of calls.
-    void bind(syntax::Parser &parser, Context &context, Primitive auto &&... modules) {
+    void bind(syntax::Parser &parser, Context &context, Primitive auto &&...modules) {
         (std::invoke(modules, parser, context), ...);
     }
-
 
     /// @brief Wraps a layout box as a syntax node the parser can return.
     ///
@@ -277,14 +274,9 @@ namespace render::primitives {
     ///                 the paragraph being built or ends it.
     /// @return The carrier node.
     /// @complexity O(1).
-    [[nodiscard]] inline syntax::Node *directive(
-        memory::Arena &arena,
-        layout::Node *node,
-        const memory::Location location,
-        const bool block = false
-    ) noexcept {
-        auto *carrier = arena.compose<syntax::Node>(
-            syntax::Node::Type::Directive, std::string_view{}, location);
+    [[nodiscard]] inline syntax::Node *directive(memory::Arena &arena, layout::Node *node,
+                                                 const memory::Location location, const bool block = false) noexcept {
+        auto *carrier = arena.compose<syntax::Node>(syntax::Node::Type::Directive, std::string_view{}, location);
         carrier->directive = node;
         carrier->display = block;
         return carrier;
@@ -346,13 +338,16 @@ namespace render::primitives {
     /// @complexity O(n) in the text's length.
     inline float measure(const std::string_view text, syntax::Mouth &mouth, const Context &context) {
         std::string_view trimmed = text;
-        while (!trimmed.empty() && trimmed.front() == ' ') trimmed.remove_prefix(1);
-        while (!trimmed.empty() && trimmed.back() == ' ') trimmed.remove_suffix(1);
+        while (!trimmed.empty() && trimmed.front() == ' ')
+            trimmed.remove_prefix(1);
+        while (!trimmed.empty() && trimmed.back() == ' ')
+            trimmed.remove_suffix(1);
         if (trimmed.empty()) return 0.0f;
 
         if (constexpr std::string_view name = "\\parindent"; trimmed.ends_with(name)) {
             std::string_view factor = trimmed.substr(0, trimmed.size() - name.size());
-            while (!factor.empty() && factor.back() == ' ') factor.remove_suffix(1);
+            while (!factor.empty() && factor.back() == ' ')
+                factor.remove_suffix(1);
             float amount = 1.0f;
             if (factor == "-") {
                 amount = -1.0f;
@@ -370,14 +365,11 @@ namespace render::primitives {
         // never set as words.
         const syntax::Symbol end = mouth.lexicon.intern("\\measure:end");
         const syntax::Token mark{
-            .symbol = end, .category = syntax::Catcodes::Category::Escape,
-            .text = mouth.lexicon.resolve(end)
-        };
+                .symbol = end, .category = syntax::Catcodes::Category::Escape, .text = mouth.lexicon.resolve(end)};
         mouth.stream().inject(std::span{&mark, 1});
         mouth.ingest(context.arena.copy("\\dimexpr " + std::string(trimmed) + "\\relax "));
         const auto scanned = syntax::Number::dimension(mouth, context.registers);
-        for (syntax::Token token = mouth.read(); !token.empty() && token.symbol != end; token = mouth.read()) {
-        }
+        for (syntax::Token token = mouth.read(); !token.empty() && token.symbol != end; token = mouth.read()) {}
         return scanned ? static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale) : 0.0f;
     }
 
@@ -392,11 +384,7 @@ namespace render::primitives {
     /// @param child   The parsed node; null and empty text add nothing.
     /// @param context Engine services, for the font and the two engines.
     /// @complexity O(n) in the characters, plus the shaper's or typesetter's work.
-    inline void compose(
-        std::vector<layout::Node *> &nodes,
-        const syntax::Node *child,
-        const Context &context
-    ) {
+    inline void compose(std::vector<layout::Node *> &nodes, const syntax::Node *child, const Context &context) {
         if (!child) return;
 
         // A group is not a thing on the page; it is a boundary around things.
@@ -410,16 +398,14 @@ namespace render::primitives {
 
         // The face the text was read under, where one was recorded, and
         // whatever is in use otherwise.
-        const auto *font = child->face
-                               ? static_cast<const typography::Font *>(child->face)
-                               : context.selection.text();
+        const auto *font = child->face ? static_cast<const typography::Font *>(child->face) : context.selection.text();
 
         // Set as running text is, its words broken where the language in
         // force lets them break -- a minipage, a paragraph cell -- and a
         // blank at the head of the whole setting nothing.
         if (child->type == syntax::Node::Type::Text && font && !child->value.empty()) {
             const memory::Slice<layout::Node *> set = context.document.set(
-                child->value, *font, nodes.empty(), static_cast<const layout::Node::Color *>(child->tint));
+                    child->value, *font, nodes.empty(), static_cast<const layout::Node::Color *>(child->tint));
             nodes.insert(nodes.end(), set.begin(), set.end());
             return;
         }
@@ -430,9 +416,8 @@ namespace render::primitives {
         }
 
         if (child->type == syntax::Node::Type::Expression && child->expression) {
-            const auto *maths = child->face
-                                    ? static_cast<const typography::Font *>(child->face)
-                                    : context.selection.formula();
+            const auto *maths =
+                    child->face ? static_cast<const typography::Font *>(child->face) : context.selection.formula();
             const auto *tint = static_cast<const layout::Node::Color *>(child->tint);
 
             // A formula in the line comes in pieces, as running text has it,
@@ -440,15 +425,14 @@ namespace render::primitives {
             // its relations or operators rather than let it run out of the
             // cell; a displayed one is a block whole.
             if (maths && child->expression->style != syntax::expression::Node::Style::Display) {
-                for (layout::Node *piece: context.typesetter.unfold(child->expression, *maths)) {
+                for (layout::Node *piece : context.typesetter.unfold(child->expression, *maths)) {
                     if (tint) layout::Typesetter::paint(piece, *tint);
                     nodes.push_back(piece);
                 }
                 return;
             }
             if (maths) {
-                if (layout::Node *lowered =
-                        context.typesetter.lower(child->expression, *maths, 0.0f)) {
+                if (layout::Node *lowered = context.typesetter.lower(child->expression, *maths, 0.0f)) {
                     if (tint) layout::Typesetter::paint(lowered, *tint);
                     nodes.push_back(lowered);
                 }

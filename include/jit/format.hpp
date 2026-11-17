@@ -84,6 +84,5 @@ namespace jit {
     /// IndexedDB or the browser's private file storage; or mount Emscripten's
     /// IDBFS where the file is written and call `FS.syncfs` after a run.
     /// The first leaves the choice to the page, and needs nothing linked.
-    class Format {
-    };
+    class Format {};
 }

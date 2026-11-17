@@ -1,5 +1,5 @@
-#include "latex.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "typography/collection.hpp"
 #include "typography/expression.hpp"
 #include "typography/registry.hpp"
@@ -13,19 +13,17 @@
 // built from the face's own parts once no single size is tall enough.
 
 /// The engine's assets directory, found from this file.
-static std::filesystem::path assets() {
-    return latex::locate(__FILE__);
-}
+static std::filesystem::path assets() { return mlatex::locate(__FILE__); }
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena}; ///< The indexed tree.
+    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena};         ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
-    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
-    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
+    const render::typography::Font *text{nullptr};            ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr};           ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -50,8 +48,7 @@ int main() {
     assert((metric.axis > 0.0f && metric.thickness > 0.0f) && "the axis and the bar are set");
     assert((metric.gap > 0.0f && metric.clearance > metric.gap) &&
            "a displayed radical stands clearer than one in a line");
-    assert((metric.rule > 0.0f && metric.raise > 0.0f && metric.raise < 1.0f) &&
-           "the radical's own numbers are read");
+    assert((metric.rule > 0.0f && metric.raise > 0.0f && metric.raise < 1.0f) && "the radical's own numbers are read");
 
     const std::uint32_t radical = maths.index(0x221A);
     const render::typography::Expression::Variant base = table.stretch(radical, 1.0f);

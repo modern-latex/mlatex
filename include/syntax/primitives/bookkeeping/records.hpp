@@ -69,18 +69,18 @@ namespace syntax::primitives::bookkeeping {
         /// @param separator The character between fields.
         /// @return Its lines, each its fields, quotes taken off; blank lines left out.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string> > parse(std::string_view text, char separator);
+        [[nodiscard]] static std::vector<std::vector<std::string>> parse(std::string_view text, char separator);
 
     private:
         /// @brief One table: its columns' names and its rows, each row a
         ///        value for each name, empty where none was given.
         struct Table {
-            std::vector<std::string> keys{}; ///< The columns, in order.
-            std::vector<std::vector<std::string> > rows{}; ///< The rows, each as wide as #keys.
+            std::vector<std::string> keys{};              ///< The columns, in order.
+            std::vector<std::vector<std::string>> rows{}; ///< The rows, each as wide as #keys.
         };
 
-        mutable std::map<std::string, Table, std::less<> > tables{}; ///< datatool's databases, by name.
-        mutable char separator{','}; ///< Between a CSV file's fields.
-        mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
+        mutable std::map<std::string, Table, std::less<>> tables{}; ///< datatool's databases, by name.
+        mutable char separator{','};                                ///< Between a CSV file's fields.
+        mutable std::vector<Traceback> tracebacks{};                ///< Errors this module found.
     };
 }

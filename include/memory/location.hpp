@@ -9,7 +9,7 @@ namespace memory {
     /// fields means no position is known, which is what a default-constructed
     /// location says.
     struct Location {
-        std::uint32_t line{0}; ///< Line number, from one.
+        std::uint32_t line{0};   ///< Line number, from one.
         std::uint32_t column{0}; ///< Column number, from one.
 
         /// Which file the line is in, by the number syntax::Mouth::files

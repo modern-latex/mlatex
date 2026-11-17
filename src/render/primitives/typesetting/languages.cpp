@@ -20,37 +20,46 @@ namespace render::primitives::typesetting {
     /// -- hyph-utf8's own figures for each -- and whether it reads right to
     /// left. A language with no patterns of its own breaks no word; one with
     /// no captions of its own keeps whatever captions were in force.
-    static constexpr std::array<Languages::Language, 78> languages{
-        {
+    static constexpr std::array<Languages::Language, 78> languages{{
             {.name = "english", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
             {.name = "american", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
             {.name = "USenglish", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
             {.name = "canadian", .captions = "english", .patterns = "en-us", .left = 2, .right = 3, .reversed = false},
             {.name = "british", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
             {.name = "UKenglish", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3, .reversed = false},
-            {
-                .name = "australian", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3,
-                .reversed = false
-            },
-            {
-                .name = "newzealand", .captions = "english", .patterns = "en-gb", .left = 2, .right = 3,
-                .reversed = false
-            },
+            {.name = "australian",
+             .captions = "english",
+             .patterns = "en-gb",
+             .left = 2,
+             .right = 3,
+             .reversed = false},
+            {.name = "newzealand",
+             .captions = "english",
+             .patterns = "en-gb",
+             .left = 2,
+             .right = 3,
+             .reversed = false},
             {.name = "german", .captions = "german", .patterns = "de-1901", .left = 2, .right = 2, .reversed = false},
             {.name = "ngerman", .captions = "german", .patterns = "de-1996", .left = 2, .right = 2, .reversed = false},
             {.name = "austrian", .captions = "german", .patterns = "de-1901", .left = 2, .right = 2, .reversed = false},
-            {
-                .name = "naustrian", .captions = "german", .patterns = "de-1996", .left = 2, .right = 2,
-                .reversed = false
-            },
-            {
-                .name = "swissgerman", .captions = "german", .patterns = "de-ch-1901", .left = 2, .right = 2,
-                .reversed = false
-            },
-            {
-                .name = "nswissgerman", .captions = "german", .patterns = "de-ch-1901", .left = 2, .right = 2,
-                .reversed = false
-            },
+            {.name = "naustrian",
+             .captions = "german",
+             .patterns = "de-1996",
+             .left = 2,
+             .right = 2,
+             .reversed = false},
+            {.name = "swissgerman",
+             .captions = "german",
+             .patterns = "de-ch-1901",
+             .left = 2,
+             .right = 2,
+             .reversed = false},
+            {.name = "nswissgerman",
+             .captions = "german",
+             .patterns = "de-ch-1901",
+             .left = 2,
+             .right = 2,
+             .reversed = false},
             {.name = "french", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
             {.name = "francais", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
             {.name = "acadian", .captions = "french", .patterns = "fr", .left = 2, .right = 2, .reversed = false},
@@ -58,10 +67,12 @@ namespace render::primitives::typesetting {
             {.name = "spanish", .captions = "spanish", .patterns = "es", .left = 2, .right = 2, .reversed = false},
             {.name = "mexican", .captions = "spanish", .patterns = "es", .left = 2, .right = 2, .reversed = false},
             {.name = "italian", .captions = "italian", .patterns = "it", .left = 2, .right = 2, .reversed = false},
-            {
-                .name = "portuguese", .captions = "portuguese", .patterns = "pt", .left = 2, .right = 3,
-                .reversed = false
-            },
+            {.name = "portuguese",
+             .captions = "portuguese",
+             .patterns = "pt",
+             .left = 2,
+             .right = 3,
+             .reversed = false},
             {.name = "portuges", .captions = "portuguese", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
             {.name = "brazil", .captions = "brazilian", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
             {.name = "brazilian", .captions = "brazilian", .patterns = "pt", .left = 2, .right = 3, .reversed = false},
@@ -84,10 +95,12 @@ namespace render::primitives::typesetting {
             {.name = "magyar", .captions = "hungarian", .patterns = "hu", .left = 2, .right = 2, .reversed = false},
             {.name = "romanian", .captions = "romanian", .patterns = "ro", .left = 2, .right = 2, .reversed = false},
             {.name = "greek", .captions = "greek", .patterns = "el-monoton", .left = 1, .right = 1, .reversed = false},
-            {
-                .name = "polutonikogreek", .captions = "greek", .patterns = "el-polyton", .left = 1, .right = 1,
-                .reversed = false
-            },
+            {.name = "polutonikogreek",
+             .captions = "greek",
+             .patterns = "el-polyton",
+             .left = 1,
+             .right = 1,
+             .reversed = false},
             {.name = "ancientgreek", .captions = "", .patterns = "grc", .left = 1, .right = 1, .reversed = false},
             {.name = "turkish", .captions = "turkish", .patterns = "tr", .left = 2, .right = 2, .reversed = false},
             {.name = "swedish", .captions = "swedish", .patterns = "sv", .left = 2, .right = 2, .reversed = false},
@@ -121,8 +134,7 @@ namespace render::primitives::typesetting {
             {.name = "farsi", .captions = "persian", .patterns = "", .left = 0, .right = 0, .reversed = true},
             {.name = "urdu", .captions = "", .patterns = "", .left = 0, .right = 0, .reversed = true},
             {.name = "syriac", .captions = "", .patterns = "", .left = 0, .right = 0, .reversed = true},
-        }
-    };
+    }};
 
     Languages::Languages(syntax::Lexicon &lexicon) noexcept {
         lexicon.intern("\\@language");
@@ -177,15 +189,17 @@ namespace render::primitives::typesetting {
         // punctuation, as babel and polyglossia set them.
         const auto spoken = [this, patterns](const Language &language) -> layout::Node::Directive {
             const auto chosen = std::ranges::find(numerals, language.name, &std::pair<std::string, std::string>::first);
-            const bool western = chosen != numerals.end() && (
-                                     chosen->second == "maghrib" || chosen->second == "western");
+            const bool western =
+                    chosen != numerals.end() && (chosen->second == "maghrib" || chosen->second == "western");
             std::uint32_t digits = 0;
             if (language.name == "arabic") digits = 0x0660;
             if (language.name == "persian" || language.name == "farsi" || language.name == "urdu") digits = 0x06F0;
-            return {
-                .command = Command::Language, .hyphenator = patterns(language), .before = language.left,
-                .after = language.right, .digits = western ? 0 : digits, .spaced = language.captions == "french"
-            };
+            return {.command = Command::Language,
+                    .hyphenator = patterns(language),
+                    .before = language.left,
+                    .after = language.right,
+                    .digits = western ? 0 : digits,
+                    .spaced = language.captions == "french"};
         };
 
         // polyglossia's options for a language, `[numerals=maghrib]`, read
@@ -193,7 +207,7 @@ namespace render::primitives::typesetting {
         // is written so too.
         const auto options = [](syntax::Mouth &mouth) {
             std::string written;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 written += token.text;
             }
             return written;
@@ -205,8 +219,10 @@ namespace render::primitives::typesetting {
             value = value.substr(0, value.find(','));
             std::erase(value, ' ');
             if (const auto known = std::ranges::find(numerals, name, &std::pair<std::string, std::string>::first);
-                known != numerals.end()) known->second = value;
-            else numerals.emplace_back(std::string(name), value);
+                known != numerals.end())
+                known->second = value;
+            else
+                numerals.emplace_back(std::string(name), value);
         };
 
         // The language a list of names means: babel's options in the order
@@ -224,8 +240,10 @@ namespace render::primitives::typesetting {
                 if (stop == std::string::npos) stop = list.size();
                 std::string_view item(list.data() + start, stop - start);
                 start = stop + 1;
-                while (!item.empty() && (item.front() == ' ' || item.front() == '\n')) item.remove_prefix(1);
-                while (!item.empty() && (item.back() == ' ' || item.back() == '\n')) item.remove_suffix(1);
+                while (!item.empty() && (item.front() == ' ' || item.front() == '\n'))
+                    item.remove_prefix(1);
+                while (!item.empty() && (item.back() == ' ' || item.back() == '\n'))
+                    item.remove_suffix(1);
 
                 if (item.starts_with("main=")) {
                     chosen = get(item.substr(5));
@@ -289,30 +307,28 @@ namespace render::primitives::typesetting {
         // around it and set in that language -- wholly, captions too, or
         // with a star its words and direction alone -- and the language
         // before it chosen again as it closes.
-        const auto block = [this, &context
-                ](const std::string_view name, const bool whole, const std::string_view fixed) {
+        const auto block = [this, &context](const std::string_view name, const bool whole,
+                                            const std::string_view fixed) {
             context.environments.watch(
-                name,
-                [this, whole, given = std::string(fixed)](syntax::Mouth &mouth) {
-                    const std::string language = given.empty() ? syntax::Argument::expanded(mouth) : given;
-                    kept.push_back(current);
-                    const Language *known = get(language);
-                    mouth.ingest(mouth.arena.copy(
-                        whole
-                            ? std::format("\\par\\@language{{{}}}", language)
-                            : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})", language,
-                                          known && known->reversed ? "RTL" : "LTR")));
-                },
-                [this, whole](syntax::Mouth &mouth) {
-                    const std::string before = kept.empty() ? current : kept.back();
-                    if (!kept.empty()) kept.pop_back();
-                    const Language *known = get(before);
-                    mouth.ingest(mouth.arena.copy(
-                        whole
-                            ? std::format("\\par\\@language{{{}}}", before)
-                            : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})", before,
-                                          known && known->reversed ? "RTL" : "LTR")));
-                });
+                    name,
+                    [this, whole, given = std::string(fixed)](syntax::Mouth &mouth) {
+                        const std::string language = given.empty() ? syntax::Argument::expanded(mouth) : given;
+                        kept.push_back(current);
+                        const Language *known = get(language);
+                        mouth.ingest(mouth.arena.copy(whole ? std::format("\\par\\@language{{{}}}", language)
+                                                            : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})",
+                                                                          language,
+                                                                          known && known->reversed ? "RTL" : "LTR")));
+                    },
+                    [this, whole](syntax::Mouth &mouth) {
+                        const std::string before = kept.empty() ? current : kept.back();
+                        if (!kept.empty()) kept.pop_back();
+                        const Language *known = get(before);
+                        mouth.ingest(mouth.arena.copy(whole ? std::format("\\par\\@language{{{}}}", before)
+                                                            : std::format(R"(\par\@hyphenation{{{}}}\@direction{{{}}})",
+                                                                          before,
+                                                                          known && known->reversed ? "RTL" : "LTR")));
+                    });
         };
         block("otherlanguage", true, "");
         block("otherlanguage*", false, "");
@@ -332,8 +348,10 @@ namespace render::primitives::typesetting {
                 if (stop == std::string::npos) stop = list.size();
                 std::string_view item(list.data() + start, stop - start);
                 start = stop + 1;
-                while (!item.empty() && item.front() == ' ') item.remove_prefix(1);
-                while (!item.empty() && item.back() == ' ') item.remove_suffix(1);
+                while (!item.empty() && item.front() == ' ')
+                    item.remove_prefix(1);
+                while (!item.empty() && item.back() == ' ')
+                    item.remove_suffix(1);
 
                 const Language *language = get(item);
                 if (!language) continue;

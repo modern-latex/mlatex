@@ -43,11 +43,11 @@ namespace jit {
     ///    when the timeout passed first.
     /// 4. **`~Watcher()`** closes every handle. It owns them, so copying is
     ///    deleted with a reason, as memory::Arena does.
-    /// 5. **Which folders.** latex::compose() should say which files the run
-    ///    read: everything the `disk` reader in src/latex.cpp found (its
+    /// 5. **Which folders.** mlatex::compose() should say which files the run
+    ///    read: everything the `disk` reader in src/mlatex.cpp found (its
     ///    `nearby` table, minus the names it cached as missing), and the
-    ///    document. A public `inputs` field on latex::Session and an
-    ///    out-parameter on latex::compose() carry it. plots.cpp reads its
+    ///    document. A public `inputs` field on mlatex::Session and an
+    ///    out-parameter on mlatex::compose() carry it. plots.cpp reads its
     ///    tables from disk directly (`std::ifstream` in plots.cpp); route
     ///    those through `disk` too, or a table's change goes unseen.
     /// 6. **The loop in src/main.cpp.** Replace the `sleep_for(250ms)` and
@@ -61,6 +61,5 @@ namespace jit {
     /// the person types. Compile this class's body out under Emscripten --
     /// `#if !defined(__EMSCRIPTEN__)` around everything in watcher.cpp --
     /// and leave the class itself, so code that names it still compiles.
-    class Watcher {
-    };
+    class Watcher {};
 }

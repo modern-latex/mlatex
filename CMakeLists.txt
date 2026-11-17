@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.25)
 # The builds a preset names beside the plain release one: the sanitizers and
 # clang-tidy. Each is a cache option, so an IDE's own profile can turn one on
 # as well as a preset can.
-set(LATEX_SANITIZE "" CACHE STRING "Sanitizers to build everything with, as -fsanitize names them: address,undefined")
-option(LATEX_TIDY "Check mLaTeX's own sources with clang-tidy as they build" OFF)
+set(MLATEX_SANITIZE "" CACHE STRING "Sanitizers to build everything with, as -fsanitize names them: address,undefined")
+option(MLATEX_TIDY "Check mLaTeX's own sources with clang-tidy as they build" OFF)
 
 # The libraries -- HarfBuzz, FreeType, the image libraries -- come from
 # vcpkg. Its toolchain is taken from whichever vcpkg has libraries installed,
@@ -191,12 +191,12 @@ endif ()
 
 # Sanitizers over the engine, so a memory error or undefined behaviour stops
 # the program where it happens rather than corrupting what comes after.
-if (LATEX_SANITIZE)
+if (MLATEX_SANITIZE)
     if (MSVC OR EMSCRIPTEN)
-        message(FATAL_ERROR "LATEX_SANITIZE needs Clang on macOS or Linux")
+        message(FATAL_ERROR "MLATEX_SANITIZE needs Clang on macOS or Linux")
     endif ()
-    add_compile_options(-fsanitize=${LATEX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer -g)
-    add_link_options(-fsanitize=${LATEX_SANITIZE})
+    add_compile_options(-fsanitize=${MLATEX_SANITIZE} -fno-sanitize-recover=all -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=${MLATEX_SANITIZE})
 endif ()
 
 find_package(Doxygen)
@@ -467,14 +467,14 @@ target_link_libraries(core PUBLIC PNG::PNG JPEG::JPEG WebP::webp ZLIB::ZLIB)
 # Whether this is a release build, told to everything that links the engine:
 # logger.hpp keys its floor on it, and the tests, which undefine NDEBUG so
 # their asserts run, must see the same floor the engine was compiled with.
-target_compile_definitions(core PUBLIC $<$<NOT:$<CONFIG:Debug>>:LATEX_RELEASE>)
+target_compile_definitions(core PUBLIC $<$<NOT:$<CONFIG:Debug>>:MLATEX_RELEASE>)
 if (WIN32)
     target_link_libraries(core PUBLIC winhttp)
 elseif (NOT EMSCRIPTEN)
     find_package(CURL QUIET)
     if (CURL_FOUND)
         target_link_libraries(core PUBLIC CURL::libcurl)
-        target_compile_definitions(core PRIVATE LATEX_CURL)
+        target_compile_definitions(core PRIVATE MLATEX_CURL)
     endif ()
 endif ()
 
@@ -530,17 +530,17 @@ else ()
     # target keeps its name, which is what an IDE's run configuration names.
     set_target_properties(mlatex PROPERTIES OUTPUT_NAME mlatex)
     # What `mlatex --version` prints.
-    target_compile_definitions(mlatex PRIVATE LATEX_VERSION="${version}")
+    target_compile_definitions(mlatex PRIVATE MLATEX_VERSION="${version}")
 
     # The engine as a C library, for a program that wants documents made
     # without running a second process: see include/protocols/ffi.hpp. Named
-    # latex_ffi so that its import library does not collide with the one the
+    # mlatex_ffi so that its import library does not collide with the one the
     # executable leaves behind. It finds its assets from where it was loaded,
     # which on Linux and macOS takes dladdr and so the dynamic-loading library.
     add_library(ffi SHARED "${source}/src/protocols/ffi.cpp" "${source}/include/protocols/ffi.hpp")
     target_link_libraries(ffi PRIVATE core ${CMAKE_DL_LIBS})
     target_compile_definitions(ffi PRIVATE EXPORTING)
-    set_target_properties(ffi PROPERTIES OUTPUT_NAME latex_ffi)
+    set_target_properties(ffi PROPERTIES OUTPUT_NAME mlatex_ffi)
 
     # Loaded the first time a document needs them rather than when the program
     # starts: most documents draw no JPEG or WebP picture and fetch nothing
@@ -565,7 +565,7 @@ else ()
     # clang-tidy over the engine's own sources as they build, as .clang-tidy
     # configures it: the analyze preset turns it on. Taken from beside the
     # compiler first, then from the PATH.
-    if (LATEX_TIDY)
+    if (MLATEX_TIDY)
         get_filename_component(tools "${CMAKE_CXX_COMPILER}" DIRECTORY)
         find_program(tidy NAMES clang-tidy-22 clang-tidy HINTS "${tools}" REQUIRED)
         set_target_properties(core mlatex ffi PROPERTIES CXX_CLANG_TIDY "${tidy};--config-file=${source}/.clang-tidy")

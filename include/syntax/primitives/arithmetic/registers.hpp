@@ -4,8 +4,8 @@
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"
 
-#include <vector>
 #include "syntax/semantics/registers.hpp"
+#include <vector>
 
 #include <array>
 #include <cstdint>
@@ -79,15 +79,15 @@ namespace syntax::primitives::arithmetic {
 
         Lexicon *lexicon{nullptr}; ///< For naming the banks when this module installs.
 
-        Symbol relax{}; ///< `\\relax`, which ends an expression.
-        Symbol toks{}; ///< `\\toks`, the token registers by number.
+        Symbol relax{};   ///< `\\relax`, which ends an expression.
+        Symbol toks{};    ///< `\\toks`, the token registers by number.
         Symbol numexpr{}; ///< `\\numexpr`, which \\the prints as a number.
         Symbol dimexpr{}; ///< `\\dimexpr`, which \\the prints as a length.
 
         /// The next register each bank gives out -- integers, lengths, glue
         /// -- counted up from 128 to the engine's own at 240.
         mutable std::array<std::size_t, 3> following{128, 128, 128};
-        mutable std::size_t boxes{10}; ///< The next box register \\newbox gives out.
+        mutable std::size_t boxes{10};  ///< The next box register \\newbox gives out.
         mutable std::size_t tokens{10}; ///< The next token register \\newtoks gives out.
 
         mutable std::array<std::vector<Token>, semantics::Registers::slots> lists{}; ///< The token registers.

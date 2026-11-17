@@ -28,9 +28,8 @@ namespace memory {
 
     /// @brief Values by name, found in O(1) expected with a view of the name.
     /// @tparam Value What each name stands for.
-    template<typename Value>
-    using Dictionary = std::unordered_map<std::string, Value, Hash, std::equal_to<> >;
+    template <typename Value> using Dictionary = std::unordered_map<std::string, Value, Hash, std::equal_to<>>;
 
     /// @brief A set of names, searched the same way.
-    using Names = std::unordered_set<std::string, Hash, std::equal_to<> >;
+    using Names = std::unordered_set<std::string, Hash, std::equal_to<>>;
 }

@@ -28,23 +28,21 @@ namespace render::primitives::arrangement {
 
         /// @brief One switch: its name, and the instruction it becomes.
         struct Switch {
-            std::string_view name; ///< What the document writes.
-            Command command; ///< What the document is told.
+            std::string_view name;       ///< What the document writes.
+            Command command;             ///< What the document is told.
             Justification justification; ///< For Command::Align.
         };
 
-        static constexpr std::array<Switch, 6> switches{
-            {
+        static constexpr std::array<Switch, 6> switches{{
                 {.name = "\\indent", .command = Command::Indent, .justification = Justification::Full},
                 {.name = "\\noindent", .command = Command::Flush, .justification = Justification::Full},
                 {.name = "\\justifying", .command = Command::Align, .justification = Justification::Full},
                 {.name = "\\raggedright", .command = Command::Align, .justification = Justification::Left},
                 {.name = "\\raggedleft", .command = Command::Align, .justification = Justification::Right},
                 {.name = "\\centering", .command = Command::Align, .justification = Justification::Center},
-            }
-        };
+        }};
 
-        for (const auto &[name, command, justification]: switches) {
+        for (const auto &[name, command, justification] : switches) {
             parser.bind(name, [command, justification](const syntax::Parser &reader) -> syntax::Node * {
                 memory::Arena &arena = reader.arena;
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Directive);
@@ -56,14 +54,12 @@ namespace render::primitives::arrangement {
         // TeX's `\\leftskip` and `\\rightskip`, as dimensions rather than
         // glue: how far in from each edge every line of the paragraphs from
         // here on starts and ends.
-        static constexpr std::array<std::pair<std::string_view, bool>, 2> edges{
-            {
+        static constexpr std::array<std::pair<std::string_view, bool>, 2> edges{{
                 {"\\leftskip", false},
                 {"\\rightskip", true},
-            }
-        };
+        }};
 
-        for (const auto &[name, trailing]: edges) {
+        for (const auto &[name, trailing] : edges) {
             parser.bind(name, [this, &context, trailing, name](const syntax::Parser &reader) -> syntax::Node * {
                 syntax::Mouth &mouth = reader.mouth;
                 memory::Arena &arena = reader.arena;
@@ -81,11 +77,9 @@ namespace render::primitives::arrangement {
                 }
 
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Directive);
-                node->directive({
-                    .command = Command::Margin,
-                    .width = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale),
-                    .trailing = trailing
-                });
+                node->directive({.command = Command::Margin,
+                                 .width = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale),
+                                 .trailing = trailing});
                 return directive(arena, node, origin);
             });
         }
@@ -97,8 +91,7 @@ namespace render::primitives::arrangement {
         // this block changes every one of them -- so that returning to it,
         // or to the document's own baseline once none is left open, is never
         // missing a piece another block further out happened to leave set.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> blocks{
-            {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> blocks{{
                 {"center", R"(\par\leftskip=0pt\rightskip=0pt\centering )"},
                 {"flushleft", R"(\par\leftskip=0pt\rightskip=0pt\raggedright )"},
                 {"flushright", R"(\par\leftskip=0pt\rightskip=0pt\raggedleft )"},
@@ -114,27 +107,25 @@ namespace render::primitives::arrangement {
                 {"quote", R"(\par\leftskip=2.5em\rightskip=2.5em\justifying\noindent )"},
                 {"quotation", R"(\par\leftskip=2.5em\rightskip=2.5em\justifying )"},
                 {"verse", R"(\par\leftskip=2.5em\rightskip=2.5em\raggedright\noindent )"},
-            }
-        };
+        }};
 
         // The body's own alignment is the class's \\@bodyshape: justified,
         // or beamer's ragged right.
-        static constexpr std::string_view baseline =
-                R"(\par\leftskip=0pt\rightskip=0pt\@bodyshape\noindent )";
+        static constexpr std::string_view baseline = R"(\par\leftskip=0pt\rightskip=0pt\@bodyshape\noindent )";
 
-        for (const auto &[name, opening]: blocks) {
+        for (const auto &[name, opening] : blocks) {
             context.environments.watch(
-                name,
-                [this, opening](syntax::Mouth &mouth) {
-                    openings.push_back(opening);
-                    mouth.ingest(opening);
-                },
-                [this](syntax::Mouth &mouth) {
-                    // Text straight after the block carries on from it, and
-                    // so is not indented unless a blank line comes first.
-                    if (!openings.empty()) openings.pop_back();
-                    mouth.ingest(openings.empty() ? baseline : openings.back());
-                });
+                    name,
+                    [this, opening](syntax::Mouth &mouth) {
+                        openings.push_back(opening);
+                        mouth.ingest(opening);
+                    },
+                    [this](syntax::Mouth &mouth) {
+                        // Text straight after the block carries on from it, and
+                        // so is not indented unless a blank line comes first.
+                        if (!openings.empty()) openings.pop_back();
+                        mouth.ingest(openings.empty() ? baseline : openings.back());
+                    });
         }
 
         // The abstract, and the keywords after it, as the class sets them:
@@ -144,26 +135,24 @@ namespace render::primitives::arrangement {
         // from both margins -- which a class redefines, as IEEEtran runs its
         // `\\small` to them is their own to close.
         static constexpr std::string_view abstract = "\\par\\@abstractshape ";
-        for (const auto &[name, head]: {
-                 std::pair<std::string_view, std::string_view>{"abstract", "{\\@abstracthead "},
-                 {"keywords", "{\\@keywordshead "},
-                 {"keyword", "{\\@keywordshead "},
-                 {"IEEEkeywords", "{\\@keywordshead "}
-             }) {
+        for (const auto &[name, head] : {std::pair<std::string_view, std::string_view>{"abstract", "{\\@abstracthead "},
+                                         {"keywords", "{\\@keywordshead "},
+                                         {"keyword", "{\\@keywordshead "},
+                                         {"IEEEkeywords", "{\\@keywordshead "}}) {
             context.environments.watch(
-                name,
-                [this, head](syntax::Mouth &mouth) {
-                    openings.push_back(abstract);
-                    mouth.ingest(head);
-                },
-                [this](syntax::Mouth &mouth) {
-                    // What is ingested last is read first: the block's end,
-                    // then the shape of whatever it stood in.
-                    if (!openings.empty()) openings.pop_back();
-                    mouth.ingest(openings.empty() ? baseline : openings.back());
-                    mouth.ingest("\\par}");
-                },
-                /*transparent=*/true);
+                    name,
+                    [this, head](syntax::Mouth &mouth) {
+                        openings.push_back(abstract);
+                        mouth.ingest(head);
+                    },
+                    [this](syntax::Mouth &mouth) {
+                        // What is ingested last is read first: the block's end,
+                        // then the shape of whatever it stood in.
+                        if (!openings.empty()) openings.pop_back();
+                        mouth.ingest(openings.empty() ? baseline : openings.back());
+                        mouth.ingest("\\par}");
+                    },
+                    /*transparent=*/true);
         }
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound paragraph primitives");

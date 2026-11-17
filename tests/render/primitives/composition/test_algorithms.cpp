@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -52,16 +52,19 @@ static bool holds(const std::string_view text, const std::string_view part) {
 }
 
 int main() {
-    const Result result = article(
-        "\\usepackage{algorithm,algpseudocode}",
-        "\\begin{algorithm}\\caption{Sum}\\begin{algorithmic}[1]"
-        "\\Require a list $L$ \\State $s \\gets 0$ \\For{$x \\in L$} \\State $s \\gets s + x$ \\EndFor"
-        "\\Statex \\If{$s > 10$} \\State \\Return $s$ \\EndIf"
-        "\\end{algorithmic}\\end{algorithm}");
+    const Result result =
+            article("\\usepackage{algorithm,algpseudocode}",
+                    "\\begin{algorithm}\\caption{Sum}\\begin{algorithmic}[1]"
+                    "\\Require a list $L$ \\State $s \\gets 0$ \\For{$x \\in L$} \\State $s \\gets s + x$ \\EndFor"
+                    "\\Statex \\If{$s > 10$} \\State \\Return $s$ \\EndIf"
+                    "\\end{algorithmic}\\end{algorithm}");
     assert((result.clean) && "an algorithm reads without a report");
     assert((holds(result.text, "Algorithm1Sum")) && "captioned as a float");
     assert((holds(result.text, "Require:alistL")) && "its input");
-    assert((holds(result.text, "1:s\xE2\x86\x90" "0") || holds(result.text, "1s\xE2\x86\x90" "0")) &&
+    assert((holds(result.text, "1:s\xE2\x86\x90"
+                               "0") ||
+            holds(result.text, "1s\xE2\x86\x90"
+                               "0")) &&
            "each \\State numbered");
     assert((holds(result.text, "for") && holds(result.text, "endfor") && holds(result.text, "endif")) &&
            "the blocks opened and closed in words");

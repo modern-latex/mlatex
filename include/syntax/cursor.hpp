@@ -94,7 +94,7 @@ namespace syntax {
         /// per token of every document -- and the next inject() writes over
         /// them anyway.
         std::vector<Token> tokens{};
-        std::size_t depth = 0; ///< How many of #tokens are still to be read.
+        std::size_t depth = 0;  ///< How many of #tokens are still to be read.
         std::size_t unread = 0; ///< How many of #tokens, from the first, are the document's unread.
     };
 }

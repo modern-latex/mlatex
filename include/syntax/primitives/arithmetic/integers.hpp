@@ -62,7 +62,7 @@ namespace syntax::primitives::arithmetic {
         void operator()(Mouth &mouth, Context &context) const;
 
         static constexpr std::int64_t ceiling = 2147483647; ///< Widest value a register holds.
-        static constexpr std::size_t depth = 64; ///< Deepest parenthesis nesting.
+        static constexpr std::size_t depth = 64;            ///< Deepest parenthesis nesting.
 
         /// @brief Errors this module has recorded.
         ///
@@ -78,14 +78,14 @@ namespace syntax::primitives::arithmetic {
 
         /// @brief State threaded through one evaluation.
         struct Pass {
-            Cursor &cursor; ///< Tokens of the expression.
+            Cursor &cursor;                        ///< Tokens of the expression.
             const semantics::Registers &registers; ///< Resolves register operands.
-            Symbol integer{}; ///< Interned `\\integer`.
-            const Integers &owner; ///< Records errors on this module.
-            Symbol modulo{}; ///< Interned `\\mod`.
-            std::size_t level = 0; ///< Current parenthesis depth.
-            bool sound = true; ///< Cleared by malformed input; result becomes 0.
-            bool noted = false; ///< An overflow has already been reported.
+            Symbol integer{};                      ///< Interned `\\integer`.
+            const Integers &owner;                 ///< Records errors on this module.
+            Symbol modulo{};                       ///< Interned `\\mod`.
+            std::size_t level = 0;                 ///< Current parenthesis depth.
+            bool sound = true;                     ///< Cleared by malformed input; result becomes 0.
+            bool noted = false;                    ///< An overflow has already been reported.
         };
 
         [[nodiscard]] static std::int64_t expression(Pass &pass);
@@ -104,6 +104,6 @@ namespace syntax::primitives::arithmetic {
         [[nodiscard]] static std::int64_t bound(Pass &pass, std::int64_t value);
 
         Symbol integer{}; ///< `\\integer`, so register operands scan.
-        Symbol modulo{}; ///< `\\mod`, the remainder operator.
+        Symbol modulo{};  ///< `\\mod`, the remainder operator.
     };
 }

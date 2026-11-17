@@ -20,10 +20,10 @@
 /// argument parsing and self-location left to `main.cpp`. The foreign-function
 /// library in `protocols/ffi.hpp` calls the same path, which is why it can make
 /// the same PDF from the same document without running a second program.
-namespace latex {
+namespace mlatex {
     /// @brief Values handed to a document before it runs, name then text, as
     ///        `\\variable{name}` reads them.
-    using Variables = std::vector<std::pair<std::string, std::string> >;
+    using Variables = std::vector<std::pair<std::string, std::string>>;
 
     /// @brief A control sequence the calling program implements itself.
     ///
@@ -39,7 +39,7 @@ namespace latex {
     /// by the account number the page is about, a figure computed from a
     /// database the engine never sees.
     struct Command {
-        std::string name{}; ///< Without the backslash, as `balance`.
+        std::string name{};   ///< Without the backslash, as `balance`.
         std::size_t arity{0}; ///< How many brace groups it reads; at most nine.
 
         /// Called with the arguments' text; returns what the command stands for.
@@ -48,8 +48,8 @@ namespace latex {
 
     /// @brief Everything a calling program hands a document besides its text.
     struct Host {
-        Variables variables{}; ///< Read with `\\variable`.
-        std::vector<Command> commands{}; ///< Implemented by the program.
+        Variables variables{};             ///< Read with `\\variable`.
+        std::vector<Command> commands{};   ///< Implemented by the program.
         syntax::primitives::Files files{}; ///< Packages, inputs and pictures, from memory.
 
         /// Folders read after the document's own for what it inputs --
@@ -74,7 +74,7 @@ namespace latex {
     /// handed from one language, it can be handed from all three.
     ///
     /// @code
-    /// latex::Session session(latex::locate(program));
+    /// mlatex::Session session(mlatex::locate(program));
     /// session.set("customer", "Acme Ltd.");
     /// session.define({.name = "balance", .arity = 1, .handler = [&](auto arguments) {
     ///     return ledger.balance(arguments[0]);
@@ -153,8 +153,8 @@ namespace latex {
         bool snippet(std::string_view text);
 
         std::filesystem::path assets{}; ///< The assets directory the session reads.
-        Host host{}; ///< Everything the next document will be handed.
-        std::string pdf{}; ///< The last PDF made, or nothing when none could be.
+        Host host{};                    ///< Everything the next document will be handed.
+        std::string pdf{};              ///< The last PDF made, or nothing when none could be.
         /// What went wrong the last time, one error per line -- as
         /// `appendix.tex:3:5: error (macro): Undefined control sequence \\foo`,
         /// the file it is in first -- or a warning; empty when nothing did.
@@ -203,15 +203,9 @@ namespace latex {
     /// @param texts       Receives each page's text, or null for none; empty
     ///                    for a draft, which draws no page.
     /// @return True when the document compiled with nothing left broken.
-    [[nodiscard]] bool compose(
-        const std::filesystem::path &assets,
-        const std::filesystem::path &source,
-        const std::filesystem::path &destination,
-        const Host &host,
-        std::ostream *report,
-        std::ostream &errors,
-        std::vector<std::string> *texts = nullptr
-    );
+    [[nodiscard]] bool compose(const std::filesystem::path &assets, const std::filesystem::path &source,
+                               const std::filesystem::path &destination, const Host &host, std::ostream *report,
+                               std::ostream &errors, std::vector<std::string> *texts = nullptr);
 
     /// @brief Composes a document held in memory into a PDF held in memory,
     ///        quietly.
@@ -233,13 +227,7 @@ namespace latex {
     /// @param screen   Receives the pages to draw on a screen, or null for none.
     /// @return True when the document compiled with nothing left broken. A
     ///         PDF may still have been made when some part of it was not.
-    [[nodiscard]] bool typeset(
-        const std::filesystem::path &assets,
-        std::string_view document,
-        std::string &pdf,
-        const Host &host,
-        std::ostream &errors,
-        std::vector<std::string> *texts = nullptr,
-        render::Screen *screen = nullptr
-    );
+    [[nodiscard]] bool typeset(const std::filesystem::path &assets, std::string_view document, std::string &pdf,
+                               const Host &host, std::ostream &errors, std::vector<std::string> *texts = nullptr,
+                               render::Screen *screen = nullptr);
 }

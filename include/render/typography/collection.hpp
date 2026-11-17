@@ -67,11 +67,11 @@ namespace render::typography {
     public:
         /// @brief One indexed face, or one alias standing in for another name.
         struct Entry {
-            std::string_view family{}; ///< Lower-cased lookup name.
-            std::string_view path{}; ///< Where the file lives, UTF-8 and zero-terminated.
+            std::string_view family{};             ///< Lower-cased lookup name.
+            std::string_view path{};               ///< Where the file lives, UTF-8 and zero-terminated.
             std::span<const std::uint8_t> bytes{}; ///< File contents, empty until mapped or read.
-            Entry *target{nullptr}; ///< Set on an alias: the entry it stands for.
-            Entry *next{nullptr}; ///< Next entry in this bucket.
+            Entry *target{nullptr};                ///< Set on an alias: the entry it stands for.
+            Entry *next{nullptr};                  ///< Next entry in this bucket.
         };
 
         /// @brief Builds an empty collection.
@@ -83,11 +83,11 @@ namespace render::typography {
         /// @brief Unmaps every file mapped so far.
         ~Collection() noexcept;
 
-        Collection(const Collection &) = delete(
-            "a collection owns the font bytes it keeps resident, and every face points into them");
+        Collection(const Collection &) =
+                delete ("a collection owns the font bytes it keeps resident, and every face points into them");
 
-        Collection &operator=(const Collection &) = delete(
-            "a collection owns the font bytes it keeps resident, and every face points into them");
+        Collection &operator=(const Collection &) =
+                delete ("a collection owns the font bytes it keeps resident, and every face points into them");
 
         /// @brief Posts every font file under a directory to the collection,
         ///        recursively.
@@ -185,21 +185,21 @@ namespace render::typography {
         /// them, so the mapping has to outlive the entry's claim on it.
         struct View {
             const void *data{nullptr}; ///< Where the file was mapped.
-            std::size_t size{0}; ///< How many bytes were mapped.
+            std::size_t size{0};       ///< How many bytes were mapped.
         };
 
-        memory::Arena &arena; ///< Storage for names, buckets and bytes.
-        std::size_t slots{0}; ///< Bucket count, always a power of two.
+        memory::Arena &arena;   ///< Storage for names, buckets and bytes.
+        std::size_t slots{0};   ///< Bucket count, always a power of two.
         Entry **table{nullptr}; ///< Bucket heads.
-        bool searched{false}; ///< Whether post() has listed the system's folders.
-        bool lending{false}; ///< Whether the faces being posted are the system's, for #lent.
+        bool searched{false};   ///< Whether post() has listed the system's folders.
+        bool lending{false};    ///< Whether the faces being posted are the system's, for #lent.
 
         /// Every file mapped so far, and every one read where it would not
         /// map. Kept on the heap rather than in the arena, and get() taken
         /// under a lock, so a second thread may open faces ahead of the one
         /// that sets the document while that one allocates from the arena.
         mutable std::vector<View> views{};
-        mutable std::vector<std::unique_ptr<std::uint8_t[]> > copies{};
+        mutable std::vector<std::unique_ptr<std::uint8_t[]>> copies{};
         mutable std::mutex guard{};
     };
 }

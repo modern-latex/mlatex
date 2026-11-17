@@ -5,9 +5,9 @@
 /// signs, octal, hex, character codes and register references all behave
 /// exactly as they do everywhere else in the language.
 #include "syntax/primitives/arithmetic/integers.hpp"
+#include "logger.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"
-#include "logger.hpp"
 
 #include <string_view>
 
@@ -22,8 +22,7 @@ namespace syntax::primitives::arithmetic {
     }
 
     Token Integers::lookahead(const Pass &pass) {
-        while (!pass.cursor.empty() &&
-               pass.cursor.lookahead(0).category == Catcodes::Category::Space) {
+        while (!pass.cursor.empty() && pass.cursor.lookahead(0).category == Catcodes::Category::Space) {
             pass.cursor.advance();
         }
         return pass.cursor.lookahead(0);
@@ -73,11 +72,10 @@ namespace syntax::primitives::arithmetic {
         const auto scanned = Number::integer(pass.cursor, pass.registers);
         if (!scanned) {
             if (pass.sound) {
-                pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, lead.location,
-                                                   lead.empty()
-                                                       ? std::string("\\evaluate ended where a number was expected")
-                                                       : std::format("\\evaluate expected a number, found '{}'",
-                                                                     lead.text));
+                pass.owner.tracebacks.emplace_back(
+                        Traceback::Type::Syntax, lead.location,
+                        lead.empty() ? std::string("\\evaluate ended where a number was expected")
+                                     : std::format("\\evaluate expected a number, found '{}'", lead.text));
                 pass.sound = false;
             }
             return 0;
@@ -140,9 +138,8 @@ namespace syntax::primitives::arithmetic {
             if (right == 0) {
                 if (pass.sound) {
                     pass.owner.tracebacks.emplace_back(Traceback::Type::Syntax, next.location,
-                                                       remainder
-                                                           ? "\\evaluate takes a remainder by zero"
-                                                           : "\\evaluate divides by zero");
+                                                       remainder ? "\\evaluate takes a remainder by zero"
+                                                                 : "\\evaluate divides by zero");
                     pass.sound = false;
                 }
                 return 0;
@@ -184,10 +181,11 @@ namespace syntax::primitives::arithmetic {
             mouth.ingest(mouth.arena.copy(std::format("{{{}}}", expanded)));
             Cursor stream(mouth.argument({}, 0));
 
-            Pass pass{
-                .cursor = stream, .registers = context.registers, .integer = integer, .owner = *this,
-                .modulo = modulo
-            };
+            Pass pass{.cursor = stream,
+                      .registers = context.registers,
+                      .integer = integer,
+                      .owner = *this,
+                      .modulo = modulo};
             const std::int64_t value = expression(pass);
 
             if (pass.sound && !lookahead(pass).empty()) {
@@ -201,11 +199,10 @@ namespace syntax::primitives::arithmetic {
 
             std::vector<Token> produced;
             produced.reserve(digits.size());
-            for (const char symbol: digits) {
+            for (const char symbol : digits) {
                 const Symbol bound = mouth.lexicon.intern(std::string_view(&symbol, 1));
                 produced.push_back(Token{
-                    .symbol = bound, .category = Catcodes::Category::Other, .text = mouth.lexicon.resolve(bound)
-                });
+                        .symbol = bound, .category = Catcodes::Category::Other, .text = mouth.lexicon.resolve(bound)});
             }
             mouth.stream().inject(produced);
         });

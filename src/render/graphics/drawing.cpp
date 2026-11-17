@@ -40,16 +40,15 @@ namespace render::graphics {
             if (start < file.size()) file = file.substr(start, std::min(length, file.size() - start));
         }
         if (file.starts_with("%!PS")) return page == 1 ? script(file) : std::nullopt;
-        if (!file.starts_with("%PDF-") && file.substr(0, 8192).contains("<svg")) return
-                page == 1 ? markup(file) : std::nullopt;
+        if (!file.starts_with("%PDF-") && file.substr(0, 8192).contains("<svg"))
+            return page == 1 ? markup(file) : std::nullopt;
 
         if (!file.starts_with("%PDF-") || page < 1) return std::nullopt;
         constexpr std::size_t none = std::string_view::npos;
 
-
         const auto blank = [](const char letter) {
-            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' || letter ==
-                   '\0';
+            return letter == ' ' || letter == '\n' || letter == '\r' || letter == '\t' || letter == '\f' ||
+                   letter == '\0';
         };
         const auto boundary = [&blank](const char letter) {
             return blank(letter) || std::string_view("()<>[]{}/%").contains(letter);
@@ -60,7 +59,8 @@ namespace render::graphics {
                 if (blank(in[at])) {
                     ++at;
                 } else if (in[at] == '%') {
-                    while (at < in.size() && in[at] != '\n' && in[at] != '\r') ++at;
+                    while (at < in.size() && in[at] != '\n' && in[at] != '\r')
+                        ++at;
                 } else {
                     break;
                 }
@@ -70,13 +70,13 @@ namespace render::graphics {
         // The letters from here to the next blank or delimiter.
         const auto word = [&boundary](const std::string_view in, const std::size_t at) {
             std::size_t end = at;
-            while (end < in.size() && !boundary(in[end])) ++end;
+            while (end < in.size() && !boundary(in[end]))
+                ++end;
             return in.substr(std::min(at, in.size()), end - std::min(at, in.size()));
         };
         const auto whole = [](const std::string_view text) {
-            return !text.empty() && std::ranges::all_of(text, [](const char letter) {
-                return letter >= '0' && letter <= '9';
-            });
+            return !text.empty() &&
+                   std::ranges::all_of(text, [](const char letter) { return letter >= '0' && letter <= '9'; });
         };
         const auto integer = [](const std::string_view text) {
             long long value = 0;
@@ -172,7 +172,8 @@ namespace render::graphics {
             if (whole(token)) {
                 const std::size_t look = skip(in, at);
                 if (const std::string_view generation = word(in, look); whole(generation)) {
-                    if (const std::size_t after = skip(in, look + generation.size()); after < in.size() && in[after] == 'R' && (after + 1 >= in.size() || boundary(in[after + 1]))) {
+                    if (const std::size_t after = skip(in, look + generation.size());
+                        after < in.size() && in[after] == 'R' && (after + 1 >= in.size() || boundary(in[after + 1]))) {
                         made.type = Type::Reference;
                         made.number = static_cast<std::uint32_t>(integer(token));
                         at = after + 1;
@@ -194,7 +195,6 @@ namespace render::graphics {
             }
             return nullptr;
         };
-
 
         // Flate's compressed bytes, unpacked.
         const auto unpack = [](const std::string_view data) -> std::optional<std::string> {
@@ -231,9 +231,8 @@ namespace render::graphics {
             if (!out) return std::nullopt;
 
             const Value *parameters = get(dictionary, "/DecodeParms");
-            if (parameters && parameters->type == Type::List) parameters = parameters->items.empty()
-                                                                               ? nullptr
-                                                                               : &parameters->items[0];
+            if (parameters && parameters->type == Type::List)
+                parameters = parameters->items.empty() ? nullptr : &parameters->items[0];
             const auto parameter = [&](const std::string_view key, const long long fallback) {
                 const Value *found = parameters ? get(*parameters, key) : nullptr;
                 return found && found->type == Type::Plain ? integer(found->text) : fallback;
@@ -270,7 +269,6 @@ namespace render::graphics {
             return plain;
         };
 
-
         /// Where one object is: nowhere yet (0), at an offset in the file
         /// (1), in an object stream at a place (2), or freed (3).
         struct Entry {
@@ -291,7 +289,8 @@ namespace render::graphics {
         // length is written out, or an empty dictionary.
         const auto direct = [&](const std::size_t offset) -> std::pair<Value, std::string_view> {
             std::size_t at = skip(file, offset);
-            for (int index = 0; index < 3; ++index) at = skip(file, at + word(file, at).size());
+            for (int index = 0; index < 3; ++index)
+                at = skip(file, at + word(file, at).size());
             Value dictionary = read(file, at, 0);
             at = skip(file, at);
             if (dictionary.type != Type::Table || file.substr(at, 6) != "stream") return {};
@@ -299,9 +298,8 @@ namespace render::graphics {
             if (at < file.size() && file[at] == '\r') ++at;
             if (at < file.size() && file[at] == '\n') ++at;
             const Value *length = get(dictionary, "/Length");
-            std::size_t size = length && length->type == Type::Plain
-                                   ? static_cast<std::size_t>(integer(length->text))
-                                   : none;
+            std::size_t size =
+                    length && length->type == Type::Plain ? static_cast<std::size_t>(integer(length->text)) : none;
             if (size == none || at + size > file.size()) {
                 const std::size_t end = file.find("endstream", at);
                 size = (end == none ? file.size() : end) - at;
@@ -318,14 +316,15 @@ namespace render::graphics {
             const Value *widths = get(dictionary, "/W");
             if (!table || !widths || widths->type != Type::List || widths->items.size() < 3) return {};
             std::size_t width[3];
-            for (std::size_t index = 0; index < 3; ++index) width[index] = static_cast<std::size_t>(integer(
-                                                                widths->items[index].text));
+            for (std::size_t index = 0; index < 3; ++index)
+                width[index] = static_cast<std::size_t>(integer(widths->items[index].text));
             const std::size_t row = width[0] + width[1] + width[2];
             if (row == 0) return {};
 
             std::vector<long long> ranges;
             if (const Value *index = get(dictionary, "/Index"); index && index->type == Type::List) {
-                for (const Value &item: index->items) ranges.push_back(integer(item.text));
+                for (const Value &item : index->items)
+                    ranges.push_back(integer(item.text));
             } else if (const Value *size = get(dictionary, "/Size")) {
                 ranges = {0, integer(size->text)};
             }
@@ -385,9 +384,10 @@ namespace render::graphics {
                             const char type = at < file.size() ? file[at] : 'f';
                             ++at;
                             enter(integer(first) + index,
-                                  type == 'n'
-                                      ? Entry{.type = 1, .first = static_cast<std::size_t>(integer(offset)), .second = 0}
-                                      : Entry{.type = 3, .first = 0, .second = 0});
+                                  type == 'n' ? Entry{.type = 1,
+                                                      .first = static_cast<std::size_t>(integer(offset)),
+                                                      .second = 0}
+                                              : Entry{.type = 3, .first = 0, .second = 0});
                         }
                     }
                     if (const Value *hybrid = get(trailer, "/XRefStm"); hybrid && hybrid->type == Type::Plain) {
@@ -415,14 +415,18 @@ namespace render::graphics {
             for (std::size_t at = file.find("obj"); at != none; at = file.find("obj", at + 3)) {
                 if (at + 3 < file.size() && !boundary(file[at + 3])) continue;
                 std::size_t back = at;
-                while (back > 0 && blank(file[back - 1])) --back;
+                while (back > 0 && blank(file[back - 1]))
+                    --back;
                 std::size_t digits = back;
-                while (digits > 0 && file[digits - 1] >= '0' && file[digits - 1] <= '9') --digits;
+                while (digits > 0 && file[digits - 1] >= '0' && file[digits - 1] <= '9')
+                    --digits;
                 if (digits == back) continue;
                 std::size_t gap = digits;
-                while (gap > 0 && blank(file[gap - 1])) --gap;
+                while (gap > 0 && blank(file[gap - 1]))
+                    --gap;
                 std::size_t start = gap;
-                while (start > 0 && file[start - 1] >= '0' && file[start - 1] <= '9') --start;
+                while (start > 0 && file[start - 1] >= '0' && file[start - 1] <= '9')
+                    --start;
                 if (start == gap || gap == digits) continue;
                 const long long number = integer(file.substr(start, gap - start));
                 if (number >= 0 && number < 8'000'000) {
@@ -439,7 +443,6 @@ namespace render::graphics {
         };
         if (catalog == 0 || entries.empty()) rescan();
         if (catalog == 0) return std::nullopt;
-
 
         /// An object as the file holds it: its value, and a stream's bytes.
         struct Loaded {
@@ -464,7 +467,8 @@ namespace render::graphics {
             Loaded made;
             if (type == 1) {
                 std::size_t at = skip(file, first);
-                for (int index = 0; index < 2; ++index) at = skip(file, at + word(file, at).size());
+                for (int index = 0; index < 2; ++index)
+                    at = skip(file, at + word(file, at).size());
                 if (word(file, at) != "obj") return nullptr;
                 at += 3;
                 made.value = read(file, at, 0);
@@ -488,7 +492,8 @@ namespace render::graphics {
                     if (size == none || at + size > file.size() || !ends(at + size)) {
                         const std::size_t end = file.find("endstream", at);
                         size = (end == none ? file.size() : end) - at;
-                        while (size > 0 && (file[at + size - 1] == '\n' || file[at + size - 1] == '\r')) --size;
+                        while (size > 0 && (file[at + size - 1] == '\n' || file[at + size - 1] == '\r'))
+                            --size;
                     }
                     made.data = file.substr(at, size);
                     made.streamed = true;
@@ -534,7 +539,6 @@ namespace render::graphics {
             return value;
         };
 
-
         /// What a page takes from the nodes above it in the tree.
         struct Inherited {
             const Value *resources{nullptr};
@@ -543,7 +547,7 @@ namespace render::graphics {
         };
         int remaining = page;
         const auto find = [&](this const auto &self, const Value *node, Inherited inherited,
-                              const int depth) -> std::optional<std::pair<const Value *, Inherited> > {
+                              const int depth) -> std::optional<std::pair<const Value *, Inherited>> {
             node = resolve(node);
             if (!node || node->type != Type::Table || depth > 64) return std::nullopt;
             if (const Value *found = get(*node, "/Resources")) inherited.resources = found;
@@ -551,12 +555,12 @@ namespace render::graphics {
             if (const Value *found = get(*node, "/CropBox")) inherited.crop = found;
             if (const Value *kids = resolve(get(*node, "/Kids")); kids && kids->type == Type::List) {
                 // A subtree before the page asked for is passed whole.
-                if (const Value *count = get(*node, "/Count"); count && count->type == Type::Plain && depth > 0 &&
-                                                               integer(count->text) < remaining) {
+                if (const Value *count = get(*node, "/Count");
+                    count && count->type == Type::Plain && depth > 0 && integer(count->text) < remaining) {
                     remaining -= static_cast<int>(integer(count->text));
                     return std::nullopt;
                 }
-                for (const Value &kid: kids->items) {
+                for (const Value &kid : kids->items) {
                     if (auto found = self(&kid, inherited, depth + 1)) return found;
                     if (remaining <= 0) break;
                 }
@@ -598,14 +602,16 @@ namespace render::graphics {
         std::vector<const Value *> parts;
         if (contents && contents->type == Type::Reference) {
             if (const Loaded *held = load(contents->number, 0); held && held->value.type == Type::List) {
-                for (const Value &item: held->value.items) parts.push_back(&item);
+                for (const Value &item : held->value.items)
+                    parts.push_back(&item);
             } else {
                 parts.push_back(contents);
             }
         } else if (contents && contents->type == Type::List) {
-            for (const Value &item: contents->items) parts.push_back(&item);
+            for (const Value &item : contents->items)
+                parts.push_back(&item);
         }
-        for (const Value *part: parts) {
+        for (const Value *part : parts) {
             if (part->type != Type::Reference) continue;
             const Loaded *held = load(part->number, 0);
             if (!held || !held->streamed) continue;
@@ -668,23 +674,23 @@ namespace render::graphics {
         // tilde, in Adobe's metrics for Helvetica and Times-Roman; Courier's
         // are all 600. A bold or slanted cut is near enough its upright one.
         static constexpr std::array<short, 95> helvetica{
-            278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278, 556, 556, 556, 556,
-            556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778,
-            722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278,
-            278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556,
-            556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,
+                278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333,  278, 278, 556, 556, 556,
+                556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667,
+                611, 778, 722, 278, 500, 667, 556, 833, 722, 778, 667, 778, 722, 667,  611, 722, 667, 944, 667,
+                667, 611, 278, 278, 278, 469, 556, 333, 556, 556, 500, 556, 556, 278,  556, 556, 222, 222, 500,
+                222, 833, 556, 556, 556, 556, 333, 500, 278, 556, 500, 722, 500, 500,  500, 334, 260, 334, 584,
         };
         static constexpr std::array<short, 95> times{
-            250, 333, 408, 500, 500, 833, 778, 180, 333, 333, 500, 564, 250, 333, 250, 278, 500, 500, 500, 500,
-            500, 500, 500, 500, 500, 500, 278, 278, 564, 564, 564, 444, 921, 722, 667, 667, 722, 611, 556, 722,
-            722, 333, 389, 722, 611, 889, 722, 722, 556, 722, 667, 556, 611, 722, 722, 944, 722, 722, 611, 333,
-            278, 333, 469, 500, 333, 444, 500, 444, 500, 444, 333, 500, 500, 278, 278, 500, 278, 778, 500, 500,
-            500, 500, 333, 389, 278, 500, 500, 722, 500, 500, 444, 480, 200, 480, 541,
+                250, 333, 408, 500, 500, 833, 778, 180, 333, 333, 500, 564, 250, 333, 250, 278, 500, 500, 500,
+                500, 500, 500, 500, 500, 500, 500, 278, 278, 564, 564, 564, 444, 921, 722, 667, 667, 722, 611,
+                556, 722, 722, 333, 389, 722, 611, 889, 722, 722, 556, 722, 667, 556, 611, 722, 722, 944, 722,
+                722, 611, 333, 278, 333, 469, 500, 333, 444, 500, 444, 500, 444, 333, 500, 500, 278, 278, 500,
+                278, 778, 500, 500, 500, 500, 333, 389, 278, 500, 500, 722, 500, 500, 444, 480, 200, 480, 541,
         };
         const bool fixed = face.starts_with("Courier");
         const std::array<short, 95> &table = face.starts_with("Times") ? times : helvetica;
         double total = 0.0;
-        for (const char letter: letters) {
+        for (const char letter : letters) {
             const auto code = static_cast<unsigned char>(letter);
             total += fixed ? 600.0 : code >= 32 && code < 127 ? table[code - 32] : 500.0;
         }
@@ -696,14 +702,13 @@ namespace render::graphics {
         if (names.empty()) return {};
         Value fonts{.type = Type::Table};
         for (std::size_t index = 0; index < names.size(); ++index) {
-            Value font{
-                .type = Type::Table,
-                .items = {
-                    {.type = Type::Name, .text = "/Type"}, {.type = Type::Name, .text = "/Font"},
-                    {.type = Type::Name, .text = "/Subtype"}, {.type = Type::Name, .text = "/Type1"},
-                    {.type = Type::Name, .text = "/BaseFont"}, {.type = Type::Name, .text = "/" + names[index]}
-                }
-            };
+            Value font{.type = Type::Table,
+                       .items = {{.type = Type::Name, .text = "/Type"},
+                                 {.type = Type::Name, .text = "/Font"},
+                                 {.type = Type::Name, .text = "/Subtype"},
+                                 {.type = Type::Name, .text = "/Type1"},
+                                 {.type = Type::Name, .text = "/BaseFont"},
+                                 {.type = Type::Name, .text = "/" + names[index]}}};
             // The symbol faces keep their own encoding.
             if (names[index] != "Symbol" && names[index] != "ZapfDingbats") {
                 font.items.push_back({.type = Type::Name, .text = "/Encoding"});

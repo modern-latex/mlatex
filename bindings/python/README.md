@@ -52,7 +52,7 @@ The `with` block disposes of the session on exit. You can also call
 | `offline(on=True)` | Keep the session's documents off the network. |
 | `dispose()` | Dispose of the session. |
 
-See [Embedding the engine](https://github.com/modern-latex/mlatex#embedding-the-engine)
+See [Embedding](https://github.com/modern-latex/mlatex#embedding)
 for the C and C++ APIs.
 
 mLaTeX is licensed under the GNU Affero General Public License, version 3.

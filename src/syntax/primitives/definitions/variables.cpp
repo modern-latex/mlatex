@@ -5,8 +5,8 @@
 /// stream -- copied into the arena first, so the tokens made from it never
 /// point into a value a later `\\setvariable` has since replaced.
 #include "syntax/primitives/definitions/variables.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "syntax/argument.hpp"
 
 #include <cctype>
 #include <format>
@@ -39,8 +39,10 @@ namespace syntax::primitives::definitions {
 
     void Variables::assign(const std::string_view family, const std::string_view list) const {
         const auto trim = [](std::string_view text) {
-            while (!text.empty() && (text.front() == ' ' || text.front() == '\n')) text.remove_prefix(1);
-            while (!text.empty() && (text.back() == ' ' || text.back() == '\n')) text.remove_suffix(1);
+            while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
+                text.remove_prefix(1);
+            while (!text.empty() && (text.back() == ' ' || text.back() == '\n'))
+                text.remove_suffix(1);
             return text;
         };
 
@@ -69,9 +71,8 @@ namespace syntax::primitives::definitions {
             }
 
             const std::string_view key = trim(item.substr(0, split));
-            std::string_view value = split == std::string_view::npos
-                                         ? std::string_view{"true"}
-                                         : trim(item.substr(split + 1));
+            std::string_view value =
+                    split == std::string_view::npos ? std::string_view{"true"} : trim(item.substr(split + 1));
             if (value.size() >= 2 && value.front() == '{' && value.back() == '}') {
                 value = trim(value.substr(1, value.size() - 2));
             }
@@ -146,7 +147,7 @@ namespace syntax::primitives::definitions {
             const auto written = [](const std::span<const Token> tokens) {
                 std::string text;
                 bool word = false;
-                for (const Token &token: tokens) {
+                for (const Token &token : tokens) {
                     if (word && token.category == Catcodes::Category::Letter) text += ' ';
                     text += token.text;
                     word = token.category == Catcodes::Category::Escape && token.text.size() > 1 &&
@@ -161,7 +162,8 @@ namespace syntax::primitives::definitions {
 
             std::size_t at = 0;
             const auto skip = [&test, &at] {
-                while (at < test.size() && test[at].category == Catcodes::Category::Space) ++at;
+                while (at < test.size() && test[at].category == Catcodes::Category::Space)
+                    ++at;
             };
             // An atom: a comparison of numbers or lengths, or a test.
             const auto atom = [&](const std::size_t stop) {
@@ -225,7 +227,8 @@ namespace syntax::primitives::definitions {
                         if (at < test.size() && named(test[at], "\\)")) ++at;
                     } else {
                         std::size_t stop = end();
-                        while (stop > at && test[stop - 1].category == Catcodes::Category::Space) --stop;
+                        while (stop > at && test[stop - 1].category == Catcodes::Category::Space)
+                            --stop;
                         value = atom(stop);
                     }
                     all = all && value != turned;

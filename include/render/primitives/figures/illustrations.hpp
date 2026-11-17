@@ -130,9 +130,7 @@ namespace render::primitives::figures {
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// Parser-level primitive `\\end{picture}` injects, so the finished
@@ -176,9 +174,9 @@ namespace render::primitives::figures {
         ///        whether it is round.
         struct Landmark {
             graphics::Point2 centre{}; ///< Its centre, in the picture's own coordinates.
-            float across{0.0f}; ///< Half its width, its inner sep included.
-            float up{0.0f}; ///< Half its height, likewise.
-            bool round{false}; ///< A circle or an ellipse rather than a rectangle.
+            float across{0.0f};        ///< Half its width, its inner sep included.
+            float up{0.0f};            ///< Half its height, likewise.
+            bool round{false};         ///< A circle or an ellipse rather than a rectangle.
         };
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
@@ -186,7 +184,7 @@ namespace render::primitives::figures {
         ///< The open picture's named nodes and coordinates.
         mutable std::unordered_map<std::string, std::string> styles{};
         ///< TikZ's styles by name: \\tikzset's and a picture's own.
-        mutable std::vector<float> distances{}; ///< Each open picture's `node distance`, in points.
+        mutable std::vector<float> distances{};     ///< Each open picture's `node distance`, in points.
         mutable std::vector<std::string> folders{}; ///< Where \\graphicspath says pictures are, each ending in a slash.
         mutable std::vector<graphics::Canvas> canvases{}; ///< Open pictures, outermost first.
 
@@ -202,9 +200,9 @@ namespace render::primitives::figures {
         // -- or nothing for its bottom.
         mutable std::vector<std::string> baselines{};
 
-        mutable graphics::Color color{graphics::black}; ///< Current stroke color.
-        mutable float weight = 1.0f; ///< Current stroke width, in points.
-        mutable bool dashed = false; ///< Current stroke style.
+        mutable graphics::Color color{graphics::black};                        ///< Current stroke color.
+        mutable float weight = 1.0f;                                           ///< Current stroke width, in points.
+        mutable bool dashed = false;                                           ///< Current stroke style.
         mutable graphics::Projection view = graphics::Projection::isometric(); ///< Current 3D view.
         mutable layout::Node *pending = nullptr; ///< The picture just closed, awaiting flush.
 
@@ -222,7 +220,6 @@ namespace render::primitives::figures {
         /// Each page of another PDF drawn, kept as the images are, and found
         /// again the same way: by where the file's bytes lie, then its page.
         mutable std::deque<graphics::Drawing> drawings{};
-        mutable std::unordered_map<const std::byte *, std::vector<std::pair<int, const graphics::Drawing *> > > sheets
-                {};
+        mutable std::unordered_map<const std::byte *, std::vector<std::pair<int, const graphics::Drawing *>>> sheets{};
     };
 }

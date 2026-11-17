@@ -1,6 +1,6 @@
 #pragma once
 
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <string>
 #include <string_view>
@@ -11,7 +11,7 @@
 
 namespace render {
     /// @brief The engine compiled to WebAssembly, for a web page, a worker or
-    ///        Node: latex::Session, bound for JavaScript under its own names.
+    ///        Node: mlatex::Session, bound for JavaScript under its own names.
     ///
     /// Built by the `wasm` target when CMake runs under Emscripten; see the
     /// top-level CMakeLists.txt. The build leaves `mlatex.js`, `mlatex.wasm`
@@ -36,7 +36,7 @@ namespace render {
     /// @endcode
     ///
     /// The pages come back drawable as well: `screen()` hands over a Screen,
-    /// a copy of latex::Session::screen, which draws a page on a canvas's 2D
+    /// a copy of mlatex::Session::screen, which draws a page on a canvas's 2D
     /// context -- the page's own, or a worker's OffscreenCanvas -- at any
     /// size, with no PDF reader in between:
     ///
@@ -55,7 +55,7 @@ namespace render {
     /// for an editor to jump between the two by; and what the document says
     /// of itself, `about()`.
     ///
-    /// Every operation is latex::Session's, under the same name, and does
+    /// Every operation is mlatex::Session's, under the same name, and does
     /// the same thing: `set`/`unset`, `define`/`forget`, `provide`/`withdraw`,
     /// `typeset`, `snippet`, `pdf`, `error` and `screen`. Only what JavaScript hands over differs:
     /// a command is a JavaScript function, called with the arguments' text
@@ -69,7 +69,7 @@ namespace render {
     /// runs anywhere WebAssembly does. `\\includegraphics` of a URL is not
     /// fetched from inside the module; the page fetches it and hands the
     /// bytes in with `provide`, under the name the document uses.
-    class Wasm : public ::latex::Session {
+    class Wasm : public ::mlatex::Session {
     public:
         /// Where the fonts are in the module's own file system: packed there
         /// when the module was built, and read from there like any disk.

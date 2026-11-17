@@ -13,8 +13,7 @@ struct alignas(16) Wide {
     std::int64_t value;
     std::int64_t spare{0};
 
-    explicit Wide(const std::int64_t start) : value(start) {
-    }
+    explicit Wide(const std::int64_t start) : value(start) {}
 };
 
 int main() {
@@ -30,7 +29,8 @@ int main() {
     // Slices.
     const auto numbers = arena.allocate<int>(4);
     assert((numbers.size() == 4) && "a slice has the length asked for");
-    for (std::size_t index = 0; index < numbers.size(); ++index) numbers[index] = static_cast<int>(index * 10);
+    for (std::size_t index = 0; index < numbers.size(); ++index)
+        numbers[index] = static_cast<int>(index * 10);
     assert((numbers[3] == 30) && "and holds what is written to it");
     assert((arena.allocate<int>(0).empty()) && "nothing asked for is nothing");
 

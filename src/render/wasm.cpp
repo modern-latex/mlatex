@@ -2,7 +2,7 @@
 /// @brief The engine bound for JavaScript: see render/wasm.hpp.
 ///
 /// Compiled into the `wasm` target alone, under Emscripten. Embind does the
-/// binding: latex::Session's operations are handed to JavaScript under their
+/// binding: mlatex::Session's operations are handed to JavaScript under their
 /// own names, each through a small adapter where JavaScript's types differ
 /// from C++'s -- embind has no string view, reads a Uint8Array or a string
 /// into a std::string, and would read a PDF's bytes back as UTF-8 text if
@@ -23,8 +23,7 @@
 #endif
 
 namespace render {
-    Wasm::Wasm() : Session(std::string(root)) {
-    }
+    Wasm::Wasm() : Session(std::string(root)) {}
 
 #if defined(__EMSCRIPTEN__)
 
@@ -40,16 +39,19 @@ namespace render {
 
     void Wasm::attach(const std::string &name, const std::size_t arity, emscripten::val function) {
         define({
-            .name = name,
-            .arity = arity,
-            .handler = [function = std::move(function)](const std::span<const std::string> arguments) {
-                emscripten::val list = emscripten::val::array();
-                for (const std::string &argument: arguments) list.call<void>("push", argument);
+                .name = name,
+                .arity = arity,
+                .handler =
+                        [function = std::move(function)](const std::span<const std::string> arguments) {
+                            emscripten::val list = emscripten::val::array();
+                            for (const std::string &argument : arguments)
+                                list.call<void>("push", argument);
 
-                const emscripten::val answer = function.call<emscripten::val>("apply", emscripten::val::null(), list);
-                if (answer.isUndefined() || answer.isNull()) return std::string{};
-                return emscripten::val::global("String")(answer).as<std::string>();
-            },
+                            const emscripten::val answer =
+                                    function.call<emscripten::val>("apply", emscripten::val::null(), list);
+                            if (answer.isUndefined() || answer.isNull()) return std::string{};
+                            return emscripten::val::global("String")(answer).as<std::string>();
+                        },
         });
     }
 
@@ -62,8 +64,7 @@ namespace render {
     /// once, drawn into the unit square as often as the page asks.
     class Context final : public Screen::Target {
     public:
-        explicit Context(emscripten::val context) : context(std::move(context)) {
-        }
+        explicit Context(emscripten::val context) : context(std::move(context)) {}
 
         void save() override { context.call<void>("save"); }
 
@@ -136,10 +137,11 @@ namespace render {
                     pixels[index * 4 + 1] = picture.pixels[index * 3 + 1];
                     pixels[index * 4 + 2] = picture.pixels[index * 3 + 2];
                 }
-                const emscripten::val data = emscripten::val::global("ImageData").new_(
-                    emscripten::val::global("Uint8ClampedArray").new_(
-                        emscripten::val(emscripten::typed_memory_view(pixels.size(), pixels.data()))),
-                    picture.width, picture.height);
+                const emscripten::val data = emscripten::val::global("ImageData")
+                                                     .new_(emscripten::val::global("Uint8ClampedArray")
+                                                                   .new_(emscripten::val(emscripten::typed_memory_view(
+                                                                           pixels.size(), pixels.data()))),
+                                                           picture.width, picture.height);
                 emscripten::val canvas = made.new_(picture.width, picture.height);
                 canvas.call<emscripten::val>("getContext", std::string("2d")).call<void>("putImageData", data, 0, 0);
                 found = images.emplace(slot, std::move(canvas)).first;
@@ -170,127 +172,122 @@ namespace render {
             return "rgb(" + channel(red) + ", " + channel(green) + ", " + channel(blue) + ")";
         }
 
-        emscripten::val context; ///< The context drawn on.
+        emscripten::val context;                                       ///< The context drawn on.
         std::unordered_map<std::uint64_t, emscripten::val> outlines{}; ///< Each glyph's Path2D, by face and code.
-        std::unordered_map<std::size_t, emscripten::val> images{}; ///< Each picture's canvas, by slot.
+        std::unordered_map<std::size_t, emscripten::val> images{};     ///< Each picture's canvas, by slot.
     };
 
-    /// @brief Hands latex::Session to JavaScript under its own names.
-    EMSCRIPTEN_BINDINGS (latex) {
+    /// @brief Hands mlatex::Session to JavaScript under its own names.
+    EMSCRIPTEN_BINDINGS(mlatex) {
         emscripten::class_<Wasm>("Session")
                 .constructor<>()
                 .function("set", emscripten::optional_override([](Wasm &self, const std::string &name,
-                                                                  const std::string &value) {
-                    self.set(name, value);
-                }))
-                .function("unset", emscripten::optional_override(
-                              [](Wasm &self, const std::string &name) { self.unset(name); }))
+                                                                  const std::string &value) { self.set(name, value); }))
+                .function("unset",
+                          emscripten::optional_override([](Wasm &self, const std::string &name) { self.unset(name); }))
                 .function("define", &Wasm::attach)
-                .function("forget", emscripten::optional_override(
-                              [](Wasm &self, const std::string &name) { self.forget(name); }))
-                .function("provide", emscripten::optional_override([](Wasm &self, const std::string &name,
-                                                                      std::string bytes) {
-                    self.provide(name, std::move(bytes));
-                }))
+                .function("forget",
+                          emscripten::optional_override([](Wasm &self, const std::string &name) { self.forget(name); }))
+                .function("provide",
+                          emscripten::optional_override([](Wasm &self, const std::string &name, std::string bytes) {
+                              self.provide(name, std::move(bytes));
+                          }))
                 .function("withdraw", emscripten::optional_override(
-                              [](Wasm &self, const std::string &name) { self.withdraw(name); }))
+                                              [](Wasm &self, const std::string &name) { self.withdraw(name); }))
                 // A face to draw what the engine carries no face for -- the
                 // system's faces a browser lends no page -- as a font file's
                 // bytes and its file name: `NotoSerifCJK-Regular.otf` is the
                 // face for Chinese. Every document after looks there.
-                .function("font", emscripten::optional_override([](Wasm &, const std::string &name,
-                                                                   const std::string &bytes) {
-                    if (name.empty() || name.find_first_of("/\\") != std::string::npos) return false;
-                    std::error_code failure;
-                    std::filesystem::create_directories("/fonts", failure);
-                    std::ofstream file("/fonts/" + name, std::ios::binary | std::ios::trunc);
-                    file.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-                    return static_cast<bool>(file);
-                }))
-                .function("typeset", emscripten::optional_override(
-                              [](Wasm &self, const std::string &document) { return self.typeset(document); }))
+                .function("font",
+                          emscripten::optional_override([](Wasm &, const std::string &name, const std::string &bytes) {
+                              if (name.empty() || name.find_first_of("/\\") != std::string::npos) return false;
+                              std::error_code failure;
+                              std::filesystem::create_directories("/fonts", failure);
+                              std::ofstream file("/fonts/" + name, std::ios::binary | std::ios::trunc);
+                              file.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+                              return static_cast<bool>(file);
+                          }))
+                .function("typeset", emscripten::optional_override([](Wasm &self, const std::string &document) {
+                              return self.typeset(document);
+                          }))
                 .function("snippet", emscripten::optional_override(
-                              [](Wasm &self, const std::string &text) { return self.snippet(text); }))
+                                             [](Wasm &self, const std::string &text) { return self.snippet(text); }))
                 .function("pdf", &Wasm::bytes)
-                .function("error", emscripten::optional_override(
-                              [](const Wasm &self) { return self.error; }))
-                .function("screen", emscripten::optional_override(
-                              [](const Wasm &self) { return self.screen; }));
+                .function("error", emscripten::optional_override([](const Wasm &self) { return self.error; }))
+                .function("screen", emscripten::optional_override([](const Wasm &self) { return self.screen; }));
 
         // The pages of the last PDF made, to draw on a canvas: a copy of the
         // session's, which the next document leaves as it is, so the pages
         // before can be drawn beside the pages after.
         emscripten::class_<Screen>("Screen")
-                .function("count", emscripten::optional_override(
-                              [](const Screen &self) { return self.sheets.size(); }))
+                .function("count", emscripten::optional_override([](const Screen &self) { return self.sheets.size(); }))
                 .function("width", emscripten::optional_override([](const Screen &self, const std::size_t page) {
-                    return page < self.sheets.size() ? self.sheets[page].box[2] : 0.0f;
-                }))
+                              return page < self.sheets.size() ? self.sheets[page].box[2] : 0.0f;
+                          }))
                 .function("height", emscripten::optional_override([](const Screen &self, const std::size_t page) {
-                    return page < self.sheets.size() ? self.sheets[page].box[3] : 0.0f;
-                }))
-                .function("draw", emscripten::optional_override(
-                              [](const Screen &self, emscripten::val context, const std::size_t page,
-                                 const float scale) {
-                                  Context target(std::move(context));
-                                  self.draw(target, page, scale);
-                              }))
+                              return page < self.sheets.size() ? self.sheets[page].box[3] : 0.0f;
+                          }))
+                .function("draw", emscripten::optional_override([](const Screen &self, emscripten::val context,
+                                                                   const std::size_t page, const float scale) {
+                              Context target(std::move(context));
+                              self.draw(target, page, scale);
+                          }))
                 .function("links", emscripten::optional_override([](const Screen &self, const std::size_t page) {
-                    emscripten::val list = emscripten::val::array();
-                    if (page >= self.links.size() || page >= self.sheets.size()) return list;
-                    // Each area from the top left of what is shown, as the page's own size is.
-                    const std::array<float, 4> &box = self.sheets[page].box;
-                    for (const Screen::Link &link: self.links[page]) {
-                        emscripten::val made = emscripten::val::object();
-                        made.set("left", link.area[0] - box[0]);
-                        made.set("top", link.area[1] - box[1]);
-                        made.set("right", link.area[2] - box[0]);
-                        made.set("bottom", link.area[3] - box[1]);
-                        if (!link.target.empty()) {
-                            made.set("target", link.target);
-                        } else {
-                            made.set("page", link.page);
-                            made.set("down", link.page < self.sheets.size()
-                                                 ? link.down - self.sheets[link.page].box[1]
-                                                 : link.down);
-                        }
-                        list.call<void>("push", made);
-                    }
-                    return list;
-                }))
+                              emscripten::val list = emscripten::val::array();
+                              if (page >= self.links.size() || page >= self.sheets.size()) return list;
+                              // Each area from the top left of what is shown, as the page's own size is.
+                              const std::array<float, 4> &box = self.sheets[page].box;
+                              for (const Screen::Link &link : self.links[page]) {
+                                  emscripten::val made = emscripten::val::object();
+                                  made.set("left", link.area[0] - box[0]);
+                                  made.set("top", link.area[1] - box[1]);
+                                  made.set("right", link.area[2] - box[0]);
+                                  made.set("bottom", link.area[3] - box[1]);
+                                  if (!link.target.empty()) {
+                                      made.set("target", link.target);
+                                  } else {
+                                      made.set("page", link.page);
+                                      made.set("down", link.page < self.sheets.size()
+                                                               ? link.down - self.sheets[link.page].box[1]
+                                                               : link.down);
+                                  }
+                                  list.call<void>("push", made);
+                              }
+                              return list;
+                          }))
                 .function("spots", emscripten::optional_override([](const Screen &self, const std::size_t page) {
-                    emscripten::val list = emscripten::val::array();
-                    if (page >= self.spots.size() || page >= self.sheets.size()) return list;
-                    // Each area from the top left of what is shown, as a link's
-                    // is, with the line and the file it was written in.
-                    const std::array<float, 4> &box = self.sheets[page].box;
-                    for (const Composer::Spot &spot: self.spots[page]) {
-                        emscripten::val made = emscripten::val::object();
-                        made.set("left", spot.area[0] - box[0]);
-                        made.set("top", spot.area[1] - box[1]);
-                        made.set("right", spot.area[2] - box[0]);
-                        made.set("bottom", spot.area[3] - box[1]);
-                        made.set("line", spot.origin.line);
-                        made.set("file", spot.origin.file < self.files.size()
-                                             ? self.files[spot.origin.file]
-                                             : std::string{});
-                        list.call<void>("push", made);
-                    }
-                    return list;
-                }))
+                              emscripten::val list = emscripten::val::array();
+                              if (page >= self.spots.size() || page >= self.sheets.size()) return list;
+                              // Each area from the top left of what is shown, as a link's
+                              // is, with the line and the file it was written in.
+                              const std::array<float, 4> &box = self.sheets[page].box;
+                              for (const Composer::Spot &spot : self.spots[page]) {
+                                  emscripten::val made = emscripten::val::object();
+                                  made.set("left", spot.area[0] - box[0]);
+                                  made.set("top", spot.area[1] - box[1]);
+                                  made.set("right", spot.area[2] - box[0]);
+                                  made.set("bottom", spot.area[3] - box[1]);
+                                  made.set("line", spot.origin.line);
+                                  made.set("file", spot.origin.file < self.files.size() ? self.files[spot.origin.file]
+                                                                                        : std::string{});
+                                  list.call<void>("push", made);
+                              }
+                              return list;
+                          }))
                 .function("missing", emscripten::optional_override([](const Screen &self) {
-                    emscripten::val list = emscripten::val::array();
-                    for (const std::uint32_t code: self.missing) list.call<void>("push", code);
-                    return list;
-                }))
+                              emscripten::val list = emscripten::val::array();
+                              for (const std::uint32_t code : self.missing)
+                                  list.call<void>("push", code);
+                              return list;
+                          }))
                 .function("about", emscripten::optional_override([](const Screen &self) {
-                    emscripten::val made = emscripten::val::object();
-                    made.set("title", self.about.title);
-                    made.set("author", self.about.author);
-                    made.set("subject", self.about.subject);
-                    made.set("keywords", self.about.keywords);
-                    return made;
-                }));
+                              emscripten::val made = emscripten::val::object();
+                              made.set("title", self.about.title);
+                              made.set("author", self.about.author);
+                              made.set("subject", self.about.subject);
+                              made.set("keywords", self.about.keywords);
+                              return made;
+                          }));
     }
 
 #endif

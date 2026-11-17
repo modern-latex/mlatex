@@ -90,13 +90,13 @@ namespace syntax::primitives::definitions {
     private:
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
 
-        Symbol integer{}; ///< Interned `\\integer`, so `[\integer0]` scans.
-        Symbol alias{}; ///< `\\@alias`, which a switch's two macros are written with.
-        Symbol truth{}; ///< `\\iftrue`, what a switch turned on means.
+        Symbol integer{};   ///< Interned `\\integer`, so `[\integer0]` scans.
+        Symbol alias{};     ///< `\\@alias`, which a switch's two macros are written with.
+        Symbol truth{};     ///< `\\iftrue`, what a switch turned on means.
         Symbol falsehood{}; ///< `\\iffalse`, what a switch turned off means.
         Symbol terminate{}; ///< `\\endcsname`, the end of a built name.
-        Symbol relax{}; ///< `\\relax`, what a built name means until it is defined.
-        Symbol finish{}; ///< The end of a body being expanded; no document can write it.
+        Symbol relax{};     ///< `\\relax`, what a built name means until it is defined.
+        Symbol finish{};    ///< The end of a body being expanded; no document can write it.
 
         /// How many bodies are being expanded for an \\edef now: while one
         /// is, \\noexpand and \\unexpanded hold names back rather than let

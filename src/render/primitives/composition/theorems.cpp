@@ -7,9 +7,9 @@
 /// front of what the document wrote, so the body is parsed exactly as any
 /// other text is, labels, formulas and lists included.
 #include "render/primitives/composition/theorems.hpp"
+#include "logger.hpp"
 #include "render/primitives/referencing/counters.hpp"
 #include "syntax/argument.hpp"
-#include "logger.hpp"
 
 #include <format>
 #include <ranges>
@@ -58,10 +58,10 @@ namespace render::primitives::composition {
             const std::string body = syntax::Argument::text(mouth);
             static_cast<void>(syntax::Argument::text(mouth)); // indentation
             const std::string heading = syntax::Argument::text(mouth);
-            for (int remaining = 0; remaining < 3; ++remaining) static_cast<void>(syntax::Argument::text(mouth));
+            for (int remaining = 0; remaining < 3; ++remaining)
+                static_cast<void>(syntax::Argument::text(mouth));
 
-            const bool slanted = body.contains("\\itshape") ||
-                                 body.contains("\\slshape");
+            const bool slanted = body.contains("\\itshape") || body.contains("\\slshape");
             const bool quiet = heading.contains("\\itshape");
             styles[name] = slanted ? Style::Plain : quiet ? Style::Remark : Style::Definition;
         });
@@ -83,8 +83,7 @@ namespace render::primitives::composition {
                     context.type = name;
                 }
 
-                const std::vector<syntax::Token> note =
-                        mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+                const std::vector<syntax::Token> note = mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
                 // The head's full stop in the head's own face, then a space
                 // and the body in its face, opened here and closed at \end.
@@ -121,12 +120,12 @@ namespace render::primitives::composition {
 
             const std::string name = syntax::Argument::text(mouth);
             std::string shared;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 shared += token.text;
             }
             const std::string title = syntax::Argument::text(mouth);
             std::string within;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 within += token.text;
             }
 
@@ -163,7 +162,7 @@ namespace render::primitives::composition {
         // the style it is set in.
         parser.mouth.bind("\\declaretheorem", [](syntax::Mouth &mouth) {
             std::string keys;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 keys += token.text;
             }
             const std::string name = syntax::Argument::text(mouth);
@@ -173,18 +172,19 @@ namespace render::primitives::composition {
             std::string shared;
             std::string styling;
             bool starred = false;
-            for (const auto piece: std::views::split(std::string_view{keys}, ',')) {
+            for (const auto piece : std::views::split(std::string_view{keys}, ',')) {
                 const std::string_view option(piece.data(), piece.size());
                 const std::size_t equals = option.find('=');
                 const auto trimmed = [](std::string_view text) {
-                    while (!text.empty() && (text.front() == ' ' || text.front() == '{')) text.remove_prefix(1);
-                    while (!text.empty() && (text.back() == ' ' || text.back() == '}')) text.remove_suffix(1);
+                    while (!text.empty() && (text.front() == ' ' || text.front() == '{'))
+                        text.remove_prefix(1);
+                    while (!text.empty() && (text.back() == ' ' || text.back() == '}'))
+                        text.remove_suffix(1);
                     return std::string(text);
                 };
                 const std::string key = trimmed(option.substr(0, equals));
-                const std::string value = equals == std::string_view::npos
-                                              ? std::string{}
-                                              : trimmed(option.substr(equals + 1));
+                const std::string value =
+                        equals == std::string_view::npos ? std::string{} : trimmed(option.substr(equals + 1));
                 if (key == "name" || key == "title" || key == "heading") title = value;
                 if (key == "numberwithin" || key == "within" || key == "parent") within = value;
                 if (key == "sibling" || key == "numberlike" || key == "sharenumber") shared = value;
@@ -202,21 +202,21 @@ namespace render::primitives::composition {
         // The proof: its head in italic, `\proofname` unless it names its
         // own, and the box at the end.
         context.environments.watch(
-            "proof",
-            [&context](syntax::Mouth &mouth) {
-                const std::vector<syntax::Token> note =
-                        mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
-                if (note.empty()) {
-                    mouth.ingest(context.arena.copy(
-                        std::format(R"({}\noindent{{\itshape\proofname.}}\ {{\ignorespaces )", around)));
-                    return;
-                }
-                mouth.ingest(".}\\ {\\ignorespaces ");
-                mouth.stream().inject(std::span{note});
-                mouth.ingest(context.arena.copy(std::format("{}\\noindent{{\\itshape ", around)));
-            },
-            [](syntax::Mouth &mouth) { mouth.ingest(R"(\qed}\par\vskip 8pt plus 2pt minus 4pt\noindent )"); },
-            /*transparent=*/true);
+                "proof",
+                [&context](syntax::Mouth &mouth) {
+                    const std::vector<syntax::Token> note =
+                            mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+                    if (note.empty()) {
+                        mouth.ingest(context.arena.copy(
+                                std::format(R"({}\noindent{{\itshape\proofname.}}\ {{\ignorespaces )", around)));
+                        return;
+                    }
+                    mouth.ingest(".}\\ {\\ignorespaces ");
+                    mouth.stream().inject(std::span{note});
+                    mouth.ingest(context.arena.copy(std::format("{}\\noindent{{\\itshape ", around)));
+                },
+                [](syntax::Mouth &mouth) { mouth.ingest(R"(\qed}\par\vskip 8pt plus 2pt minus 4pt\noindent )"); },
+                /*transparent=*/true);
 
         // The end of a proof's mark, carried out to the margin by glue of the
         // second infinite order, which outpulls the paragraph's own fill;
@@ -247,8 +247,7 @@ namespace render::primitives::composition {
         // \qedhere puts the box where it stands in LaTeX; here the box stays
         // at the proof's end, which is where it lands in all but a proof
         // ending in a display, and is set once either way.
-        parser.mouth.bind("\\qedhere", [](syntax::Mouth &) {
-        });
+        parser.mouth.bind("\\qedhere", [](syntax::Mouth &) {});
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound theorem primitives");
     }

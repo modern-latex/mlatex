@@ -55,9 +55,9 @@ namespace render {
         /// what keeps a maths face with five thousand glyphs from embedding
         /// five thousand empty slots to reach the twelve that were wanted.
         struct Entry {
-            const typography::Font *font{nullptr}; ///< A font over it, for its metrics.
-            std::vector<std::uint32_t> glyphs{}; ///< Glyphs drawn, in first-drawn order.
-            std::vector<std::uint32_t> points{}; ///< The character each of those came from.
+            const typography::Font *font{nullptr};   ///< A font over it, for its metrics.
+            std::vector<std::uint32_t> glyphs{};     ///< Glyphs drawn, in first-drawn order.
+            std::vector<std::uint32_t> points{};     ///< The character each of those came from.
             std::vector<std::string_view> letters{}; ///< A ligature's characters, for each; empty for one alone.
 
             /// Each of those glyphs' widths in thousandths of the em, rounded
@@ -73,12 +73,8 @@ namespace render {
         /// @param scratch Allocator for intermediates within one pass.
         /// @param shaper  Shaper, handed on to the document.
         /// @param typesetter  Layout engine, for lowering formulas and paginating.
-        Composer(
-            memory::Arena &arena,
-            memory::Arena &scratch,
-            const typography::Shaper &shaper,
-            layout::Typesetter &typesetter
-        ) noexcept;
+        Composer(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                 layout::Typesetter &typesetter) noexcept;
 
         /// @brief Describes one page.
         ///
@@ -94,27 +90,26 @@ namespace render {
         /// @return The page description.
         /// @complexity O(n) in the nodes beneath them.
         [[nodiscard]] std::string_view draw(memory::Slice<layout::Node *> nodes,
-                                            memory::Slice<const layout::Node *> notes,
-                                            float left, float top);
+                                            memory::Slice<const layout::Node *> notes, float left, float top);
 
         /// @brief Where an anchor was drawn: which page, counted from 0, and
         ///        how far down it, in points from the page's top.
         struct Place {
             std::size_t page{0}; ///< The page.
-            float down{0.0f}; ///< From its top.
+            float down{0.0f};    ///< From its top.
         };
 
         /// @brief A link as it was drawn: where it goes, and the area of each
         ///        line it covers.
         struct Link {
-            std::string_view target{}; ///< The address it goes to; empty for #anchor's place.
-            std::size_t anchor{0}; ///< The anchor it goes to, when it has no address.
-            layout::Node::Color border{}; ///< The frame a reader draws round it; none at no alpha.
-            std::vector<std::array<float, 4> > areas{}; ///< Left, top, right and bottom, from the page's top left.
+            std::string_view target{};                 ///< The address it goes to; empty for #anchor's place.
+            std::size_t anchor{0};                     ///< The anchor it goes to, when it has no address.
+            layout::Node::Color border{};              ///< The frame a reader draws round it; none at no alpha.
+            std::vector<std::array<float, 4>> areas{}; ///< Left, top, right and bottom, from the page's top left.
         };
 
         layout::Typesetter &typesetter; ///< The layout engine this composer was built with.
-        layout::Document document; ///< The document being composed.
+        layout::Document document;      ///< The document being composed.
 
         /// Every face the pages drawn so far have used, indexed the way the
         /// page description names them: entry `n` is the resource the
@@ -150,17 +145,17 @@ namespace render {
         /// a bookmark, goes to.
         std::vector<Place> places{};
 
-        std::vector<std::vector<Link> > links{}; ///< Every link drawn, by the page it was drawn on.
+        std::vector<std::vector<Link>> links{}; ///< Every link drawn, by the page it was drawn on.
         /// @brief Where a line of the source was drawn: the area its glyphs
         ///        and pictures cover on one line of the page, as a
         ///        Command::Source before them said -- what an editor's reader
         ///        jumps between, a click on the page to its line and its line
         ///        to the page.
         struct Spot {
-            memory::Location origin{}; ///< The line, and its file; its column is not kept.
+            memory::Location origin{};   ///< The line, and its file; its column is not kept.
             std::array<float, 4> area{}; ///< Left, top, right and bottom, from the page's top left.
         };
-        std::vector<std::vector<Spot> > spots{}; ///< Every spot drawn, by the page it was drawn on.
+        std::vector<std::vector<Spot>> spots{}; ///< Every spot drawn, by the page it was drawn on.
 
         /// Every page drawn so far, as its text: what a reader copying it
         /// would get -- a ligature as its letters, a word space as a space,
@@ -255,30 +250,30 @@ namespace render {
 
         // The page being drawn: its number, how pages are numbered from here,
         // and the style pages are furnished in from here.
-        std::int32_t count{1}; ///< Its number.
+        std::int32_t count{1};                                                                    ///< Its number.
         layout::Node::Directive::Numbering numbering{layout::Node::Directive::Numbering::Arabic}; ///< How.
-        bool capital{false}; ///< In capitals.
-        layout::Node::Directive::Style style{layout::Node::Directive::Style::Plain}; ///< From here on.
+        bool capital{false};                                                                      ///< In capitals.
+        layout::Node::Directive::Style style{layout::Node::Directive::Style::Plain};              ///< From here on.
 
         /// The marks a head or a foot shows on the page being drawn: the
         /// left's and the right's, each the last set on it or before it --
         /// a row of text set where `\\markboth` was written -- or none.
         std::array<const layout::Node *, 2> marks{};
 
-        std::string content{}; ///< The page description being built.
+        std::string content{};    ///< The page description being built.
         std::string transcript{}; ///< The text of the page being drawn.
 
         // The open run: which face and size it is in, and where its pen is.
         const typography::Font *running{nullptr}; ///< Its font, or null when no run is open.
-        std::size_t index{0}; ///< Its resource index.
-        float pen{0.0f}; ///< Where its pen has reached from the left.
-        float line{0.0f}; ///< Its baseline from the top.
+        std::size_t index{0};                     ///< Its resource index.
+        float pen{0.0f};                          ///< Where its pen has reached from the left.
+        float line{0.0f};                         ///< Its baseline from the top.
 
         // The color last set, so a page of the one color -- nearly every one
         // -- costs one operator rather than one per glyph and rule.
-        layout::Node::Color filling{}; ///< Fill color in use.
+        layout::Node::Color filling{};  ///< Fill color in use.
         layout::Node::Color stroking{}; ///< Stroke color in use.
-        float opacity = 1.0f; ///< Opacity in use.
+        float opacity = 1.0f;           ///< Opacity in use.
 
         std::vector<Link> opened{}; ///< The links being drawn, innermost last.
 

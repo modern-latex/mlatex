@@ -38,7 +38,7 @@ namespace syntax::primitives::logic {
         /// @param context Engine services; the count scans against its registers.
         void operator()(Mouth &mouth, Context &context) const;
 
-        static constexpr std::int32_t passes = 65536; ///< Most repetitions one \\repeat may ask for.
+        static constexpr std::int32_t passes = 65536;       ///< Most repetitions one \\repeat may ask for.
         static constexpr std::size_t production = 1u << 22; ///< Most tokens one \\repeat may produce.
 
         /// @brief Errors this module has recorded.

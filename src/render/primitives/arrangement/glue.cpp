@@ -8,9 +8,9 @@
 /// alone measures itself from the face rather than from a dimension or an em.
 #include "render/primitives/arrangement/glue.hpp"
 #include "layout/line.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
+#include "syntax/argument.hpp"
 
 #include "syntax/number.hpp"
 
@@ -40,8 +40,8 @@ namespace render::primitives::arrangement {
                 ++offset;
                 continue;
             }
-            if (token.text.size() == 1 && ((token.text[0] >= '0' && token.text[0] <= '9') ||
-                                           token.text[0] == '.' || token.text[0] == '-')) {
+            if (token.text.size() == 1 &&
+                ((token.text[0] >= '0' && token.text[0] <= '9') || token.text[0] == '.' || token.text[0] == '-')) {
                 digits += token.text;
                 ++offset;
                 continue;
@@ -54,12 +54,11 @@ namespace render::primitives::arrangement {
             ++letters;
         }
         if (letters >= 3) {
-            for (std::size_t index = 0; index < offset + letters; ++index) mouth.read();
-            order = letters == 3
-                        ? layout::Node::Order::Fil
-                        : letters == 4
-                              ? layout::Node::Order::Fill
-                              : layout::Node::Order::Filll;
+            for (std::size_t index = 0; index < offset + letters; ++index)
+                mouth.read();
+            order = letters == 3   ? layout::Node::Order::Fil
+                    : letters == 4 ? layout::Node::Order::Fill
+                                   : layout::Node::Order::Filll;
             float amount = 1.0f;
             if (!digits.empty()) patch::decimal(digits.data(), digits.data() + digits.size(), amount);
             return amount;
@@ -70,27 +69,23 @@ namespace render::primitives::arrangement {
         return scanned ? static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale) : 0.0f;
     }
 
-    Glue::Glue(syntax::Lexicon &lexicon) noexcept {
-        lexicon.intern("\\hskip");
-    }
+    Glue::Glue(syntax::Lexicon &lexicon) noexcept { lexicon.intern("\\hskip"); }
 
     void Glue::operator()(syntax::Parser &parser, Context &context) const {
         /// @brief A space whose size the document writes out.
         struct Measured {
             std::string_view name; ///< What the document writes.
-            bool elastic; ///< Glue, which flexes and may be broken at; else a kern.
-            bool block; ///< True when it goes down the page, not across the line.
+            bool elastic;          ///< Glue, which flexes and may be broken at; else a kern.
+            bool block;            ///< True when it goes down the page, not across the line.
         };
 
-        static constexpr std::array<Measured, 3> measured{
-            {
+        static constexpr std::array<Measured, 3> measured{{
                 {.name = "\\hskip", .elastic = true, .block = false},
                 {.name = "\\vskip", .elastic = true, .block = true},
                 {.name = "\\kern", .elastic = false, .block = false},
-            }
-        };
+        }};
 
-        for (const auto &[name, elastic, block]: measured) {
+        for (const auto &[name, elastic, block] : measured) {
             parser.bind(name, [&context, elastic, block](const syntax::Parser &reader) -> syntax::Node * {
                 syntax::Mouth &mouth = reader.mouth;
                 memory::Arena &arena = reader.arena;
@@ -103,10 +98,8 @@ namespace render::primitives::arrangement {
                 const auto held = context.registers.target(mouth.lookahead().symbol);
                 const bool glued = held && held->type == Registers::Type::Glue;
                 const auto scanned = syntax::Number::dimension(mouth, context.registers);
-                const float width = scanned
-                                        ? static_cast<float>(*scanned) /
-                                          static_cast<float>(syntax::Number::scale)
-                                        : 0.0f;
+                const float width =
+                        scanned ? static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale) : 0.0f;
 
                 auto *node = arena.compose<layout::Node>();
                 if (elastic) {
@@ -125,13 +118,12 @@ namespace render::primitives::arrangement {
                         expand = static_cast<layout::Node::Order>(orders & 3);
                         limit = static_cast<layout::Node::Order>((orders >> 2) & 3);
                     }
-                    if (syntax::Argument::keyword(mouth, "plus")) stretch = flexibility(mouth, context.registers,
-                                                                      expand);
+                    if (syntax::Argument::keyword(mouth, "plus"))
+                        stretch = flexibility(mouth, context.registers, expand);
                     if (syntax::Argument::keyword(mouth, "minus"))
                         shrink = flexibility(mouth, context.registers, limit);
-                    node->glue({
-                        .width = width, .stretch = stretch, .shrink = shrink, .expand = expand, .limit = limit
-                    });
+                    node->glue(
+                            {.width = width, .stretch = stretch, .shrink = shrink, .expand = expand, .limit = limit});
                 } else {
                     node->kern({.width = width});
                 }
@@ -141,12 +133,12 @@ namespace render::primitives::arrangement {
 
         /// @brief A space whose size is fixed by its name.
         struct Named {
-            std::string_view name; ///< What the document writes.
-            float width; ///< Fixed width, in ems of the text face.
-            float stretch; ///< How much it may grow; 0 makes it a kern.
-            float shrink; ///< How much it may give, the same way.
+            std::string_view name;     ///< What the document writes.
+            float width;               ///< Fixed width, in ems of the text face.
+            float stretch;             ///< How much it may grow; 0 makes it a kern.
+            float shrink;              ///< How much it may give, the same way.
             layout::Node::Order order; ///< At which order of infinity it grows.
-            bool block; ///< True when it goes down the page, not across.
+            bool block;                ///< True when it goes down the page, not across.
         };
 
         // A finite width makes a kern unless it also carries stretch or
@@ -157,85 +149,172 @@ namespace render::primitives::arrangement {
         // are a formula's thin, medium and thick -- three, four and five
         // eighteenths of an em -- written in the text, where LaTeX gives
         // them the same widths.
-        static constexpr std::array<Named, 22> named{
-            {
-                {.name = "\\quad", .width = 1.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\qquad", .width = 2.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\enspace", .width = 0.5f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\enskip", .width = 0.5f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\thinspace", .width = 3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\negthinspace", .width = -3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\,", .width = 3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\:", .width = 4.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\>", .width = 4.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\;", .width = 5.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\!", .width = -3.0f / 18.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
-                {.name = "\\/", .width = 0.0f, .stretch = 0.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Normal, .block = false},
+        static constexpr std::array<Named, 22> named{{
+                {.name = "\\quad",
+                 .width = 1.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\qquad",
+                 .width = 2.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\enspace",
+                 .width = 0.5f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\enskip",
+                 .width = 0.5f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\thinspace",
+                 .width = 3.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\negthinspace",
+                 .width = -3.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\,",
+                 .width = 3.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\:",
+                 .width = 4.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\>",
+                 .width = 4.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\;",
+                 .width = 5.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\!",
+                 .width = -3.0f / 18.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
+                {.name = "\\/",
+                 .width = 0.0f,
+                 .stretch = 0.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Normal,
+                 .block = false},
                 // the faces' own kerning corrects italics
-                {.name = "\\hfil", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Fil, .block = false},
-                {.name = "\\hfill", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Fill, .block = false},
-                {.name = "\\vfil", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Fil, .block = true},
-                {.name = "\\vfill", .width = 0.0f, .stretch = 1.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Fill, .block = true},
-                {.name = "\\hss", .width = 0.0f, .stretch = 1.0f, .shrink = 1.0f,
-                 .order = layout::Node::Order::Fil, .block = false},
-                {.name = "\\vss", .width = 0.0f, .stretch = 1.0f, .shrink = 1.0f,
-                 .order = layout::Node::Order::Fil, .block = true},
-                {.name = "\\hfilneg", .width = 0.0f, .stretch = -1.0f, .shrink = 0.0f,
-                 .order = layout::Node::Order::Fil, .block = false},
-                {.name = "\\smallskip", .width = 0.3f, .stretch = 0.1f, .shrink = 0.1f,
-                 .order = layout::Node::Order::Normal, .block = true},
-                {.name = "\\medskip", .width = 0.6f, .stretch = 0.2f, .shrink = 0.2f,
-                 .order = layout::Node::Order::Normal, .block = true},
-                {.name = "\\bigskip", .width = 1.2f, .stretch = 0.4f, .shrink = 0.4f,
-                 .order = layout::Node::Order::Normal, .block = true},
-            }
-        };
+                {.name = "\\hfil",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil,
+                 .block = false},
+                {.name = "\\hfill",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Fill,
+                 .block = false},
+                {.name = "\\vfil",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil,
+                 .block = true},
+                {.name = "\\vfill",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Fill,
+                 .block = true},
+                {.name = "\\hss",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 1.0f,
+                 .order = layout::Node::Order::Fil,
+                 .block = false},
+                {.name = "\\vss",
+                 .width = 0.0f,
+                 .stretch = 1.0f,
+                 .shrink = 1.0f,
+                 .order = layout::Node::Order::Fil,
+                 .block = true},
+                {.name = "\\hfilneg",
+                 .width = 0.0f,
+                 .stretch = -1.0f,
+                 .shrink = 0.0f,
+                 .order = layout::Node::Order::Fil,
+                 .block = false},
+                {.name = "\\smallskip",
+                 .width = 0.3f,
+                 .stretch = 0.1f,
+                 .shrink = 0.1f,
+                 .order = layout::Node::Order::Normal,
+                 .block = true},
+                {.name = "\\medskip",
+                 .width = 0.6f,
+                 .stretch = 0.2f,
+                 .shrink = 0.2f,
+                 .order = layout::Node::Order::Normal,
+                 .block = true},
+                {.name = "\\bigskip",
+                 .width = 1.2f,
+                 .stretch = 0.4f,
+                 .shrink = 0.4f,
+                 .order = layout::Node::Order::Normal,
+                 .block = true},
+        }};
 
-        for (const auto &[name, width, stretch, shrink, order, block]: named) {
+        for (const auto &[name, width, stretch, shrink, order, block] : named) {
             parser.bind(
-                name, [&context, width, stretch, shrink, order, block](const syntax::Parser &reader) -> syntax::Node * {
-                    memory::Arena &arena = reader.arena;
-                    const memory::Location origin = reader.mouth.lookahead().location;
+                    name,
+                    [&context, width, stretch, shrink, order, block](const syntax::Parser &reader) -> syntax::Node * {
+                        memory::Arena &arena = reader.arena;
+                        const memory::Location origin = reader.mouth.lookahead().location;
 
-                    // An em of whatever face the text is in where the space is
-                    // written, so a quad in a heading is a heading's quad.
-                    const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
+                        // An em of whatever face the text is in where the space is
+                        // written, so a quad in a heading is a heading's quad.
+                        const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
 
-                    // Fil and fill orders are infinite: #stretch there is a
-                    // dimensionless weight against other infinite glue on the
-                    // same line, not a length, so only a finite (Normal) amount
-                    // scales with the face -- an \\hfil is the same weight in
-                    // any size text.
-                    const bool finite = order == layout::Node::Order::Normal;
+                        // Fil and fill orders are infinite: #stretch there is a
+                        // dimensionless weight against other infinite glue on the
+                        // same line, not a length, so only a finite (Normal) amount
+                        // scales with the face -- an \\hfil is the same weight in
+                        // any size text.
+                        const bool finite = order == layout::Node::Order::Normal;
 
-                    auto *node = arena.compose<layout::Node>();
-                    if (stretch != 0.0f || shrink != 0.0f) {
-                        node->glue({
-                            .width = width * em, .stretch = finite ? stretch * em : stretch,
-                            .shrink = finite ? shrink * em : shrink, .expand = order,
-                            .limit = finite || shrink == 0.0f ? layout::Node::Order::Normal : order
-                        });
-                    } else {
-                        node->kern({.width = width * em});
-                    }
-                    return directive(arena, node, origin, block);
-                });
+                        auto *node = arena.compose<layout::Node>();
+                        if (stretch != 0.0f || shrink != 0.0f) {
+                            node->glue({.width = width * em,
+                                        .stretch = finite ? stretch * em : stretch,
+                                        .shrink = finite ? shrink * em : shrink,
+                                        .expand = order,
+                                        .limit = finite || shrink == 0.0f ? layout::Node::Order::Normal : order});
+                        } else {
+                            node->kern({.width = width * em});
+                        }
+                        return directive(arena, node, origin, block);
+                    });
         }
 
         // TeX's tie: an ordinary word space that a line may not break at,
@@ -265,7 +344,7 @@ namespace render::primitives::arrangement {
         // LaTeX's leaders: glue that fills what is left of the line as \hfill
         // does, drawn along -- a rule for \hrulefill, dots for \dotfill, each
         // in a box .44em wide, as LaTeX's own.
-        for (const bool dotted: {false, true}) {
+        for (const bool dotted : {false, true}) {
             parser.bind(dotted ? "\\dotfill" : "\\hrulefill",
                         [&context, dotted](const syntax::Parser &reader) -> syntax::Node * {
                             memory::Arena &arena = reader.arena;
@@ -275,15 +354,15 @@ namespace render::primitives::arrangement {
                             leader->rule({.height = 0.4f});
                             if (const typography::Font *font = context.selection.text(); dotted && font) {
                                 const typography::Font *fonts[] = {font};
-                                const memory::Slice<layout::Node *> dot = context.shaper.shape(
-                                    memory::Slice{.data = fonts, .count = 1uz}, ".", {});
+                                const memory::Slice<layout::Node *> dot =
+                                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, ".", {});
                                 const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(dot.count + 2);
-                                for (const std::size_t end: {0uz, dot.count + 1}) {
+                                for (const std::size_t end : {0uz, dot.count + 1}) {
                                     row[end] = arena.compose<layout::Node>(layout::Node::Type::Glue);
-                                    row[end]->glue({
-                                        .stretch = 1.0f, .shrink = 1.0f, .expand = layout::Node::Order::Fil,
-                                        .limit = layout::Node::Order::Fil
-                                    });
+                                    row[end]->glue({.stretch = 1.0f,
+                                                    .shrink = 1.0f,
+                                                    .expand = layout::Node::Order::Fil,
+                                                    .limit = layout::Node::Order::Fil});
                                 }
                                 std::ranges::copy(dot, row.begin() + 1);
                                 leader = layout::Line::horizontal(arena, row, font->size() * 0.44f);

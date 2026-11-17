@@ -10,20 +10,17 @@
 
 #include <algorithm>
 #include <array>
-#include <string>
 #include <format>
+#include <string>
 #include <utility>
 
 namespace syntax {
     Lexer::Lexer(const std::string_view source, Catcodes &codes, Lexicon &lexicon, const std::uint32_t file)
         : sources(source), table(codes), lexicon(lexicon), location{.line = 1, .column = 1, .file = file} {
-        Logger::log(Logger::Type::Lexer, Logger::Level::Informative,
-                    "Lexer bound to {} byte buffer", source.size());
+        Logger::log(Logger::Type::Lexer, Logger::Level::Informative, "Lexer bound to {} byte buffer", source.size());
     }
 
-    bool Lexer::empty() const noexcept {
-        return offset >= sources.size() && held.empty();
-    }
+    bool Lexer::empty() const noexcept { return offset >= sources.size() && held.empty(); }
 
     Token Lexer::advance() {
         // Read through a plain pointer: this loop runs once per character of
@@ -42,12 +39,12 @@ namespace syntax {
             if (offset == opening) {
                 std::string_view body(text + opening, stop - opening);
                 std::size_t first = 0;
-                while (first < body.size() && (body[first] == ' ' || body[first] == '\t')) ++first;
+                while (first < body.size() && (body[first] == ' ' || body[first] == '\t'))
+                    ++first;
                 if (first < body.size() && ending(body[first])) {
-                    body.remove_prefix(first + (body[first] == '\r' && first + 1 < body.size() &&
-                                                body[first + 1] == '\n'
-                                                    ? 2
-                                                    : 1));
+                    body.remove_prefix(
+                            first +
+                            (body[first] == '\r' && first + 1 < body.size() && body[first + 1] == '\n' ? 2 : 1));
                 }
                 const std::size_t last = body.find_last_not_of(" \t");
                 body = last == std::string_view::npos ? std::string_view{} : body.substr(0, last + 1);
@@ -93,8 +90,8 @@ namespace syntax {
                 if (previous == Type::Newline) {
                     type = Type::Blank;
                     const Symbol bound = lexicon.intern("\\par");
-                    Logger::log(Logger::Type::Lexer, Logger::Level::Debug,
-                                "Lexed <Escape> [\\par] at {}:{}", position.line, position.column);
+                    Logger::log(Logger::Type::Lexer, Logger::Level::Debug, "Lexed <Escape> [\\par] at {}:{}",
+                                position.line, position.column);
                     return Token{bound, Catcodes::Category::Escape, position, lexicon.resolve(bound)};
                 }
 
@@ -127,10 +124,8 @@ namespace syntax {
                 tracebacks.emplace_back(Traceback::Type::Token, position,
                                         std::format("Illegal byte 0x{:02X} in input",
                                                     static_cast<unsigned>(static_cast<unsigned char>(symbol))));
-                Logger::log(Logger::Type::Lexer, Logger::Level::Warning,
-                            "Illegal byte 0x{:02X} at {}:{} discarded",
-                            static_cast<unsigned>(static_cast<unsigned char>(symbol)),
-                            position.line, position.column);
+                Logger::log(Logger::Type::Lexer, Logger::Level::Warning, "Illegal byte 0x{:02X} at {}:{} discarded",
+                            static_cast<unsigned>(static_cast<unsigned char>(symbol)), position.line, position.column);
                 offset++;
                 location.column++;
                 continue;
@@ -181,8 +176,8 @@ namespace syntax {
                         type = Type::Skip;
                     } else {
                         const std::size_t span = ((static_cast<unsigned char>(next) & 0x80) == 0)
-                                                     ? 1
-                                                     : std::min(length(next), size - offset);
+                                                         ? 1
+                                                         : std::min(length(next), size - offset);
                         offset += span;
                         location.column++;
                         type = Type::Middle;
@@ -194,8 +189,8 @@ namespace syntax {
                 const std::string_view slice(text + origin, offset - origin);
                 const Symbol bound = lexicon.intern(slice);
                 const std::string_view value = lexicon.resolve(bound);
-                Logger::log(Logger::Type::Lexer, Logger::Level::Debug,
-                            "Lexed <Escape> [{}] at {}:{}", slice, position.line, position.column);
+                Logger::log(Logger::Type::Lexer, Logger::Level::Debug, "Lexed <Escape> [{}] at {}:{}", slice,
+                            position.line, position.column);
 
                 // Text read as it stands, as TeX reads it once \verb or a
                 // verbatim block has made every character an ordinary one:
@@ -208,27 +203,27 @@ namespace syntax {
                     std::size_t at = offset;
                     if (at < size && text[at] == '*' && (slice == "\\verb" || slice == "\\Verb")) ++at;
                     if (at < size && text[at] == '[' && slice != "\\verb") {
-                        while (at < size && text[at] != ']' && !ending(text[at])) ++at;
+                        while (at < size && text[at] != ']' && !ending(text[at]))
+                            ++at;
                         if (at < size && text[at] == ']') ++at;
                     }
                     if (at < size && text[at] == '{' && slice == "\\mintinline") {
-                        while (at < size && text[at] != '}' && !ending(text[at])) ++at;
+                        while (at < size && text[at] != '}' && !ending(text[at]))
+                            ++at;
                         if (at < size && text[at] == '}') ++at;
                     }
                     if (at < size && !ending(text[at]) && table.get(text[at]) != Catcodes::Category::Letter) {
                         const char close = text[at] == '{' ? '}' : text[at];
                         std::size_t last = at + 1;
-                        while (last < size && text[last] != close && !ending(text[last])) ++last;
+                        while (last < size && text[last] != close && !ending(text[last]))
+                            ++last;
                         if (last < size && text[last] == close) {
-                            held = Token{
-                                none, Catcodes::Category::Other,
-                                {
-                                    .line = location.line,
-                                    .column = location.column + static_cast<std::uint32_t>(at + 1 - offset),
-                                    .file = location.file
-                                },
-                                std::string_view(text + at + 1, last - at - 1)
-                            };
+                            held = Token{none,
+                                         Catcodes::Category::Other,
+                                         {.line = location.line,
+                                          .column = location.column + static_cast<std::uint32_t>(at + 1 - offset),
+                                          .file = location.file},
+                                         std::string_view(text + at + 1, last - at - 1)};
                             location.column += static_cast<std::uint32_t>(last + 1 - offset);
                             offset = last + 1;
                             type = Type::Middle;
@@ -247,23 +242,25 @@ namespace syntax {
                 // and the block its options.
                 if (slice == "\\begin") {
                     static constexpr std::array<std::string_view, 15> blocks{
-                        "{verbatim}", "{verbatim*}", "{lstlisting}", "{Verbatim}", "{Verbatim*}", "{BVerbatim}",
-                        "{spverbatim}", "{boxedverbatim}", "{comment}", "{minted}", "{filecontents}",
-                        "{filecontents*}", "{CCSXML}", "{luacode}", "{luacode*}",
+                            "{verbatim}",     "{verbatim*}",     "{lstlisting}",    "{Verbatim}", "{Verbatim*}",
+                            "{BVerbatim}",    "{spverbatim}",    "{boxedverbatim}", "{comment}",  "{minted}",
+                            "{filecontents}", "{filecontents*}", "{CCSXML}",        "{luacode}",  "{luacode*}",
                     };
                     const std::string_view rest = sources.substr(offset);
-                    for (const std::string_view name: blocks) {
+                    for (const std::string_view name : blocks) {
                         if (!rest.starts_with(name)) continue;
                         std::size_t begin = offset + name.size();
                         if (begin < size && text[begin] == '[') {
-                            while (begin < size && text[begin] != ']') ++begin;
+                            while (begin < size && text[begin] != ']')
+                                ++begin;
                             if (begin < size) ++begin;
                         }
                         // minted's language, after its options, and the name
                         // of the file filecontents writes.
                         if ((name == "{minted}" || name.starts_with("{filecontents")) && begin < size &&
                             text[begin] == '{') {
-                            while (begin < size && text[begin] != '}') ++begin;
+                            while (begin < size && text[begin] != '}')
+                                ++begin;
                             if (begin < size) ++begin;
                         }
                         const std::string closing = std::string("\\end") + std::string(name);
@@ -277,18 +274,16 @@ namespace syntax {
                 return Token{bound, Catcodes::Category::Escape, position, value};
             }
 
-            const std::size_t span = (static_cast<unsigned char>(symbol) & 0x80) == 0
-                                         ? 1
-                                         : std::min(length(symbol), size - offset);
+            const std::size_t span =
+                    (static_cast<unsigned char>(symbol) & 0x80) == 0 ? 1 : std::min(length(symbol), size - offset);
             offset += span;
             location.column++;
             type = Type::Middle;
 
             const std::string_view slice(text + origin, span);
             const Symbol bound = lexicon.intern(slice);
-            Logger::log(Logger::Type::Lexer, Logger::Level::Traceback,
-                        "Lexed <{}> [{}] at {}:{}", std::to_underlying(category), slice,
-                        position.line, position.column);
+            Logger::log(Logger::Type::Lexer, Logger::Level::Traceback, "Lexed <{}> [{}] at {}:{}",
+                        std::to_underlying(category), slice, position.line, position.column);
             return Token{bound, category, position, lexicon.resolve(bound)};
         }
 

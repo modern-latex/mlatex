@@ -44,9 +44,7 @@ namespace render::primitives::composition {
         void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a `\\footnote` with no text face.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief A mark as it is set in the running text: raised, smaller,
@@ -56,8 +54,8 @@ namespace render::primitives::composition {
         /// @param text    The mark.
         /// @param size    The size of the text it is set against.
         /// @return The mark's box.
-        [[nodiscard]] static layout::Node *mark(const Context &context, memory::Arena &arena,
-                                                const std::string &text, float size);
+        [[nodiscard]] static layout::Node *mark(const Context &context, memory::Arena &arena, const std::string &text,
+                                                float size);
 
         /// @brief Reads a note's text and lays it out at the foot's size.
         /// @param parser  Parser to read the text with; the brace is next.
@@ -77,7 +75,7 @@ namespace render::primitives::composition {
                                                 memory::Location origin);
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable int thanked{0}; ///< How many `\\thanks` marks are given out.
+        mutable int thanked{0};                              ///< How many `\\thanks` marks are given out.
 
         /// How far a mark is raised above the baseline, as a fraction of the
         /// text it is set in: where a superscript sits.

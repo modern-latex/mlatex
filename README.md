@@ -278,7 +278,7 @@ or Unix Makefiles, and the vcpkg toolchain file.
 
 The build produces three targets: `mlatex` (the command-line program), `core`
 (the engine as a static library, which every other target links) and `ffi`
-(the C library, `latex_ffi`). Every source file has a matching test under
+(the C library, `mlatex_ffi`). Every source file has a matching test under
 `tests/`.
 
 ### Presets
@@ -378,10 +378,10 @@ Compose a session to keep values, commands, and files across documents.
 Use `typeset` for a document and `snippet` for a standalone piece of LaTeX.
 Dispose of the session when you are done.
 
-**C++** constructs a `latex::Session` and disposes of it when it goes out of scope.
+**C++** constructs a `mlatex::Session` and disposes of it when it goes out of scope.
 
 ```cpp
-latex::Session session(latex::locate(program));
+mlatex::Session session(mlatex::locate(program));
 session.set("customer", "Acme Ltd.");
 session.define({.name = "balance", .arity = 1, .handler = [&](auto arguments) {
     return ledger.balance(arguments[0]);
@@ -409,7 +409,7 @@ Rust, Go). The library exports a single function, `engine()`, declared in
 `include/protocols/ffi.hpp`:
 
 ```c
-const Latex* system = engine();
+const Mlatex* system = engine();
 Session* session = system->compose(NULL);
 system->set(session, "customer", "Acme Ltd.");
 
@@ -424,8 +424,8 @@ system->snippet(session, formula, strlen(formula), &pdf, &size);
 system->dispose(session);
 ```
 
-The library ships in every package: `latex_ffi.dll` on Windows,
-`liblatex_ffi.dylib` on macOS and `liblatex_ffi.so` on Linux, with
+The library ships in every package: `mlatex_ffi.dll` on Windows,
+`libm.dylib` on macOS and `libm.so` on Linux, with
 `include/protocols/ffi.hpp`. Copy any PDF bytes you want to keep before
 the next call to `typeset` or `snippet`, or before you dispose of the session.
 

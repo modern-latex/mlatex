@@ -56,7 +56,7 @@ namespace render::typography {
     /// @complexity O(n) in the name's length, which is a file name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
         std::uint64_t value = 1469598103934665603ull; // sixty-four bits whatever a size_t is
-        for (const char letter: name) {
+        for (const char letter : name) {
             value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(fold(letter)));
             value *= 1099511628211ull;
         }
@@ -80,14 +80,15 @@ namespace render::typography {
         // A modulo on the hot path costs more than the comparison after it.
         this->slots = std::bit_ceil(buckets > 0 ? buckets : 512);
         table = arena.allocate<Entry *>(this->slots).data;
-        for (std::size_t index = 0; index < this->slots; ++index) table[index] = nullptr;
+        for (std::size_t index = 0; index < this->slots; ++index)
+            table[index] = nullptr;
     }
 
     Collection::~Collection() noexcept {
         // The views, not the entries: an entry an alias took over no longer
         // names the bytes it once held, and a Face may be reading them still
         // right up to this point.
-        for ([[maybe_unused]] const View &view: views) {
+        for ([[maybe_unused]] const View &view : views) {
 #if defined(_WIN32)
             UnmapViewOfFile(view.data);
 #elif (defined(__unix__) || defined(__APPLE__)) && !defined(__EMSCRIPTEN__)
@@ -104,8 +105,7 @@ namespace render::typography {
         std::error_code failure;
         const std::filesystem::path root(directory);
         if (files.empty() && (!std::filesystem::is_directory(root, failure) || failure)) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Warning,
-                        "Font directory missing: {}", directory);
+            Logger::log(Logger::Type::Layout, Logger::Level::Warning, "Font directory missing: {}", directory);
             return 0;
         }
 
@@ -202,10 +202,11 @@ namespace render::typography {
 
         if (!files.empty()) {
             std::string path(directory);
-            while (!path.empty() && (path.back() == '/' || path.back() == '\\')) path.pop_back();
+            while (!path.empty() && (path.back() == '/' || path.back() == '\\'))
+                path.pop_back();
             path += '/';
             const std::size_t base = path.size();
-            for (const std::string_view file: files) {
+            for (const std::string_view file : files) {
                 path.resize(base);
                 path += file;
                 enter(path);
@@ -222,15 +223,16 @@ namespace render::typography {
         // UTF-8 for the index -- and each name is converted once, onto the
         // end of the UTF-8 one, rather than the whole path per file.
         std::wstring search = root.wstring();
-        while (!search.empty() && (search.back() == L'\\' || search.back() == L'/')) search.pop_back();
+        while (!search.empty() && (search.back() == L'\\' || search.back() == L'/'))
+            search.pop_back();
 
         std::string text;
         const auto append = [&text](const std::wstring_view name) {
             const std::size_t length = text.size();
             text.resize(length + name.size() * 3);
-            const int written = WideCharToMultiByte(CP_UTF8, 0, name.data(), static_cast<int>(name.size()),
-                                                    text.data() + length, static_cast<int>(name.size() * 3),
-                                                    nullptr, nullptr);
+            const int written =
+                    WideCharToMultiByte(CP_UTF8, 0, name.data(), static_cast<int>(name.size()), text.data() + length,
+                                        static_cast<int>(name.size() * 3), nullptr, nullptr);
             text.resize(length + static_cast<std::size_t>(written > 0 ? written : 0));
         };
         append(search);
@@ -245,16 +247,16 @@ namespace render::typography {
 
             search += L"\\*";
             WIN32_FIND_DATAW found{};
-            const HANDLE listing = FindFirstFileExW(search.c_str(), FindExInfoBasic, &found,
-                                                    FindExSearchNameMatch, nullptr, FIND_FIRST_EX_LARGE_FETCH);
+            const HANDLE listing = FindFirstFileExW(search.c_str(), FindExInfoBasic, &found, FindExSearchNameMatch,
+                                                    nullptr, FIND_FIRST_EX_LARGE_FETCH);
             search.resize(wide);
             if (listing == INVALID_HANDLE_VALUE) return;
 
             do {
                 const std::wstring_view name(found.cFileName);
                 const bool folder = (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-                if (folder && (name == L"." || name == L".." ||
-                               (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)) {
+                if (folder &&
+                    (name == L"." || name == L".." || (found.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0)) {
                     continue;
                 }
 
@@ -275,15 +277,15 @@ namespace render::typography {
         };
         descend(descend);
 #else
-        for (std::filesystem::recursive_directory_iterator walk(root, failure), stop;
-             !failure && walk != stop; walk.increment(failure)) {
+        for (std::filesystem::recursive_directory_iterator walk(root, failure), stop; !failure && walk != stop;
+             walk.increment(failure)) {
             if (!walk->is_regular_file(failure) || failure) continue;
             enter(walk->path().string());
         }
 #endif
 
-        Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                    "Indexed {} font files under {}", indexed, directory);
+        Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Indexed {} font files under {}", indexed,
+                    directory);
         return indexed;
     }
 
@@ -305,8 +307,8 @@ namespace render::typography {
         }
 #elif defined(__APPLE__)
         folders = {"/System/Library/Fonts", "/Library/Fonts"};
-        if (const char *home = std::getenv("HOME")) folders.emplace_back(
-            std::filesystem::path(home) / "Library" / "Fonts");
+        if (const char *home = std::getenv("HOME"))
+            folders.emplace_back(std::filesystem::path(home) / "Library" / "Fonts");
 #elif defined(__unix__) && !defined(__EMSCRIPTEN__)
         folders = {"/usr/share/fonts", "/usr/local/share/fonts"};
         if (const char *home = std::getenv("HOME")) {
@@ -323,7 +325,7 @@ namespace render::typography {
         std::size_t indexed = 0;
         std::error_code failure;
         lending = true;
-        for (const std::filesystem::path &folder: folders) {
+        for (const std::filesystem::path &folder : folders) {
             if (!std::filesystem::is_directory(folder, failure) || failure) continue;
             const std::u8string written = folder.u8string();
             indexed += post(std::string_view(reinterpret_cast<const char *>(written.data()), written.size()));
@@ -380,8 +382,10 @@ namespace render::typography {
         // chain is one link deep in practice, but a document that aliases in
         // a circle must not spin, so the walk is bounded rather than trusted.
         Entry *entry = table[digest(family) & (slots - 1)];
-        while (entry && !same(family, entry->family)) entry = entry->next;
-        for (int hops = 0; entry && entry->target && hops < 8; ++hops) entry = entry->target;
+        while (entry && !same(family, entry->family))
+            entry = entry->next;
+        for (int hops = 0; entry && entry->target && hops < 8; ++hops)
+            entry = entry->target;
         if (!entry || entry->path.empty()) return nullptr;
         if (!entry->bytes.empty()) return entry;
 
@@ -415,8 +419,8 @@ namespace render::typography {
         if (const int file = open(entry->path.data(), O_RDONLY | O_CLOEXEC); file >= 0) {
             struct stat status{};
             if (fstat(file, &status) == 0 && status.st_size > 0) {
-                if (void *mapped = mmap(nullptr, static_cast<std::size_t>(status.st_size), PROT_READ, MAP_PRIVATE, file,
-                                        0);
+                if (void *mapped =
+                            mmap(nullptr, static_cast<std::size_t>(status.st_size), PROT_READ, MAP_PRIVATE, file, 0);
                     mapped != MAP_FAILED) {
                     view = mapped;
                     size = static_cast<std::size_t>(status.st_size);
@@ -432,19 +436,18 @@ namespace render::typography {
             entry->bytes = std::span<const std::uint8_t>(static_cast<const std::uint8_t *>(view), size);
             bytes += size;
 
-            Logger::log(Logger::Type::Layout, Logger::Level::Debug,
-                        "Mapped {} bytes for family '{}'", size, entry->family);
+            Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Mapped {} bytes for family '{}'", size,
+                        entry->family);
             return entry;
         }
 
         // Read, where it would not map: the path is UTF-8, which is what the
         // stream is told it is rather than left to guess.
         std::ifstream file(std::filesystem::path(std::u8string_view(
-                               reinterpret_cast<const char8_t *>(entry->path.data()), entry->path.size())),
+                                   reinterpret_cast<const char8_t *>(entry->path.data()), entry->path.size())),
                            std::ios::binary | std::ios::ate);
         if (!file) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                        "Font file unreadable: {}", entry->path);
+            Logger::log(Logger::Type::Layout, Logger::Level::Error, "Font file unreadable: {}", entry->path);
             return nullptr;
         }
 
@@ -462,8 +465,8 @@ namespace render::typography {
         bytes += count;
         copies.push_back(std::move(storage));
 
-        Logger::log(Logger::Type::Layout, Logger::Level::Debug,
-                    "Loaded {} bytes for family '{}'", count, entry->family);
+        Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Loaded {} bytes for family '{}'", count,
+                    entry->family);
         return entry;
     }
 }

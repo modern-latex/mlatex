@@ -1,7 +1,7 @@
 #pragma once
 
-#include "syntax/expression/unicodes.hpp"
 #include "memory/slice.hpp"
+#include "syntax/expression/unicodes.hpp"
 
 #include <string_view>
 
@@ -32,34 +32,34 @@ namespace syntax::expression {
         /// @brief What a node is, which says which of its fields mean anything.
         enum class Type : std::uint8_t {
             Variable, ///< A symbol, letter or digit: uses #codepoint or #value.
-            Binary, ///< An infix operator: #left, #right, and the operator in #value.
-            Unary, ///< A prefix or postfix operator: #left, and the operator in #value.
-            Group, ///< A sub-formula in #left, fenced by #open and #close when they are set.
-            Script, ///< A base in #left with a #subscript, a #superscript, or both.
+            Binary,   ///< An infix operator: #left, #right, and the operator in #value.
+            Unary,    ///< A prefix or postfix operator: #left, and the operator in #value.
+            Group,    ///< A sub-formula in #left, fenced by #open and #close when they are set.
+            Script,   ///< A base in #left with a #subscript, a #superscript, or both.
             Fraction, ///< #left over #right; #value names the type, as `\\binom` does.
-            Radical, ///< A root of #right, with an optional degree in #left.
-            Accent, ///< A mark over #left; #value names which mark.
+            Radical,  ///< A root of #right, with an optional degree in #left.
+            Accent,   ///< A mark over #left; #value names which mark.
             Sequence, ///< A run of #arguments, or a named command with them.
-            Matrix, ///< A grid of #arguments, #columns wide, fenced by #open and #close.
-            Text ///< Words set as written, spaces and all, in #value: what `\\text` holds.
+            Matrix,   ///< A grid of #arguments, #columns wide, fenced by #open and #close.
+            Text      ///< Words set as written, spaces and all, in #value: what `\\text` holds.
         };
 
         /// @brief How a Matrix spaces its columns; unused otherwise.
         enum class Grid : std::uint8_t {
             Spaced,
             ///< A quad between every two columns, each cell in text style:
-                        ///< the matrices, `cases` and `array`.
+            ///< the matrices, `cases` and `array`.
             Displayed, ///< The same, each cell a displayed line: `gathered`, `dcases`.
             Paired
             ///< Columns in right-and-left pairs, touching within a pair and two
-                        ///< quads apart between pairs, each cell a displayed line:
-                        ///< `aligned`, and the `align` displays.
+            ///< quads apart between pairs, each cell a displayed line:
+            ///< `aligned`, and the `align` displays.
         };
 
-        Type type = Type::Variable; ///< What the node is.
+        Type type = Type::Variable;                                 ///< What the node is.
         Unicodes::Category category = Unicodes::Category::Ordinary; ///< Its class, for spacing.
-        Style style = Style::Inline; ///< Inline or displayed.
-        std::uint32_t codepoint = 0; ///< The character, when known.
+        Style style = Style::Inline;                                ///< Inline or displayed.
+        std::uint32_t codepoint = 0;                                ///< The character, when known.
 
         /// @brief Its text as written.
         ///
@@ -76,10 +76,10 @@ namespace syntax::expression {
         std::uint32_t open = 0;
         std::uint32_t close = 0; ///< @copydoc open
 
-        Node *left = nullptr; ///< First operand, or the only one.
-        Node *right = nullptr; ///< Second operand.
-        Node *subscript = nullptr; ///< What sits below and after.
-        Node *superscript = nullptr; ///< What sits above and after.
+        Node *left = nullptr;              ///< First operand, or the only one.
+        Node *right = nullptr;             ///< Second operand.
+        Node *subscript = nullptr;         ///< What sits below and after.
+        Node *superscript = nullptr;       ///< What sits above and after.
         memory::Slice<Node *> arguments{}; ///< Every argument, in order.
 
         /// @brief How many columns wide a Matrix is; unused otherwise.

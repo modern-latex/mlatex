@@ -1,9 +1,9 @@
 /// @file
 /// @brief Requests implementation: `\\httpget`, `\\httppost`.
 #include "render/primitives/retrieval/requests.hpp"
+#include "logger.hpp"
 #include "protocols/http.hpp"
 #include "syntax/argument.hpp"
-#include "logger.hpp"
 
 #include <format>
 #include <string>

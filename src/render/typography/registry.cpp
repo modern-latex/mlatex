@@ -19,7 +19,7 @@ namespace render::typography {
     static constexpr std::uint64_t digest(const std::string_view family, const int weight, const int slant) noexcept {
         // Sixty-four bits whatever a size_t is: WebAssembly's is thirty-two.
         std::uint64_t value = 1469598103934665603ull;
-        for (const char letter: family) {
+        for (const char letter : family) {
             value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }
@@ -72,10 +72,8 @@ namespace render::typography {
         const std::size_t slot = digest(request) & (slots - 1);
 
         for (Entry *entry = table[slot]; entry; entry = entry->next) {
-            if (entry->request.family == request.family &&
-                entry->request.weight == request.weight &&
-                entry->request.slant == request.slant &&
-                entry->request.size == request.size) {
+            if (entry->request.family == request.family && entry->request.weight == request.weight &&
+                entry->request.slant == request.slant && entry->request.size == request.size) {
                 return &entry->font;
             }
         }
@@ -88,8 +86,7 @@ namespace render::typography {
         // paying for it ahead of the cache costs nothing on a hit.
         const Collection::Entry *file = collection.get(request.family);
         if (!file) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                        "No font indexed for family '{}'", request.family);
+            Logger::log(Logger::Type::Layout, Logger::Level::Error, "No font indexed for family '{}'", request.family);
             return nullptr;
         }
 
@@ -108,8 +105,8 @@ namespace render::typography {
             built->slant = request.slant;
             if (!built->face.compose(file->bytes)) {
                 built->face.dispose();
-                Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                            "Font family '{}' will not open", request.family);
+                Logger::log(Logger::Type::Layout, Logger::Level::Error, "Font family '{}' will not open",
+                            request.family);
                 return nullptr;
             }
             built->next = surfaces[bucket];
@@ -132,8 +129,7 @@ namespace render::typography {
         // cut of it.
         if (!entry->font.compose(built->face, request.size, built->family)) {
             entry->font.dispose();
-            Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                        "Font family '{}' will not open at {} points",
+            Logger::log(Logger::Type::Layout, Logger::Level::Error, "Font family '{}' will not open at {} points",
                         request.family, request.size);
             return nullptr;
         }
@@ -142,14 +138,14 @@ namespace render::typography {
         table[slot] = entry;
         ++fonts;
 
-        Logger::log(Logger::Type::Layout, Logger::Level::Debug,
-                    "Built font '{}' at {} points", entry->request.family, request.size);
+        Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Built font '{}' at {} points", entry->request.family,
+                    request.size);
         return &entry->font;
     }
 
     const Font *Registry::cover(const Font &font, const std::uint32_t code, const bool outside) noexcept {
         const std::uint32_t block = code >> 7;
-        for (const Cover &known: covers) {
+        for (const Cover &known : covers) {
             if (known.font != &font || known.block != block || known.outside != outside) continue;
             if (!known.found || known.found->index(code) != 0) return known.found;
             break;
@@ -177,19 +173,15 @@ namespace render::typography {
         // face the engine carries, Noto Naskh Arabic, so an Arabic document
         // is drawn the same on every system, one without a face of its own
         // for the script included.
-        static constexpr std::array<std::array<std::string_view, 4>, 3> carried{
-            {
+        static constexpr std::array<std::array<std::string_view, 4>, 3> carried{{
                 {"newcm10-regular", "newcm10-bold", "newcm10-italic", "newcm10-bolditalic"},
                 {"newcmsans10-regular", "newcmsans10-bold", "newcmsans10-oblique", "newcmsans10-boldoblique"},
                 {"newcmmono10-regular", "newcmmono10-bold", "newcmmono10-italic", "newcmmono10-boldoblique"},
-            }
-        };
+        }};
         const auto &own = carried[says("sans") ? 1 : says("mono") ? 2 : 0];
-        for (const std::string_view family:
-             {
-                 own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"},
-                 std::string_view{bold ? "notonaskharabic-bold" : "notonaskharabic-regular"}
-             }) {
+        for (const std::string_view family :
+             {own[cut], own[0], std::string_view{bold ? "newcm10devanagari-bold" : "newcm10devanagari-regular"},
+              std::string_view{bold ? "notonaskharabic-bold" : "notonaskharabic-regular"}}) {
             if (const Font *found = draws(family)) return remember(found);
         }
         if (!outside) return remember(nullptr);
@@ -201,45 +193,31 @@ namespace render::typography {
         // Chinese -- a Song face, as Chinese text is set, before a sans --
         // then the symbols' faces, last. Listed now, if they never
         // were.
-        static constexpr std::array<std::array<std::string_view, 16>, 4> systems{
-            {
-                {
-                    "amiri-regular", "notonaskharabic-regular", "times", "times new roman", "notoserif-regular",
-                    "freeserif",
-                    "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "notoserifcjk-regular", "msyh",
-                    "notosanscjk-regular",
-                    "seguisym", "notosanssymbols2-regular"
-                },
-                {
-                    "amiri-bold", "notonaskharabic-bold", "timesbd", "times new roman bold", "notoserif-bold",
-                    "freeserifbold",
-                    "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "notoserifcjk-bold", "msyhbd",
-                    "notosanscjk-bold", "seguisym",
-                    "notosanssymbols2-regular"
-                },
-                {
-                    "amiri-slanted", "notonaskharabic-regular", "timesi", "times new roman italic", "notoserif-italic",
-                    "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma",
-                    "notoserifcjk-regular", "msyh", "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"
-                },
-                {
-                    "amiri-boldslanted", "notonaskharabic-bold", "timesbi", "times new roman bold italic",
-                    "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
-                    "segoeuiz", "tahomabd", "notoserifcjk-bold", "msyhbd", "notosanscjk-bold", "seguisym",
-                    "notosanssymbols2-regular"
-                },
-            }
-        };
+        static constexpr std::array<std::array<std::string_view, 16>, 4> systems{{
+                {"amiri-regular", "notonaskharabic-regular", "times", "times new roman", "notoserif-regular",
+                 "freeserif", "dejavusans", "geezapro", "arial", "segoeui", "tahoma", "notoserifcjk-regular", "msyh",
+                 "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"},
+                {"amiri-bold", "notonaskharabic-bold", "timesbd", "times new roman bold", "notoserif-bold",
+                 "freeserifbold", "dejavusans-bold", "geezapro", "arialbd", "segoeuib", "tahomabd", "notoserifcjk-bold",
+                 "msyhbd", "notosanscjk-bold", "seguisym", "notosanssymbols2-regular"},
+                {"amiri-slanted", "notonaskharabic-regular", "timesi", "times new roman italic", "notoserif-italic",
+                 "freeserifitalic", "dejavusans-oblique", "geezapro", "ariali", "segoeuii", "tahoma",
+                 "notoserifcjk-regular", "msyh", "notosanscjk-regular", "seguisym", "notosanssymbols2-regular"},
+                {"amiri-boldslanted", "notonaskharabic-bold", "timesbi", "times new roman bold italic",
+                 "notoserif-bolditalic", "freeserifbolditalic", "dejavusans-boldoblique", "geezapro", "arialbi",
+                 "segoeuiz", "tahomabd", "notoserifcjk-bold", "msyhbd", "notosanscjk-bold", "seguisym",
+                 "notosanssymbols2-regular"},
+        }};
         collection.post();
-        for (const std::size_t pass: {cut, std::size_t{0}}) {
-            for (const std::string_view family: systems[pass]) {
+        for (const std::size_t pass : {cut, std::size_t{0}}) {
+            for (const std::string_view family : systems[pass]) {
                 if (const Font *found = draws(family)) return remember(found);
             }
         }
         // Then any face the system lent, in the order its folders listed
         // them: in a browser, the faces a page handed over for a script none
         // of those above is named for -- Thai, Bengali, Ethiopic.
-        for (const std::string_view family: collection.lent) {
+        for (const std::string_view family : collection.lent) {
             if (const Font *found = draws(family)) return remember(found);
         }
         return remember(nullptr);

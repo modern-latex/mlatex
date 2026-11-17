@@ -7,12 +7,12 @@
 /// note wraps exactly as a paragraph of body text would, and what travels
 /// with the call is only the finished box.
 #include "render/primitives/composition/footnotes.hpp"
-#include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/typesetting/styles.hpp"
-#include "syntax/semantics/scope.hpp"
 #include "layout/line.hpp"
 #include "layout/paragraph.hpp"
 #include "logger.hpp"
+#include "render/primitives/referencing/counters.hpp"
+#include "render/primitives/typesetting/styles.hpp"
+#include "syntax/semantics/scope.hpp"
 
 #include <algorithm>
 #include <array>
@@ -57,7 +57,8 @@ namespace render::primitives::composition {
         const memory::Location origin = mouth.lookahead().location;
 
         syntax::Token open = mouth.read();
-        while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+        while (open.category == syntax::Catcodes::Category::Space)
+            open = mouth.read();
         if (!open.is(syntax::Catcodes::Category::Group, '{')) {
             if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
             tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "A footnote needs a brace group");
@@ -87,7 +88,8 @@ namespace render::primitives::composition {
             content.push_back(before);
             content.push_back(raised);
         }
-        for (const syntax::Node *child: body) compose(content, child, context);
+        for (const syntax::Node *child : body)
+            compose(content, child, context);
         context.selection = restore;
 
         const memory::Slice<layout::Node *> pieces = arena.allocate<layout::Node *>(content.size());
@@ -126,7 +128,7 @@ namespace render::primitives::composition {
                 // The number as written, blanks around it let go; what is
                 // no number at all sets 0, as LaTeX's would complain and do.
                 std::string digits;
-                for (const syntax::Token &token: given) {
+                for (const syntax::Token &token : given) {
                     if (token.category != syntax::Catcodes::Category::Space) digits += token.text;
                 }
                 int value = 0;
@@ -163,7 +165,8 @@ namespace render::primitives::composition {
             std::string label;
             const std::vector<syntax::Token> given =
                     reader.mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
-            for (const syntax::Token &token: given) label += token.text;
+            for (const syntax::Token &token : given)
+                label += token.text;
             if (label.empty() && context.counters) label = Counters::print(reader.mouth, "footnote");
             return call(reader.arena, nullptr, note(reader, context, label), origin);
         });
@@ -172,7 +175,7 @@ namespace render::primitives::composition {
         // counted apart from the numbered notes the text calls.
         parser.bind("\\thanks", [this, &context, current](syntax::Parser &reader) -> syntax::Node * {
             static constexpr std::array<std::string_view, 9> symbols{
-                "*", "†", "‡", "§", "¶", "‖", "**", "††", "‡‡",
+                    "*", "†", "‡", "§", "¶", "‖", "**", "††", "‡‡",
             };
             const memory::Location origin = reader.mouth.lookahead().location;
             const std::string label(symbols[static_cast<std::size_t>(thanked++) % symbols.size()]);
@@ -184,7 +187,7 @@ namespace render::primitives::composition {
         // level with the line it is written in; the bracketed form a
         // two-sided document would set in the left margin is read and let
         // go. marginnote's \marginnote is the same note.
-        for (const std::string_view name: {"\\marginpar", "\\marginnote"}) {
+        for (const std::string_view name : {"\\marginpar", "\\marginnote"}) {
             parser.bind(name, [&context](syntax::Parser &reader) -> syntax::Node * {
                 syntax::Mouth &mouth = reader.mouth;
                 memory::Arena &arena = reader.arena;
@@ -192,7 +195,8 @@ namespace render::primitives::composition {
                 static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
 
                 syntax::Token open = mouth.read();
-                while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+                while (open.category == syntax::Catcodes::Category::Space)
+                    open = mouth.read();
                 if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                     if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                     return nullptr;
@@ -204,7 +208,8 @@ namespace render::primitives::composition {
                 context.selection = kept;
 
                 std::vector<layout::Node *> content;
-                for (const syntax::Node *child: body) compose(content, child, context);
+                for (const syntax::Node *child : body)
+                    compose(content, child, context);
                 if (content.empty()) return nullptr;
                 const memory::Slice<layout::Node *> pieces = arena.allocate<layout::Node *>(content.size());
                 std::ranges::copy(content, pieces.begin());
@@ -213,9 +218,8 @@ namespace render::primitives::composition {
                 const layout::Document::Configuration &page = context.document.configuration;
                 const auto length = [&context, &mouth](const std::string_view called, const float fallback) {
                     const auto slot = context.registers.target(mouth.lexicon.intern(called));
-                    return slot
-                               ? static_cast<float>(context.registers.get(slot->type, slot->slot)) / 65536.0f
-                               : fallback;
+                    return slot ? static_cast<float>(context.registers.get(slot->type, slot->slot)) / 65536.0f
+                                : fallback;
                 };
                 const float separation = length("\\marginparsep", 11.0f);
                 const float width = std::min(length("\\marginparwidth", 57.0f), page.right - separation - 6.0f);
@@ -225,10 +229,8 @@ namespace render::primitives::composition {
                 if (!set.node()) return nullptr;
 
                 auto *aside = arena.compose<layout::Node>(layout::Node::Type::Directive);
-                aside->directive({
-                    .command = layout::Node::Directive::Command::Aside, .width = separation,
-                    .note = set.node()
-                });
+                aside->directive(
+                        {.command = layout::Node::Directive::Command::Aside, .width = separation, .note = set.node()});
                 return directive(arena, aside, origin);
             });
         }

@@ -66,20 +66,20 @@ namespace render::layout {
     public:
         /// @brief The page, in points.
         struct Configuration {
-            float width{612.0f}; ///< Page width.
+            float width{612.0f};  ///< Page width.
             float height{792.0f}; ///< Page height.
-            float left{72.0f}; ///< Left margin.
-            float right{72.0f}; ///< Right margin.
-            float top{72.0f}; ///< Top margin.
-            float bottom{72.0f}; ///< Bottom margin.
+            float left{72.0f};    ///< Left margin.
+            float right{72.0f};   ///< Right margin.
+            float top{72.0f};     ///< Top margin.
+            float bottom{72.0f};  ///< Bottom margin.
             float heading{25.0f}; ///< From the head's baseline down to the text: `\\headsep`, as the composer reads it.
             float footing{30.0f}; ///< From the text's foot down to the foot's baseline: `\\footskip`.
             float leading{14.0f}; ///< Baseline-to-baseline distance within a paragraph.
-            float indent{15.0f}; ///< Indentation of a paragraph's first line: `\\parindent`.
-            float size{12.0f}; ///< The body's size, `\\normalsize`, which every size step is taken from.
-            float skip{0.0f}; ///< Space between two paragraphs, beyond the baseline's: `\\parskip`.
-            std::size_t columns{1}; ///< How many columns the class sets the text in: 2 for `[twocolumn]`.
-            float gap{10.0f}; ///< Between two columns: `\\columnsep`.
+            float indent{15.0f};  ///< Indentation of a paragraph's first line: `\\parindent`.
+            float size{12.0f};    ///< The body's size, `\\normalsize`, which every size step is taken from.
+            float skip{0.0f};     ///< Space between two paragraphs, beyond the baseline's: `\\parskip`.
+            std::size_t columns{1};       ///< How many columns the class sets the text in: 2 for `[twocolumn]`.
+            float gap{10.0f};             ///< Between two columns: `\\columnsep`.
             Pager::Placement placement{}; ///< Where floats may go: `\\topfraction` and the rest.
 
             /// True for `standalone`: each page as large as what is drawn on
@@ -94,15 +94,15 @@ namespace render::layout {
             /// @brief What type of block this is.
             enum class Type : std::uint8_t {
                 Paragraph, ///< A horizontal list, to be broken into lines.
-                Directive ///< A box that stands on its own.
+                Directive  ///< A box that stands on its own.
             };
 
-            Type type{Type::Paragraph}; ///< Which of the two it is.
+            Type type{Type::Paragraph};    ///< Which of the two it is.
             Paragraph *paragraph{nullptr}; ///< Set for Type::Paragraph.
-            Node *node{nullptr}; ///< Set for Type::Directive.
+            Node *node{nullptr};           ///< Set for Type::Directive.
             std::size_t columns{1};
             ///< For Type::Paragraph: the columns it was written in, one of
-                                             ///< which its lines are as wide as.
+            ///< which its lines are as wide as.
             Element *next{nullptr}; ///< The block after this one.
         };
 
@@ -113,13 +113,8 @@ namespace render::layout {
         /// @param typesetter  Layout engine, for lowering formulas.
         /// @param page    The page geometry; letter paper by default, and
         ///                `\\documentclass` overrides it from the document.
-        Document(
-            memory::Arena &arena,
-            memory::Arena &scratch,
-            const typography::Shaper &shaper,
-            const Typesetter &typesetter,
-            const Configuration &page
-        ) noexcept;
+        Document(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                 const Typesetter &typesetter, const Configuration &page) noexcept;
 
         /// @brief Binds a document on letter paper, until `\\documentclass`
         ///        says otherwise.
@@ -127,12 +122,8 @@ namespace render::layout {
         /// @param scratch Arena for what does not.
         /// @param shaper  Shaper for the text.
         /// @param typesetter  Lowers formulas into boxes.
-        Document(
-            memory::Arena &arena,
-            memory::Arena &scratch,
-            const typography::Shaper &shaper,
-            const Typesetter &typesetter
-        ) noexcept;
+        Document(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                 const Typesetter &typesetter) noexcept;
 
         /// @brief Adds a run of text to the paragraph being built.
         ///
@@ -254,17 +245,17 @@ namespace render::layout {
         struct Furniture {
             std::array<memory::Slice<Node *>, 3> head{}; ///< The head's left, centre and right.
             std::array<memory::Slice<Node *>, 3> foot{}; ///< The foot's, the same way.
-            float rule{0.4f}; ///< Under the head, in points: `\\headrulewidth`.
-            float line{0.0f}; ///< Over the foot: `\\footrulewidth`.
-            const typography::Font *face{nullptr}; ///< The face a plain page's number is set in.
-            Node::Color background{1.0f, 1.0f, 1.0f}; ///< What the page is painted in: `\\pagecolor`.
+            float rule{0.4f};                            ///< Under the head, in points: `\\headrulewidth`.
+            float line{0.0f};                            ///< Over the foot: `\\footrulewidth`.
+            const typography::Font *face{nullptr};       ///< The face a plain page's number is set in.
+            Node::Color background{1.0f, 1.0f, 1.0f};    ///< What the page is painted in: `\\pagecolor`.
         };
 
         /// @brief One entry of the file's outline, which a reader lists
         ///        beside the pages: a heading, as hyperref bookmarks one.
         struct Bookmark {
-            std::size_t level{0}; ///< How deep: 0 for a chapter, 1 a section, and on.
-            std::string title{}; ///< What it says, its number first.
+            std::size_t level{0};  ///< How deep: 0 for a chapter, 1 a section, and on.
+            std::string title{};   ///< What it says, its number first.
             std::size_t anchor{0}; ///< The anchor it goes to.
         };
 
@@ -274,12 +265,12 @@ namespace render::layout {
         ///        it keeps to PDF/A-2b, the archival standard, as pdfx and
         ///        `\\DocumentMetadata` ask.
         struct Metadata {
-            std::string title{}; ///< `pdftitle`.
-            std::string author{}; ///< `pdfauthor`.
-            std::string subject{}; ///< `pdfsubject`.
-            std::string keywords{}; ///< `pdfkeywords`.
+            std::string title{};               ///< `pdftitle`.
+            std::string author{};              ///< `pdfauthor`.
+            std::string subject{};             ///< `pdfsubject`.
+            std::string keywords{};            ///< `pdfkeywords`.
             std::vector<Bookmark> bookmarks{}; ///< The outline, in order.
-            bool archival{false}; ///< Kept to PDF/A-2b.
+            bool archival{false};              ///< Kept to PDF/A-2b.
         };
 
         std::size_t blocks{0}; ///< How many blocks the document holds.
@@ -299,8 +290,8 @@ namespace render::layout {
         [[nodiscard]] float column() const noexcept { return column(split ? split : configuration.columns); }
 
         Configuration configuration{}; ///< The page geometry.
-        Furniture furniture{}; ///< What every page carries besides its column.
-        Metadata metadata{}; ///< What the file says of itself besides its pages.
+        Furniture furniture{};         ///< What every page carries besides its column.
+        Metadata metadata{};           ///< What the file says of itself besides its pages.
 
         /// The face a character is looked for in when the text's own face has
         /// no glyph for it: a check mark, a star, a card's suit in the middle
@@ -309,7 +300,7 @@ namespace render::layout {
         /// more. The character is set at the size this face was loaded at.
         const typography::Font *fallback{nullptr};
 
-        /// Where what is appended next was written, as latex::run says before
+        /// Where what is appended next was written, as mlatex::run says before
         /// each part of the document: each run of text, formula and box
         /// carries it to the page in a Command::Source before its first node,
         /// for an editor to jump between the pages and the source by. One of
@@ -345,38 +336,38 @@ namespace render::layout {
         /// @complexity O(1).
         [[nodiscard]] static int weigh(std::string_view text, int previous) noexcept;
 
-        memory::Arena &arena; ///< Allocator for blocks.
-        memory::Arena &scratch; ///< Allocator for layout intermediates.
-        const typography::Shaper &shaper; ///< Text into glyphs.
-        const Typesetter &typesetter; ///< Equations into boxes.
-        Ledger ledger; ///< Cache of already-shaped runs.
-        Ledger words; ///< Cache of already-shaped words, penalties included.
+        memory::Arena &arena;                               ///< Allocator for blocks.
+        memory::Arena &scratch;                             ///< Allocator for layout intermediates.
+        const typography::Shaper &shaper;                   ///< Text into glyphs.
+        const Typesetter &typesetter;                       ///< Equations into boxes.
+        Ledger ledger;                                      ///< Cache of already-shaped runs.
+        Ledger words;                                       ///< Cache of already-shaped words, penalties included.
         const typography::Hyphenator *hyphenation{nullptr}; ///< Where words may break.
-        std::size_t before{2}; ///< Least letters a break leaves: `\\lefthyphenmin`.
-        std::size_t after{3}; ///< Least it carries over: `\\righthyphenmin`.
-        std::uint32_t digits{0}; ///< The code point digits are drawn from, or 0.
-        bool spaced{false}; ///< Whether words are spaced as French spaces them.
+        std::size_t before{2};                              ///< Least letters a break leaves: `\\lefthyphenmin`.
+        std::size_t after{3};                               ///< Least it carries over: `\\righthyphenmin`.
+        std::uint32_t digits{0};                            ///< The code point digits are drawn from, or 0.
+        bool spaced{false};                                 ///< Whether words are spaced as French spaces them.
 
         std::vector<Node *> pending{}; ///< The paragraph being built.
-        bool indentation{true}; ///< Whether the next paragraph opens indented.
-        bool suppression{false}; ///< Whether a blank line leaves that as it is: after a heading.
+        bool indentation{true};        ///< Whether the next paragraph opens indented.
+        bool suppression{false};       ///< Whether a blank line leaves that as it is: after a heading.
         Node::Justification justification{Node::Justification::Full}; ///< How paragraphs are set from here on.
-        float margin{0.0f}; ///< Indent of every line of the paragraphs from here on, from the left.
-        float gutter{0.0f}; ///< Indent of every line of the paragraphs from here on, from the right.
+        float margin{0.0f};   ///< Indent of every line of the paragraphs from here on, from the left.
+        float gutter{0.0f};   ///< Indent of every line of the paragraphs from here on, from the right.
         bool reversed{false}; ///< Whether the paragraphs from here on read right to left.
-        int factor{1000}; ///< TeX's space factor after what was set last: see weigh().
+        int factor{1000};     ///< TeX's space factor after what was set last: see weigh().
         std::size_t split{0}; ///< The columns from here on, as Command::Columns said; 0 for the class's.
 
         /// @brief A paragraph shape a Save directive kept.
         struct Shape {
             Node::Justification justification{Node::Justification::Full}; ///< How its lines sit.
-            float margin{0.0f}; ///< Its left indent.
-            float gutter{0.0f}; ///< Its right indent.
-            bool reversed{false}; ///< Whether it reads right to left.
+            float margin{0.0f};                                           ///< Its left indent.
+            float gutter{0.0f};                                           ///< Its right indent.
+            bool reversed{false};                                         ///< Whether it reads right to left.
         };
 
         std::vector<Shape> shapes{}; ///< What Save kept, innermost last.
-        Element *head{nullptr}; ///< First block.
-        Element *tail{nullptr}; ///< Last block, so appending stays O(1).
+        Element *head{nullptr};      ///< First block.
+        Element *tail{nullptr};      ///< Last block, so appending stays O(1).
     };
 }

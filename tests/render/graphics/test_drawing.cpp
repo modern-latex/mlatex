@@ -34,13 +34,13 @@ struct Writer {
     std::string finish(const std::string &trailer, const std::size_t shift = 0) {
         const std::size_t start = bytes.size();
         bytes += "xref\n0 " + std::to_string(offsets.size() + 1) + "\n0000000000 65535 f \n";
-        for (const std::size_t offset: offsets) {
+        for (const std::size_t offset : offsets) {
             std::string padded = std::to_string(offset + shift);
             padded.insert(0, 10 - padded.size(), '0');
             bytes += padded + " 00000 n \n";
         }
         bytes += "trailer\n<<" + trailer + "/Size " + std::to_string(offsets.size() + 1) + ">>\nstartxref\n" +
-                std::to_string(start) + "\n%%EOF\n";
+                 std::to_string(start) + "\n%%EOF\n";
         return bytes;
     }
 };
@@ -86,7 +86,7 @@ int main() {
         const std::string objects = header + held;
         const std::size_t stream = modern.bytes.size();
         modern.bytes += "5 0 obj\n<</Type /ObjStm /N 2 /First " + std::to_string(header.size()) + " /Length " +
-                std::to_string(objects.size()) + ">>\nstream\n" + objects + "\nendstream\nendobj\n";
+                        std::to_string(objects.size()) + ">>\nstream\n" + objects + "\nendstream\nendobj\n";
         const std::size_t content = modern.bytes.size();
         modern.bytes += "6 0 obj\n<</Length 10>>\nstream\n1 0 0 1 cm\nendstream\nendobj\n";
 
@@ -108,10 +108,9 @@ int main() {
         entry(1, content, 0);
         const std::size_t cross = modern.bytes.size();
         entry(1, cross, 0);
-        modern.bytes += "7 0 obj\n<</Type /XRef /Size 8 /W [1 2 1] /Root 1 0 R /Length " + std::to_string(table.size())
-                +
-                ">>\nstream\n" + table + "\nendstream\nendobj\nstartxref\n" + std::to_string(cross) +
-                "\n%%EOF\n";
+        modern.bytes += "7 0 obj\n<</Type /XRef /Size 8 /W [1 2 1] /Root 1 0 R /Length " +
+                        std::to_string(table.size()) + ">>\nstream\n" + table + "\nendstream\nendobj\nstartxref\n" +
+                        std::to_string(cross) + "\n%%EOF\n";
 
         const auto drawn = read(modern.bytes);
         assert((drawn && drawn->width() == 300.0f) && "a cross-reference stream, its page in an object stream");

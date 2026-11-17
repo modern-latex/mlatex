@@ -5,8 +5,8 @@
 /// returns a font it may already have built; the bytes behind it come from the
 /// collection, which read them at most once for the whole run.
 #include "render/primitives/typesetting/typefaces.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "syntax/argument.hpp"
 
 #include "syntax/number.hpp"
 
@@ -19,47 +19,37 @@
 #include <vector>
 
 namespace render::primitives::typesetting {
-    Typefaces::Typefaces(syntax::Lexicon &lexicon) noexcept {
-        lexicon.intern("\\font");
-    }
+    Typefaces::Typefaces(syntax::Lexicon &lexicon) noexcept { lexicon.intern("\\font"); }
 
     void Typefaces::operator()(const syntax::Parser &parser, Context &context) const {
         parser.mouth.bind("\\textfont", [this, &context](syntax::Mouth &mouth) {
             const std::string name = syntax::Argument::text(mouth);
-            const typography::Font *font = context.registry.get({
-                .family = name,
-                .size = context.selection.text() ? context.selection.text()->size() : 12.0f
-            });
+            const typography::Font *font = context.registry.get(
+                    {.family = name, .size = context.selection.text() ? context.selection.text()->size() : 12.0f});
 
             if (!font) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument,
-                                        mouth.lookahead().location,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, mouth.lookahead().location,
                                         std::format("No font family named '{}'", name));
                 return;
             }
 
             context.selection.text(font);
-            Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                        "Text face is now '{}'", name);
+            Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Text face is now '{}'", name);
         });
 
         parser.mouth.bind("\\mathfont", [this, &context](syntax::Mouth &mouth) {
             const std::string name = syntax::Argument::text(mouth);
-            const typography::Font *font = context.registry.get({
-                .family = name,
-                .size = context.selection.text() ? context.selection.text()->size() : 12.0f
-            });
+            const typography::Font *font = context.registry.get(
+                    {.family = name, .size = context.selection.text() ? context.selection.text()->size() : 12.0f});
 
             if (!font) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument,
-                                        mouth.lookahead().location,
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, mouth.lookahead().location,
                                         std::format("No font family named '{}'", name));
                 return;
             }
 
             context.selection.formula(font);
-            Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                        "Formula face is now '{}'", name);
+            Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Formula face is now '{}'", name);
         });
 
         // `\\font\name = family at size`: builds the font and binds the name to
@@ -125,12 +115,10 @@ namespace render::primitives::typesetting {
                 return;
             }
 
-            mouth.bind(symbol, [&context, font](syntax::Mouth &) {
-                context.selection.text(font);
-            });
+            mouth.bind(symbol, [&context, font](syntax::Mouth &) { context.selection.text(font); });
 
-            Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                        "Bound {} to '{}' at {} points", text, name, size);
+            Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Bound {} to '{}' at {} points", text, name,
+                        size);
         });
 
         // `\\@face{main}{TeX Gyre Termes}`: a face named as the system names
@@ -146,40 +134,54 @@ namespace render::primitives::typesetting {
             const std::string role = syntax::Argument::text(mouth);
             const std::string name = syntax::Argument::text(mouth);
             std::string key;
-            for (const char letter: name) {
+            for (const char letter : name) {
                 if (letter == ' ' || letter == '-' || letter == '_') continue;
                 key += static_cast<char>(letter >= 'A' && letter <= 'Z' ? letter + 32 : letter);
             }
 
             using Pair = std::pair<std::string_view, std::string_view>;
-            static constexpr std::array<Pair, 20> texts{
-                {
-                    {"newcomputermodernsans", "NewCMSans10-Regular"}, {"newcmsans", "NewCMSans10-Regular"},
-                    {"cmusans", "NewCMSans10-Regular"}, {"newcomputermodernmono", "NewCMMono10-Regular"},
-                    {"newcmmono", "NewCMMono10-Regular"}, {"cmutypewriter", "NewCMMono10-Regular"},
-                    {"newcomputermodern", "NewCM10-Regular"}, {"newcm", "NewCM10-Regular"},
-                    {"cmuserif", "NewCM10-Regular"}, {"computermodern", "NewCM10-Regular"},
-                    {"latinmodernsans", "lmsans10-regular"}, {"latinmodernmono", "lmmono10-regular"},
-                    {"latinmodern", "lmroman10-regular"}, {"stix", "STIXTwoText-Regular"},
-                    {"xits", "STIXTwoText-Regular"}, {"times", "STIXTwoText-Regular"},
-                    {"termes", "STIXTwoText-Regular"}, {"liberationserif", "STIXTwoText-Regular"},
-                    {"nimbusrom", "STIXTwoText-Regular"}, {"tinos", "STIXTwoText-Regular"},
-                }
-            };
-            static constexpr std::array<Pair, 14> formulas{
-                {
-                    {"newcomputermodernsansmath", "NewCMSansMath-Regular"}, {"newcmsansmath", "NewCMSansMath-Regular"},
-                    {"stix", "STIXTwoMath-Regular"}, {"xits", "STIXTwoMath-Regular"},
-                    {"cambria", "STIXTwoMath-Regular"}, {"fira", "FiraMath-Regular"}, {"asana", "Asana-Math"},
-                    {"pagella", "texgyrepagella-math"}, {"termes", "texgyretermes-math"},
-                    {"bonum", "texgyrebonum-math"}, {"schola", "texgyreschola-math"}, {"dejavu", "texgyredejavu-math"},
-                    {"newcomputermodern", "NewCMMath-Regular"}, {"latinmodern", "NewCMMath-Regular"},
-                }
-            };
+            static constexpr std::array<Pair, 20> texts{{
+                    {"newcomputermodernsans", "NewCMSans10-Regular"},
+                    {"newcmsans", "NewCMSans10-Regular"},
+                    {"cmusans", "NewCMSans10-Regular"},
+                    {"newcomputermodernmono", "NewCMMono10-Regular"},
+                    {"newcmmono", "NewCMMono10-Regular"},
+                    {"cmutypewriter", "NewCMMono10-Regular"},
+                    {"newcomputermodern", "NewCM10-Regular"},
+                    {"newcm", "NewCM10-Regular"},
+                    {"cmuserif", "NewCM10-Regular"},
+                    {"computermodern", "NewCM10-Regular"},
+                    {"latinmodernsans", "lmsans10-regular"},
+                    {"latinmodernmono", "lmmono10-regular"},
+                    {"latinmodern", "lmroman10-regular"},
+                    {"stix", "STIXTwoText-Regular"},
+                    {"xits", "STIXTwoText-Regular"},
+                    {"times", "STIXTwoText-Regular"},
+                    {"termes", "STIXTwoText-Regular"},
+                    {"liberationserif", "STIXTwoText-Regular"},
+                    {"nimbusrom", "STIXTwoText-Regular"},
+                    {"tinos", "STIXTwoText-Regular"},
+            }};
+            static constexpr std::array<Pair, 14> formulas{{
+                    {"newcomputermodernsansmath", "NewCMSansMath-Regular"},
+                    {"newcmsansmath", "NewCMSansMath-Regular"},
+                    {"stix", "STIXTwoMath-Regular"},
+                    {"xits", "STIXTwoMath-Regular"},
+                    {"cambria", "STIXTwoMath-Regular"},
+                    {"fira", "FiraMath-Regular"},
+                    {"asana", "Asana-Math"},
+                    {"pagella", "texgyrepagella-math"},
+                    {"termes", "texgyretermes-math"},
+                    {"bonum", "texgyrebonum-math"},
+                    {"schola", "texgyreschola-math"},
+                    {"dejavu", "texgyredejavu-math"},
+                    {"newcomputermodern", "NewCMMath-Regular"},
+                    {"latinmodern", "NewCMMath-Regular"},
+            }};
 
             const bool formula = role == "math";
             std::string_view file;
-            for (const auto &[part, carried]:
+            for (const auto &[part, carried] :
                  formula ? std::span<const Pair>{formulas} : std::span<const Pair>{texts}) {
                 if (key.contains(part)) {
                     file = carried;

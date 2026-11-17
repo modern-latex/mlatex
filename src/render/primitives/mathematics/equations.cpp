@@ -6,28 +6,28 @@
 /// run to its closing delimiter and then destroyed -- which is what returns
 /// the token after it to the expander instead of losing it.
 #include "render/primitives/mathematics/equations.hpp"
-#include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/typesetting/styles.hpp"
-#include "render/primitives/composition/tables.hpp"
-#include "syntax/argument.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
+#include "render/primitives/composition/tables.hpp"
+#include "render/primitives/referencing/counters.hpp"
+#include "render/primitives/typesetting/styles.hpp"
+#include "syntax/argument.hpp"
 
 #include "syntax/expression/node.hpp"
 #include "syntax/semantics/scope.hpp"
 
 #include <algorithm>
 #include <array>
+#include <format>
 #include <ranges>
 #include <span>
-#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
 
 namespace render::primitives::mathematics {
-    using referencing::Counters;
     using composition::Tables;
+    using referencing::Counters;
     using typesetting::Styles;
 
     /// @brief A display as the document takes it: the space LaTeX keeps above
@@ -41,7 +41,7 @@ namespace render::primitives::mathematics {
                                    const memory::Location origin) {
         const float skip = context.document.configuration.size;
         const memory::Slice<syntax::Node *> parts = arena.allocate<syntax::Node *>(3);
-        for (const std::size_t index: {0uz, 2uz}) {
+        for (const std::size_t index : {0uz, 2uz}) {
             auto *glue = arena.compose<layout::Node>(layout::Node::Type::Glue);
             glue->glue({.width = skip, .stretch = skip * 0.2f, .shrink = skip * 0.5f});
             parts[index] = directive(arena, glue, origin, true);
@@ -63,15 +63,14 @@ namespace render::primitives::mathematics {
         /// @brief One operator: what it builds and how tightly it binds.
         struct Rule {
             std::string_view name; ///< What the document writes.
-            Type type; ///< What type of node it makes.
-            int weight; ///< How tightly it binds; 0 for a structure.
-            bool structural; ///< True when it takes brace arguments, not operands.
+            Type type;             ///< What type of node it makes.
+            int weight;            ///< How tightly it binds; 0 for a structure.
+            bool structural;       ///< True when it takes brace arguments, not operands.
         };
 
         // Loosest first. A relation binds least tightly, so `a + b = c` reads
         // as `(a + b) = c` and not as `a + (b = c)`.
-        static constexpr std::array<Rule, 102> table{
-            {
+        static constexpr std::array<Rule, 102> table{{
                 // Relations, which everything else binds tighter than.
                 {.name = "=", .type = Type::Binary, .weight = 1, .structural = false},
                 {.name = "<", .type = Type::Binary, .weight = 1, .structural = false},
@@ -192,20 +191,19 @@ namespace render::primitives::mathematics {
                 {.name = "\\texttt", .type = Type::Text, .weight = 0, .structural = true},
                 {.name = "\\emph", .type = Type::Text, .weight = 0, .structural = true},
                 {.name = "\\mbox", .type = Type::Text, .weight = 0, .structural = true},
-            }
-        };
+        }};
 
-        for (const auto &[name, type, weight, structural]: table) {
+        for (const auto &[name, type, weight, structural] : table) {
             grammar.bind(lexicon.intern(name), type, weight, false, structural);
         }
 
         // The sixteen fixed delimiter sizes: a delimiter follows each one
         // straight after, and is drawn at that size whatever it encloses.
         static constexpr std::array<std::string_view, 16> sizes{
-            "\\big", "\\bigl", "\\bigr", "\\bigm", "\\Big", "\\Bigl", "\\Bigr", "\\Bigm",
-            "\\bigg", "\\biggl", "\\biggr", "\\biggm", "\\Bigg", "\\Biggl", "\\Biggr", "\\Biggm",
+                "\\big",  "\\bigl",  "\\bigr",  "\\bigm",  "\\Big",  "\\Bigl",  "\\Bigr",  "\\Bigm",
+                "\\bigg", "\\biggl", "\\biggr", "\\biggm", "\\Bigg", "\\Biggl", "\\Biggr", "\\Biggm",
         };
-        for (const std::string_view name: sizes) {
+        for (const std::string_view name : sizes) {
             grammar.bind(lexicon.intern(name), Type::Variable, 0, false, true);
         }
 
@@ -215,17 +213,16 @@ namespace render::primitives::mathematics {
         // to be braced, and `\\mathbb R` would set an R in the wrong alphabet
         // rather than the right one.
         static constexpr std::array<std::string_view, 18> spanning{
-            "\\mathbb", "\\mathcal", "\\mathfrak", "\\mathrm", "\\mathbf", "\\mathit",
-            "\\mathsf", "\\mathtt", "\\overline", "\\underline", "\\operatorname",
-            "\\bm", "\\boldsymbol", "\\phantom", "\\hphantom", "\\vphantom", "\\smash",
-            "\\mathscr",
+                "\\mathbb",     "\\mathcal", "\\mathfrak", "\\mathrm",    "\\mathbf",       "\\mathit",
+                "\\mathsf",     "\\mathtt",  "\\overline", "\\underline", "\\operatorname", "\\bm",
+                "\\boldsymbol", "\\phantom", "\\hphantom", "\\vphantom",  "\\smash",        "\\mathscr",
         };
-        for (const std::string_view name: spanning) {
+        for (const std::string_view name : spanning) {
             grammar.declare(lexicon.intern(name), 1);
         }
 
         // A mark over or under something: two groups, the mark first.
-        for (const std::string_view name: {"\\overset", "\\underset", "\\stackrel"}) {
+        for (const std::string_view name : {"\\overset", "\\underset", "\\stackrel"}) {
             grammar.declare(lexicon.intern(name), 2);
         }
 
@@ -233,19 +230,18 @@ namespace render::primitives::mathematics {
         // whole difference between `sin` meaning a function and `sin` meaning
         // three variables multiplied together.
         static constexpr std::array<std::string_view, 33> functions{
-            "\\sin", "\\cos", "\\tan", "\\cot", "\\sec", "\\csc",
-            "\\arcsin", "\\arccos", "\\arctan", "\\sinh", "\\cosh", "\\tanh", "\\coth",
-            "\\log", "\\ln", "\\lg", "\\exp", "\\det", "\\gcd", "\\deg", "\\dim",
-            "\\ker", "\\hom", "\\lim", "\\max", "\\min", "\\sup", "\\inf", "\\Pr",
-            "\\arg", "\\liminf", "\\limsup", "\\sgn",
+                "\\sin",  "\\cos",  "\\tan",  "\\cot",    "\\sec",    "\\csc", "\\arcsin", "\\arccos", "\\arctan",
+                "\\sinh", "\\cosh", "\\tanh", "\\coth",   "\\log",    "\\ln",  "\\lg",     "\\exp",    "\\det",
+                "\\gcd",  "\\deg",  "\\dim",  "\\ker",    "\\hom",    "\\lim", "\\max",    "\\min",    "\\sup",
+                "\\inf",  "\\Pr",   "\\arg",  "\\liminf", "\\limsup", "\\sgn",
         };
-        for (const std::string_view name: functions) {
+        for (const std::string_view name : functions) {
             grammar.declare(lexicon.intern(name), 0);
         }
 
         // The spaces, which take nothing: `\\!{}_{2}` is a space taken back
         // and then an empty base with a subscript, never a space over `{}`.
-        for (const std::string_view name: {"\\,", "\\:", "\\;", "\\!", "\\ ", "\\\n", "\\\r\n", "\\quad", "\\qquad"}) {
+        for (const std::string_view name : {"\\,", "\\:", "\\;", "\\!", "\\ ", "\\\n", "\\\r\n", "\\quad", "\\qquad"}) {
             grammar.declare(lexicon.intern(name), 0);
         }
 
@@ -254,11 +250,11 @@ namespace render::primitives::mathematics {
         // rest are hints to TeX's own breaker, or a table rule that has no
         // meaning inside a formula's grid.
         static constexpr std::array<std::string_view, 12> silent{
-            "\\displaystyle", "\\textstyle", "\\scriptstyle", "\\scriptscriptstyle",
-            "\\limits", "\\nolimits", "\\allowbreak", "\\relax", "\\protect", "\\hline",
-            "\\mathstrut", "\\strut",
+                "\\displaystyle", "\\textstyle", "\\scriptstyle", "\\scriptscriptstyle",
+                "\\limits",       "\\nolimits",  "\\allowbreak",  "\\relax",
+                "\\protect",      "\\hline",     "\\mathstrut",   "\\strut",
         };
-        for (const std::string_view name: silent) {
+        for (const std::string_view name : silent) {
             grammar.silence(lexicon.intern(name));
         }
     }
@@ -291,8 +287,8 @@ namespace render::primitives::mathematics {
         if (context.counters) context.counters->set("equation", context.counters->value("equation") - 1);
     }
 
-    layout::Node *Equations::line(memory::Arena &arena, layout::Node *body, layout::Node *mark,
-                                    const float balance, const float column) {
+    layout::Node *Equations::line(memory::Arena &arena, layout::Node *body, layout::Node *mark, const float balance,
+                                  const float column) {
         // A kern as wide as the widest number, on the left, balances the
         // number on the right, so the expression is centred on the column
         // itself and not on what the number leaves of it -- and every row of
@@ -349,13 +345,8 @@ namespace render::primitives::mathematics {
         return layout::Line::horizontal(arena, row, column);
     }
 
-    syntax::Node *Equations::enter(
-        syntax::Parser &parser,
-        Context &context,
-        const bool display,
-        const char delimiter,
-        const syntax::Symbol stop
-    ) const {
+    syntax::Node *Equations::enter(syntax::Parser &parser, Context &context, const bool display, const char delimiter,
+                                   const syntax::Symbol stop) const {
         syntax::Mouth &mouth = parser.mouth;
         memory::Arena &arena = parser.arena;
         const memory::Location origin = mouth.lookahead().location;
@@ -366,7 +357,8 @@ namespace render::primitives::mathematics {
         // own with its number beside it, as LaTeX sets the box it makes.
         if (display) {
             std::size_t ahead = 0;
-            while (mouth.lookahead(ahead).category == syntax::Catcodes::Category::Space) ++ahead;
+            while (mouth.lookahead(ahead).category == syntax::Catcodes::Category::Space)
+                ++ahead;
             const syntax::Token first = mouth.lookahead(ahead);
             std::string name;
             if (first.text == "\\begin" && mouth.lookahead(ahead + 1).is('{')) {
@@ -376,9 +368,8 @@ namespace render::primitives::mathematics {
                     name += letter.text;
                 }
             }
-            static constexpr std::array<std::string_view, 5> pictures{
-                "tikzcd", "CD", "quantikz", "tikzpicture", "forest"
-            };
+            static constexpr std::array<std::string_view, 5> pictures{"tikzcd", "CD", "quantikz", "tikzpicture",
+                                                                      "forest"};
             // xy-pic's spacing may run on from its name: `\xymatrix@C=1em`.
             if (std::ranges::contains(pictures, name) || first.text.starts_with("\\xymatrix") ||
                 first.text.starts_with("\\Qcircuit")) {
@@ -392,19 +383,18 @@ namespace render::primitives::mathematics {
                 if (delimiter == '$' && mouth.lookahead().text == "$") static_cast<void>(mouth.read());
 
                 std::vector<layout::Node *> set;
-                for (const syntax::Node *child: read) compose(set, child, context);
+                for (const syntax::Node *child : read)
+                    compose(set, child, context);
                 const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(set.size());
                 std::ranges::copy(set, row.begin());
                 layout::Node *body = layout::Line::horizontal(arena, row, 0.0f);
-                const std::string text = !tagged.empty()
-                                             ? std::exchange(tagged, std::string{})
-                                             : !numbered.empty()
-                                                   ? std::format("({})", std::exchange(numbered, std::string{}))
-                                                   : std::string{};
+                const std::string text = !tagged.empty() ? std::exchange(tagged, std::string{})
+                                         : !numbered.empty()
+                                                 ? std::format("({})", std::exchange(numbered, std::string{}))
+                                                 : std::string{};
                 layout::Node *mark = text.empty() ? nullptr : label(context, arena, text);
                 return displayed(context, arena,
-                                 line(arena, body, mark, mark ? mark->box().width : 0.0f, breadth(context)),
-                                 origin);
+                                 line(arena, body, mark, mark ? mark->box().width : 0.0f, breadth(context)), origin);
             }
         }
 
@@ -422,11 +412,9 @@ namespace render::primitives::mathematics {
         // Scoped so the expression parser is destroyed -- and gives back the
         // token it had read ahead -- before that token is looked at.
         {
-            syntax::expression::Parser inner(
-                mouth, grammar, arena,
-                display
-                    ? syntax::expression::Node::Style::Display
-                    : syntax::expression::Node::Style::Inline);
+            syntax::expression::Parser inner(mouth, grammar, arena,
+                                             display ? syntax::expression::Node::Style::Display
+                                                     : syntax::expression::Node::Style::Inline);
 
             // A row's number is given out as the row opens, so a `\\label` in
             // it already refers to it, and kept only once the row closes
@@ -436,26 +424,25 @@ namespace render::primitives::mathematics {
                 inner.watch([this, &context, &mouth](const syntax::expression::Parser::Edge edge) {
                     using Edge = syntax::expression::Parser::Edge;
                     switch (edge) {
-                        case Edge::Opened: {
-                            Row row{};
-                            if (counting &&context.counters)
-                            {
-                                context.counters->step("equation");
-                                row.number = Counters::print(mouth, "equation");
-                                context.anchor = row.number;
-                                context.type = "equation";
-                            }
-                            lines.push_back(std::move(row));
-                            break;
+                    case Edge::Opened: {
+                        Row row{};
+                        if (counting && context.counters) {
+                            context.counters->step("equation");
+                            row.number = Counters::print(mouth, "equation");
+                            context.anchor = row.number;
+                            context.type = "equation";
                         }
-                        case Edge::Closed:
-                            break;
-                        case Edge::Dropped:
-                            if (!lines.empty()) {
-                                if (!lines.back().number.empty()) retract(context);
-                                lines.pop_back();
-                            }
-                            break;
+                        lines.push_back(std::move(row));
+                        break;
+                    }
+                    case Edge::Closed:
+                        break;
+                    case Edge::Dropped:
+                        if (!lines.empty()) {
+                            if (!lines.back().number.empty()) retract(context);
+                            lines.pop_back();
+                        }
+                        break;
                     }
                 });
             }
@@ -463,7 +450,7 @@ namespace render::primitives::mathematics {
             tree = delimiter != 0 ? inner.parse(delimiter) : inner.parse(stop);
             leftover = inner.pending();
 
-            for (const syntax::Traceback &fault: inner.traceback()) {
+            for (const syntax::Traceback &fault : inner.traceback()) {
                 tracebacks.push_back(fault);
             }
         }
@@ -487,9 +474,8 @@ namespace render::primitives::mathematics {
         const typography::Font *maths = context.selection.formula();
         if (const typography::Font *text = context.selection.text();
             maths && text && std::abs(text->size() - maths->size()) > 0.01f) {
-            if (const typography::Font *sized = context.registry.get({
-                .family = maths->family(), .size = text->size()
-            })) {
+            if (const typography::Font *sized =
+                        context.registry.get({.family = maths->family(), .size = text->size()})) {
                 maths = sized;
             }
         }
@@ -497,8 +483,7 @@ namespace render::primitives::mathematics {
 
         // Each row of an `align` or a `gather` on a line of its own, its
         // number -- or its tag -- flush with the right edge.
-        if (shape == Layout::Rows && tree && maths &&
-            tree->type == syntax::expression::Node::Type::Matrix) {
+        if (shape == Layout::Rows && tree && maths && tree->type == syntax::expression::Node::Type::Matrix) {
             if (const memory::Slice<layout::Node *> built = context.typesetter.rows(tree, *maths); !built.empty()) {
                 const memory::Slice<layout::Node *> labels = arena.allocate<layout::Node *>(built.count);
                 float widest = 0.0f;
@@ -506,11 +491,9 @@ namespace render::primitives::mathematics {
                     labels[index] = nullptr;
                     if (index >= lines.size()) continue;
                     const auto &[number, tag] = lines[index];
-                    const std::string text = !tag.empty()
-                                                 ? tag
-                                                 : !number.empty()
-                                                       ? std::format("({})", number)
-                                                       : std::string{};
+                    const std::string text = !tag.empty()      ? tag
+                                             : !number.empty() ? std::format("({})", number)
+                                                               : std::string{};
                     labels[index] = label(context, arena, text);
                     if (labels[index]) widest = std::max(widest, labels[index]->box().width);
                 }
@@ -528,14 +511,12 @@ namespace render::primitives::mathematics {
 
         // `multline`: one formula over several lines, the first flush left,
         // the last flush right with the number, any between centred.
-        if (shape == Layout::Multline && tree && maths &&
-            tree->type == syntax::expression::Node::Type::Matrix && tree->columns > 0) {
+        if (shape == Layout::Multline && tree && maths && tree->type == syntax::expression::Node::Type::Matrix &&
+            tree->columns > 0) {
             const std::size_t count = tree->arguments.count / tree->columns;
-            const std::string text = !tagged.empty()
-                                         ? std::exchange(tagged, std::string{})
-                                         : !numbered.empty()
-                                               ? std::format("({})", std::exchange(numbered, std::string{}))
-                                               : std::string{};
+            const std::string text = !tagged.empty()     ? std::exchange(tagged, std::string{})
+                                     : !numbered.empty() ? std::format("({})", std::exchange(numbered, std::string{}))
+                                                         : std::string{};
             layout::Node *mark = label(context, arena, text);
             const float gap = maths->size();
 
@@ -581,21 +562,17 @@ namespace render::primitives::mathematics {
         // because its number shares its line: the expression centred in the
         // column as any display is, and the number flush with the right edge.
         if (display && (!numbered.empty() || !tagged.empty())) {
-            const std::string text = !tagged.empty()
-                                         ? std::exchange(tagged, std::string{})
-                                         : std::format("({})", numbered);
+            const std::string text =
+                    !tagged.empty() ? std::exchange(tagged, std::string{}) : std::format("({})", numbered);
             numbered.clear();
 
-            layout::Node *expression = tree && maths
-                                           ? context.typesetter.lower(tree, *maths, 0.0f)
-                                           : nullptr;
+            layout::Node *expression = tree && maths ? context.typesetter.lower(tree, *maths, 0.0f) : nullptr;
             if (layout::Node *mark = label(context, arena, text); expression && mark) {
                 return displayed(context, arena, line(arena, expression, mark, mark->box().width, column), origin);
             }
         }
 
-        auto *node = arena.compose<syntax::Node>(
-            syntax::Node::Type::Expression, std::string_view{}, origin);
+        auto *node = arena.compose<syntax::Node>(syntax::Node::Type::Expression, std::string_view{}, origin);
         node->expression = tree;
         node->display = display;
         node->face = maths;
@@ -635,15 +612,15 @@ namespace render::primitives::mathematics {
         // correctly, which is not an order \end{equation} can arrange -- it
         // is itself what causes the formula parse to finish, several frames
         // further in, by injecting the \] that parse is still waiting to read.
-        for (const bool counted: {true, false}) {
+        for (const bool counted : {true, false}) {
             context.environments.watch(
-                counted ? "equation" : "equation*",
-                [this, &context, counted](syntax::Mouth &mouth) {
-                    if (counted) count(mouth, context);
-                    mouth.ingest("\\[");
-                },
-                [](syntax::Mouth &mouth) { mouth.ingest("\\]"); },
-                /*transparent=*/true);
+                    counted ? "equation" : "equation*",
+                    [this, &context, counted](syntax::Mouth &mouth) {
+                        if (counted) count(mouth, context);
+                        mouth.ingest("\\[");
+                    },
+                    [](syntax::Mouth &mouth) { mouth.ingest("\\]"); },
+                    /*transparent=*/true);
         }
 
         // amsmath's displays of several lines. Each is a display around one
@@ -652,109 +629,139 @@ namespace render::primitives::mathematics {
         // grid and the display in one. The grids are the same ones the
         // environments inside a formula open, below.
         struct Display {
-            std::string_view name; ///< The environment.
+            std::string_view name;    ///< The environment.
             std::string_view opening; ///< What it reads as.
-            Layout layout; ///< How its lines are set.
-            bool counted; ///< True when its lines are numbered.
-            bool argued; ///< True when it takes an argument first, as `alignat` does.
+            Layout layout;            ///< How its lines are set.
+            bool counted;             ///< True when its lines are numbered.
+            bool argued;              ///< True when it takes an argument first, as `alignat` does.
         };
-        static constexpr std::array<Display, 14> displays{
-            {
-                {.name = "align", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = true, .argued = false},
-                {.name = "align*", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = false, .argued = false},
-                {.name = "flalign", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = true, .argued = false},
-                {.name = "flalign*", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = false, .argued = false},
-                {.name = "alignat", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = true, .argued = true},
-                {.name = "alignat*", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = false, .argued = true},
-                {.name = "xalignat", .opening = "\\[\\aligned{", .layout = Layout::Rows,
-                 .counted = true, .argued = true},
-                {.name = "gather", .opening = "\\[\\gathered{", .layout = Layout::Rows,
-                 .counted = true, .argued = false},
-                {.name = "gather*", .opening = "\\[\\gathered{", .layout = Layout::Rows,
-                 .counted = false, .argued = false},
-                {.name = "eqnarray", .opening = "\\[\\array{rcl}{", .layout = Layout::Rows,
-                 .counted = true, .argued = false},
-                {.name = "eqnarray*", .opening = "\\[\\array{rcl}{", .layout = Layout::Rows,
-                 .counted = false, .argued = false},
-                {.name = "multline", .opening = "\\[\\gathered{", .layout = Layout::Multline,
-                 .counted = true, .argued = false},
-                {.name = "multline*", .opening = "\\[\\gathered{", .layout = Layout::Multline,
-                 .counted = false, .argued = false},
-                {.name = "math", .opening = "\\(", .layout = Layout::Single,
-                 .counted = false, .argued = false},
-            }
-        };
+        static constexpr std::array<Display, 14> displays{{
+                {.name = "align", .opening = "\\[\\aligned{", .layout = Layout::Rows, .counted = true, .argued = false},
+                {.name = "align*",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = false,
+                 .argued = false},
+                {.name = "flalign",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = true,
+                 .argued = false},
+                {.name = "flalign*",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = false,
+                 .argued = false},
+                {.name = "alignat",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = true,
+                 .argued = true},
+                {.name = "alignat*",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = false,
+                 .argued = true},
+                {.name = "xalignat",
+                 .opening = "\\[\\aligned{",
+                 .layout = Layout::Rows,
+                 .counted = true,
+                 .argued = true},
+                {.name = "gather",
+                 .opening = "\\[\\gathered{",
+                 .layout = Layout::Rows,
+                 .counted = true,
+                 .argued = false},
+                {.name = "gather*",
+                 .opening = "\\[\\gathered{",
+                 .layout = Layout::Rows,
+                 .counted = false,
+                 .argued = false},
+                {.name = "eqnarray",
+                 .opening = "\\[\\array{rcl}{",
+                 .layout = Layout::Rows,
+                 .counted = true,
+                 .argued = false},
+                {.name = "eqnarray*",
+                 .opening = "\\[\\array{rcl}{",
+                 .layout = Layout::Rows,
+                 .counted = false,
+                 .argued = false},
+                {.name = "multline",
+                 .opening = "\\[\\gathered{",
+                 .layout = Layout::Multline,
+                 .counted = true,
+                 .argued = false},
+                {.name = "multline*",
+                 .opening = "\\[\\gathered{",
+                 .layout = Layout::Multline,
+                 .counted = false,
+                 .argued = false},
+                {.name = "math", .opening = "\\(", .layout = Layout::Single, .counted = false, .argued = false},
+        }};
 
-        for (const auto &[name, opening, type, counted, argued]: displays) {
+        for (const auto &[name, opening, type, counted, argued] : displays) {
             const std::string_view closing = type == Layout::Single ? "\\)" : "}\\]";
             context.environments.watch(
-                name,
-                [this, &context, opening, type, counted, argued](syntax::Mouth &mouth) {
-                    if (argued) static_cast<void>(syntax::Argument::text(mouth));
-                    setting = type;
-                    counting = counted;
-                    // One number for the whole of a `multline`, on its last line.
-                    if (type == Layout::Multline && counted) count(mouth, context);
-                    mouth.ingest(opening);
-                },
-                [closing](syntax::Mouth &mouth) { mouth.ingest(closing); },
-                /*transparent=*/true);
+                    name,
+                    [this, &context, opening, type, counted, argued](syntax::Mouth &mouth) {
+                        if (argued) static_cast<void>(syntax::Argument::text(mouth));
+                        setting = type;
+                        counting = counted;
+                        // One number for the whole of a `multline`, on its last line.
+                        if (type == Layout::Multline && counted) count(mouth, context);
+                        mouth.ingest(opening);
+                    },
+                    [closing](syntax::Mouth &mouth) { mouth.ingest(closing); },
+                    /*transparent=*/true);
         }
         context.environments.watch(
-            "displaymath", [](syntax::Mouth &mouth) { mouth.ingest("\\["); },
-            [](syntax::Mouth &mouth) { mouth.ingest("\\]"); }, /*transparent=*/true);
+                "displaymath", [](syntax::Mouth &mouth) { mouth.ingest("\\["); },
+                [](syntax::Mouth &mouth) { mouth.ingest("\\]"); }, /*transparent=*/true);
 
         // The grids amsmath writes as environments inside a formula, each the
         // same grid its command form reads: `\begin{pmatrix}` is `\pmatrix{`,
         // and its `\end` the brace that closes it.
         // nicematrix's matrices are amsmath's, their own keys aside.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 22> grids{
-            {
-                {"pmatrix", "\\pmatrix{"}, {"bmatrix", "\\bmatrix{"}, {"Bmatrix", "\\Bmatrix{"},
-                {"vmatrix", "\\vmatrix{"}, {"Vmatrix", "\\Vmatrix{"}, {"matrix", "\\matrix{"},
-                {"smallmatrix", "\\smallmatrix{"}, {"cases", "\\cases{"}, {"dcases", "\\dcases{"},
-                {"rcases", "\\rcases{"}, {"aligned", "\\aligned{"}, {"split", "\\aligned{"},
-                {"gathered", "\\gathered{"}, {"alignedat", "\\aligned{"}, {"subarray", "\\substack{"},
-                {"multlined", "\\gathered{"}, {"NiceMatrix", "\\matrix{"}, {"pNiceMatrix", "\\pmatrix{"},
-                {"bNiceMatrix", "\\bmatrix{"}, {"BNiceMatrix", "\\Bmatrix{"}, {"vNiceMatrix", "\\vmatrix{"},
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 22> grids{{
+                {"pmatrix", "\\pmatrix{"},         {"bmatrix", "\\bmatrix{"},     {"Bmatrix", "\\Bmatrix{"},
+                {"vmatrix", "\\vmatrix{"},         {"Vmatrix", "\\Vmatrix{"},     {"matrix", "\\matrix{"},
+                {"smallmatrix", "\\smallmatrix{"}, {"cases", "\\cases{"},         {"dcases", "\\dcases{"},
+                {"rcases", "\\rcases{"},           {"aligned", "\\aligned{"},     {"split", "\\aligned{"},
+                {"gathered", "\\gathered{"},       {"alignedat", "\\aligned{"},   {"subarray", "\\substack{"},
+                {"multlined", "\\gathered{"},      {"NiceMatrix", "\\matrix{"},   {"pNiceMatrix", "\\pmatrix{"},
+                {"bNiceMatrix", "\\bmatrix{"},     {"BNiceMatrix", "\\Bmatrix{"}, {"vNiceMatrix", "\\vmatrix{"},
                 {"VNiceMatrix", "\\Vmatrix{"},
-            }
-        };
-        for (const auto &[name, opening]: grids) {
+        }};
+        for (const auto &[name, opening] : grids) {
             const bool argued = name == "alignedat" || name == "subarray";
             const bool keyed = name.ends_with("NiceMatrix");
             context.environments.watch(
-                name,
-                [opening, argued, keyed](syntax::Mouth &mouth) {
-                    if (argued) static_cast<void>(syntax::Argument::text(mouth));
-                    if (keyed) static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                    mouth.ingest(opening);
-                },
-                [](syntax::Mouth &mouth) { mouth.ingest("}"); },
-                /*transparent=*/true);
+                    name,
+                    [opening, argued, keyed](syntax::Mouth &mouth) {
+                        if (argued) static_cast<void>(syntax::Argument::text(mouth));
+                        if (keyed) static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                        mouth.ingest(opening);
+                    },
+                    [](syntax::Mouth &mouth) { mouth.ingest("}"); },
+                    /*transparent=*/true);
         }
 
         // `array` takes its preamble first, as `tabular` does, and reads it
         // the same way: only which columns are left, centred and right
         // matters to a formula.
         context.environments.watch(
-            "array",
-            [&context](syntax::Mouth &mouth) {
-                static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                std::string letters;
-                for (const Tables::Column &column: Tables::preamble(mouth.argument({}, 0))) {
-                    letters += column.align;
-                }
-                mouth.ingest(context.arena.copy(std::format("\\array{{{}}}{{", letters)));
-            },
-            [](syntax::Mouth &mouth) { mouth.ingest("}"); },
-            /*transparent=*/true);
+                "array",
+                [&context](syntax::Mouth &mouth) {
+                    static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                    std::string letters;
+                    for (const Tables::Column &column : Tables::preamble(mouth.argument({}, 0))) {
+                        letters += column.align;
+                    }
+                    mouth.ingest(context.arena.copy(std::format("\\array{{{}}}{{", letters)));
+                },
+                [](syntax::Mouth &mouth) { mouth.ingest("}"); },
+                /*transparent=*/true);
 
         // A line of an `align` left out of the numbering, and one given a
         // tag of the document's own instead: `\tag{$*$}` prints `(*)`, and

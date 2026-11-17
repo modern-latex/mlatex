@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -66,7 +66,7 @@ namespace syntax::primitives::definitions {
     private:
         /// What each hook runs, in the order it was added. Mutable because
         /// the module is installed as a const callable, as every module is.
-        mutable memory::Dictionary<std::vector<Token> > hooks{};
+        mutable memory::Dictionary<std::vector<Token>> hooks{};
 
         std::vector<Traceback> tracebacks{}; ///< Always empty; see traceback().
     };

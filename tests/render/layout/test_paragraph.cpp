@@ -1,6 +1,6 @@
-#include "latex.hpp"
 #include "layout/paragraph.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "typography/collection.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
@@ -15,19 +15,17 @@
 // nothing.
 
 /// The engine's assets directory, found from this file.
-static std::filesystem::path assets() {
-    return latex::locate(__FILE__);
-}
+static std::filesystem::path assets() { return mlatex::locate(__FILE__); }
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena}; ///< The indexed tree.
+    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena};         ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
-    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
-    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
+    const render::typography::Font *text{nullptr};            ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr};           ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -47,10 +45,10 @@ int main() {
 
     const render::typography::Font *text[] = {fonts.text};
     const memory::Slice<layout::Node *> material = fonts.shaper.shape(
-        memory::Slice{text, 1uz},
-        "A paragraph long enough to be broken into several lines, so that each of them can be measured "
-        "against the column it was set in, and the whole stacked a baseline apart.",
-        {});
+            memory::Slice{text, 1uz},
+            "A paragraph long enough to be broken into several lines, so that each of them can be measured "
+            "against the column it was set in, and the whole stacked a baseline apart.",
+            {});
 
     layout::Paragraph paragraph(fonts.arena, material, layout::Node::Justification::Full, 0.0f, 0.0f);
     assert((paragraph.node() == nullptr) && "a paragraph not yet laid out has no lines");
@@ -59,7 +57,8 @@ int main() {
     assert((column && column->box().alignment == layout::Node::Alignment::Vertical) && "laid out, it is a column");
 
     std::size_t lines = 0;
-    for (const layout::Node *line: column->box().list) lines += line->type == layout::Node::Type::Box;
+    for (const layout::Node *line : column->box().list)
+        lines += line->type == layout::Node::Type::Box;
     assert((lines >= 3) && "of several lines");
     assert((std::abs(column->box().list[0]->box().width - 150.0f) < 0.01f) && "each as wide as the column");
 
@@ -83,7 +82,8 @@ int main() {
     assert((std::abs(opening->box().width - 100.0f) < 0.01f && opening->box().offset == 30.0f) &&
            "read right to left, a line is moved in by the right margin");
     assert((opening->box().list[0]->type == layout::Node::Type::Glyph &&
-            opening->box().list[0]->glyph().point == 'A') && "and a run of Latin words in it keeps their order");
+            opening->box().list[0]->glyph().point == 'A') &&
+           "and a run of Latin words in it keeps their order");
 
     return 0;
 }

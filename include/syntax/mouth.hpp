@@ -1,12 +1,12 @@
 #pragma once
 
+#include "memory/arena.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/glossary.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/semantics/scope.hpp"
 #include "syntax/tokens.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/arena.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -68,9 +68,9 @@ namespace syntax {
 
         /// @brief One parameter in a macro's parameter text.
         struct Parameter {
-            bool optional = false; ///< LaTeX-style `[...]` parameter.
+            bool optional = false;           ///< LaTeX-style `[...]` parameter.
             std::vector<Token> delimiters{}; ///< Tokens that terminate the argument.
-            std::vector<Token> fallbacks{}; ///< Default, used when an optional argument is absent.
+            std::vector<Token> fallbacks{};  ///< Default, used when an optional argument is absent.
 
             /// xparse's `s` and `t`: the one token looked for, then what the
             /// argument is when that token is there -- #fallbacks being what
@@ -95,13 +95,13 @@ namespace syntax {
             std::vector<Parameter> parameters{}; ///< Parameter text, left to right.
             std::vector<Token> prefix{};
             ///< What must stand before the first argument, as plain
-                                                   ///< TeX's `\\def\\x[#1]` asks for its `[`.
+            ///< TeX's `\\def\\x[#1]` asks for its `[`.
             std::vector<Token> body{}; ///< Replacement text.
-            bool literal = false; ///< Set by define(): the body needs no substitution.
-            bool spanning = false; ///< `\\long`: arguments may contain `\\par`.
-            bool isolated = false; ///< `\\outer`: may not appear inside an argument.
-            bool implicit = false; ///< Made by `\\let` from a character, which \\ifx takes it for.
-            bool robust = false; ///< e-TeX's `\\protected`: kept as written by `\\edef`.
+            bool literal = false;      ///< Set by define(): the body needs no substitution.
+            bool spanning = false;     ///< `\\long`: arguments may contain `\\par`.
+            bool isolated = false;     ///< `\\outer`: may not appear inside an argument.
+            bool implicit = false;     ///< Made by `\\let` from a character, which \\ifx takes it for.
+            bool robust = false;       ///< e-TeX's `\\protected`: kept as written by `\\edef`.
         };
 
         /// @brief Binds an expander to a token stream and an engine state.
@@ -310,15 +310,15 @@ namespace syntax {
         /// Holds a shared pointer rather than a Macro by value: taking a record
         /// is then an atomic increment instead of deep-copying two vectors.
         struct Record {
-            Symbol symbol = none; ///< Which macro slot.
+            Symbol symbol = none;                 ///< Which macro slot.
             std::shared_ptr<const Macro> macro{}; ///< Meaning to put back; null means undefined.
-            std::uint32_t level = 0; ///< Level stamp to put back with it.
+            std::uint32_t level = 0;              ///< Level stamp to put back with it.
         };
 
     public:
         semantics::Union &state; ///< Registers, catcodes and scopes, shared with the caller.
-        Lexicon &lexicon; ///< Interning table, shared with the caller.
-        memory::Arena &arena; ///< Allocator for what handlers compose.
+        Lexicon &lexicon;        ///< Interning table, shared with the caller.
+        memory::Arena &arena;    ///< Allocator for what handlers compose.
 
         /// The name of each file ingested, by the number a location's file
         /// holds, each once however often it is read. The first, zero, is
@@ -341,26 +341,26 @@ namespace syntax {
         Cursor cursor{}; ///< The token stack being read.
 
         Symbol paragraph = none; ///< `\\par`, the one name the expander knows by itself.
-        Glossary glossary{}; ///< Meanings for the names nothing else here gives one.
+        Glossary glossary{};     ///< Meanings for the names nothing else here gives one.
 
-        std::vector<std::size_t> marks{}; ///< Undo-log height at each open scope.
-        std::vector<semantics::Scope::Type> types{}; ///< What each open scope was opened as.
-        std::vector<Traceback> tracebacks{}; ///< Errors recorded so far.
-        std::vector<Record> records{}; ///< The macro undo log.
-        std::vector<std::pair<std::size_t, Token> > deferred{}; ///< \\aftergroup's tokens, each with its group's depth.
+        std::vector<std::size_t> marks{};                      ///< Undo-log height at each open scope.
+        std::vector<semantics::Scope::Type> types{};           ///< What each open scope was opened as.
+        std::vector<Traceback> tracebacks{};                   ///< Errors recorded so far.
+        std::vector<Record> records{};                         ///< The macro undo log.
+        std::vector<std::pair<std::size_t, Token>> deferred{}; ///< \\aftergroup's tokens, each with its group's depth.
 
-        std::vector<std::shared_ptr<const Macro> > macros{}; ///< Null slot means undefined.
-        std::vector<std::uint32_t> levels{}; ///< Group depth of each definition; 0 is outermost.
+        std::vector<std::shared_ptr<const Macro>> macros{}; ///< Null slot means undefined.
+        std::vector<std::uint32_t> levels{};                ///< Group depth of each definition; 0 is outermost.
         /// Primitive per symbol, each in an allocation of its own so a primitive
         /// that binds another while it runs is never moved out from under
         /// itself when the table grows; null means none.
-        std::vector<std::unique_ptr<const Handler> > handlers{};
+        std::vector<std::unique_ptr<const Handler>> handlers{};
         std::vector<Symbol> lent{}; ///< By name, the primitive lend() bound it as; none for one bound directly.
-        bool keeping{false}; ///< Robust macros are kept as written: an `\\edef` is reading.
+        bool keeping{false};        ///< Robust macros are kept as written: an `\\edef` is reading.
 
-        std::size_t depth = 0; ///< Re-entrant expand() calls in progress.
-        std::size_t limit = 256; ///< Re-entrant expand() calls allowed.
-        std::size_t budget = 10000; ///< Expansions per token produced.
+        std::size_t depth = 0;           ///< Re-entrant expand() calls in progress.
+        std::size_t limit = 256;         ///< Re-entrant expand() calls allowed.
+        std::size_t budget = 10000;      ///< Expansions per token produced.
         std::size_t capacity = 4u << 20; ///< Most tokens pending at once.
     };
 }

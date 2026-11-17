@@ -1,6 +1,6 @@
-#include "latex.hpp"
 #include "layout/node.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "typography/collection.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
@@ -12,19 +12,17 @@
 // space into glue, and a character the first face lacks taken from the next.
 
 /// The engine's assets directory, found from this file.
-static std::filesystem::path assets() {
-    return latex::locate(__FILE__);
-}
+static std::filesystem::path assets() { return mlatex::locate(__FILE__); }
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena}; ///< The indexed tree.
+    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena};         ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
-    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
-    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
+    const render::typography::Font *text{nullptr};            ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr};           ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -41,7 +39,8 @@ namespace layout = render::layout;
 /// @brief How many of a run's nodes are of one type.
 static std::size_t type(const memory::Slice<layout::Node *> nodes, const layout::Node::Type type) {
     std::size_t found = 0;
-    for (const layout::Node *node: nodes) found += node && node->type == type;
+    for (const layout::Node *node : nodes)
+        found += node && node->type == type;
     return found;
 }
 
@@ -55,7 +54,8 @@ int main() {
     const auto office = shaper.shape(one, "office", {});
     assert((type(office, layout::Node::Type::Glyph) < 6) && "the face's ligatures join letters");
     bool spelled = false;
-    for (const layout::Node *node: office) spelled = spelled || node->glyph().letters == "ffi";
+    for (const layout::Node *node : office)
+        spelled = spelled || node->glyph().letters == "ffi";
     assert((spelled) && "and a ligature still spells the letters it stands for");
 
     assert((type(shaper.shape(one, "\xC3\xA9t\xC3\xA9", {}), layout::Node::Type::Glyph) == 3) &&
@@ -63,7 +63,8 @@ int main() {
     assert((type(shaper.shape(one, "a b", {}), layout::Node::Type::Glue) == 1) && "a space is glue");
 
     float plain = 0.0f;
-    for (const layout::Node *node: shaper.shape(one, "AV", {})) plain += node->glyph().width;
+    for (const layout::Node *node : shaper.shape(one, "AV", {}))
+        plain += node->glyph().width;
     const float apart = fonts.text->advance(fonts.text->index('A')) + fonts.text->advance(fonts.text->index('V'));
     assert((plain < apart) && "a kerned pair sits closer than its letters' own advances");
 
@@ -78,7 +79,7 @@ int main() {
     const render::typography::Shaper covering(fonts.arena, &fonts.registry);
     const auto russian = covering.shape(one, "\xD0\x96\xD1\x83\xD0\xBA", {});
     bool drawn = type(russian, layout::Node::Type::Glyph) == 3;
-    for (const layout::Node *node: russian) {
+    for (const layout::Node *node : russian) {
         drawn = drawn && node->glyph().code != 0 && node->glyph().font->family() == "newcm10-regular" &&
                 node->glyph().height == fonts.text->metrics().ascent;
     }
@@ -86,7 +87,8 @@ int main() {
     const auto mixed = covering.shape(one, "a \xD0\x96 b", {});
     assert((type(mixed, layout::Node::Type::Glyph) == 3 && type(mixed, layout::Node::Type::Glue) == 2 &&
             mixed[0]->glyph().font == fonts.text && mixed[2]->glyph().font != fonts.text &&
-            mixed[4]->glyph().font == fonts.text) && "a run is cut where the face that draws it changes");
+            mixed[4]->glyph().font == fonts.text) &&
+           "a run is cut where the face that draws it changes");
     const auto missing = shaper.shape(one, "\xD0\x96", {});
     assert((type(missing, layout::Node::Type::Glyph) == 1 && missing[0]->glyph().code == 0) &&
            "without a registry, a character no face offered draws is the face's box for none");
@@ -95,10 +97,12 @@ int main() {
     // in the order written, an Arabic word in the order it is drawn.
     const auto number = covering.shape(one, "\xD9\xA1\xD9\xA2\xD9\xA3", {});
     assert((type(number, layout::Node::Type::Glyph) == 3 && number[0]->glyph().point == 0x0661 &&
-            number[2]->glyph().point == 0x0663) && "Arabic's digits left to right");
+            number[2]->glyph().point == 0x0663) &&
+           "Arabic's digits left to right");
     const auto word = covering.shape(one, "\xD8\xA8\xD8\xA7\xD8\xAA", {});
     assert((type(word, layout::Node::Type::Glyph) == 3 && word[0]->glyph().point == 0x062A &&
-            word[2]->glyph().point == 0x0628) && "an Arabic word right to left, its last letter drawn first");
+            word[2]->glyph().point == 0x0628) &&
+           "an Arabic word right to left, its last letter drawn first");
 
     return 0;
 }

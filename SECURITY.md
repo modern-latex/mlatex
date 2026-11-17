@@ -66,7 +66,7 @@ engine's own language.
   written as `name/main.mtex` in the engine's own language.
 - **Confined file reads.** Inputs, packages, pictures and bibliographies are
   read only from the document's own folder and from folders given with `-I`
-  (`latex::Host::directories` for a program). Absolute paths and paths that
+  (`mlatex::Host::directories` for a program). Absolute paths and paths that
   climb out with `..` are refused. A document handed in from memory can read
   only the host's folders and the files the host provided.
 - **No auxiliary files.** Cross-references, the table of contents and the
@@ -80,7 +80,7 @@ engine's own language.
   and `\httppost{url}{body}`. These use WinHTTP on Windows and libcurl on
   Linux and macOS when the build found it. The WebAssembly module makes no
   requests. When compiling documents you do not trust, turn the network
-  off: `mlatex --offline`, `latex::Host::offline` in C++, or
+  off: `mlatex --offline`, `mlatex::Host::offline` in C++, or
   `offline(session, 1)` in the C library. Each request is then refused and
   reported as an error before anything is sent, so a document cannot reach
   internal services or send data out. For defence in depth, also run the
@@ -90,7 +90,7 @@ engine's own language.
   compiles untrusted documents should enforce its own timeout and memory
   limit (a job object on Windows, cgroups or `ulimit` elsewhere).
 - **Commands a host program implements.** A command defined with
-  `latex::Session::define`, or `define` in the C library or the WebAssembly
+  `mlatex::Session::define`, or `define` in the C library or the WebAssembly
   module, runs with the host program's privileges, and the document chooses
   its arguments. Validate them as you would any other untrusted input.
 - **Third-party libraries.** Fonts and pictures are parsed by HarfBuzz,
@@ -101,7 +101,7 @@ engine's own language.
 
 ## Scope
 
-In scope: the engine (`core`), the `mlatex` command line, the C library (`latex_ffi`), the WebAssembly module, the
+In scope: the engine (`core`), the `mlatex` command line, the C library (`mlatex_ffi`), the WebAssembly module, the
 packages under `src/modules`, and
 the build and packaging scripts in this repository.
 

@@ -34,10 +34,10 @@ namespace memory {
         /// @brief Returns every block to the operating system.
         ~Arena();
 
-        Arena(const Arena &) = delete("an arena owns its blocks, and two of them would free the same blocks twice");
+        Arena(const Arena &) = delete ("an arena owns its blocks, and two of them would free the same blocks twice");
 
-        Arena &operator=(const Arena &) = delete(
-            "an arena owns its blocks, and two of them would free the same blocks twice");
+        Arena &operator=(const Arena &) =
+                delete ("an arena owns its blocks, and two of them would free the same blocks twice");
 
         /// @brief Allocates raw storage.
         /// @param size      Bytes wanted.
@@ -56,8 +56,7 @@ namespace memory {
         /// @param count Number of elements.
         /// @return The storage, or an empty slice when @p count is zero.
         /// @complexity O(1).
-        template<typename Type>
-        [[nodiscard]] Slice<Type> allocate(const std::size_t count) {
+        template <typename Type> [[nodiscard]] Slice<Type> allocate(const std::size_t count) {
             if (count == 0) return {};
             return Slice<Type>{static_cast<Type *>(allocate(sizeof(Type) * count, alignof(Type))), count};
         }
@@ -68,9 +67,8 @@ namespace memory {
         /// @param arguments Forwarded to the constructor.
         /// @return The object; its destructor never runs.
         /// @complexity O(1) plus the constructor.
-        template<typename Type, typename... Arguments>
-        [[nodiscard]] Type *compose(Arguments &&... arguments) {
-            return ::new(allocate(sizeof(Type), alignof(Type))) Type(std::forward<Arguments>(arguments)...);
+        template <typename Type, typename... Arguments> [[nodiscard]] Type *compose(Arguments &&...arguments) {
+            return ::new (allocate(sizeof(Type), alignof(Type))) Type(std::forward<Arguments>(arguments)...);
         }
 
         /// @brief Copies text into the arena.
@@ -88,13 +86,13 @@ namespace memory {
 
         /// @brief One mapped block.
         struct Block {
-            std::byte *data; ///< Start of the block.
+            std::byte *data;      ///< Start of the block.
             std::size_t capacity; ///< Its size in bytes.
         };
 
         std::vector<Block> blocks{}; ///< Every block mapped so far.
-        std::byte *cursor{nullptr}; ///< Next free byte in the newest block.
-        std::byte *limit{nullptr}; ///< End of the newest block.
-        std::size_t capacity{0}; ///< Size of the next block to map.
+        std::byte *cursor{nullptr};  ///< Next free byte in the newest block.
+        std::byte *limit{nullptr};   ///< End of the newest block.
+        std::size_t capacity{0};     ///< Size of the next block to map.
     };
 }

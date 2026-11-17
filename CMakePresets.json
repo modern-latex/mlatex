@@ -51,7 +51,7 @@
       "binaryDir": "${sourceDir}/cmake-build-sanitize",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "LATEX_SANITIZE": "address,undefined",
+        "MLATEX_SANITIZE": "address,undefined",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/cmake-build-sanitize/bin"
       }
     },
@@ -63,7 +63,7 @@
       "binaryDir": "${sourceDir}/cmake-build-analyze",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "LATEX_TIDY": "ON",
+        "MLATEX_TIDY": "ON",
         "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/cmake-build-analyze/bin"
       }
     }

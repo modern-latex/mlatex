@@ -17,8 +17,8 @@ _Command = Callable[..., Optional[str]]
 
 _folder = Path(__file__).parent
 library = str(
-    _folder / {"win32": "latex_ffi.dll", "darwin": "liblatex_ffi.dylib"}.get(
-        sys.platform, "liblatex_ffi.so"
+    _folder / {"win32": "mlatex_ffi.dll", "darwin": "libm.dylib"}.get(
+        sys.platform, "libm.so"
     )
 )
 

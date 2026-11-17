@@ -14,16 +14,13 @@
 namespace render::typography {
     Shaper::~Shaper() noexcept {
         if (buffer) hb_buffer_destroy(buffer);
-        for (const Plan &kept: plans) {
+        for (const Plan &kept : plans) {
             if (kept.plan) hb_shape_plan_destroy(kept.plan);
         }
     }
 
-    memory::Slice<layout::Node *> Shaper::shape(
-        const memory::Slice<const Font *> fonts,
-        const std::string_view text,
-        const memory::Slice<Feature> features
-    ) const {
+    memory::Slice<layout::Node *> Shaper::shape(const memory::Slice<const Font *> fonts, const std::string_view text,
+                                                const memory::Slice<Feature> features) const {
         if (text.empty() || fonts.empty()) return {};
 
         const Font *primary = nullptr;
@@ -51,16 +48,14 @@ namespace render::typography {
                 return {static_cast<std::uint32_t>(((data[0] & 0x1F) << 6) | (data[1] & 0x3F)), 2};
             }
             if ((data[0] & 0xF0) == 0xE0 && rest >= 3) {
-                return {
-                    static_cast<std::uint32_t>(((data[0] & 0x0F) << 12) | ((data[1] & 0x3F) << 6) | (data[2] & 0x3F)), 3
-                };
+                return {static_cast<std::uint32_t>(((data[0] & 0x0F) << 12) | ((data[1] & 0x3F) << 6) |
+                                                   (data[2] & 0x3F)),
+                        3};
             }
             if ((data[0] & 0xF8) == 0xF0 && rest >= 4) {
-                return {
-                    static_cast<std::uint32_t>(((data[0] & 0x07) << 18) | ((data[1] & 0x3F) << 12) |
-                                               ((data[2] & 0x3F) << 6) | (data[3] & 0x3F)),
-                    4
-                };
+                return {static_cast<std::uint32_t>(((data[0] & 0x07) << 18) | ((data[1] & 0x3F) << 12) |
+                                                   ((data[2] & 0x3F) << 6) | (data[3] & 0x3F)),
+                        4};
             }
             return {data[0], 1};
         };
@@ -101,7 +96,7 @@ namespace render::typography {
                 hb_face_t *face = hb_font_get_face(font.handle());
 
                 hb_shape_plan_t *chosen = nullptr;
-                for (const Plan &kept: plans) {
+                for (const Plan &kept : plans) {
                     if (kept.face == face && hb_segment_properties_equal(&kept.properties, &properties)) {
                         chosen = kept.plan;
                         break;
@@ -136,9 +131,8 @@ namespace render::typography {
 
             for (std::size_t step = 0; step < count; ++step) {
                 const std::uint32_t cluster = info[step].cluster;
-                const auto [code, size] = cluster < run.size()
-                                              ? decode(run, cluster)
-                                              : std::pair<std::uint32_t, std::size_t>{0, 0};
+                const auto [code, size] =
+                        cluster < run.size() ? decode(run, cluster) : std::pair<std::uint32_t, std::size_t>{0, 0};
                 const float advance = static_cast<float>(position[step].x_advance) * grain;
 
                 // A space becomes glue, not a glyph: it is where the breaker
@@ -147,11 +141,7 @@ namespace render::typography {
                 // added, a third of it taken away.
                 if (code == ' ') {
                     auto *node = arena.compose<layout::Node>(layout::Node::Type::Glue);
-                    node->glue({
-                        .width = advance,
-                        .stretch = advance * 0.5f,
-                        .shrink = advance / 3.0f
-                    });
+                    node->glue({.width = advance, .stretch = advance * 0.5f, .shrink = advance / 3.0f});
                     nodes[step] = node;
                     continue;
                 }
@@ -188,17 +178,15 @@ namespace render::typography {
                 }
 
                 auto *node = arena.compose<layout::Node>(layout::Node::Type::Glyph);
-                node->glyph({
-                    .width = advance,
-                    .height = metric.ascent,
-                    .depth = -metric.descent,
-                    .offset = static_cast<float>(position[step].x_offset) * grain,
-                    .shift = static_cast<float>(position[step].y_offset) * grain,
-                    .code = info[step].codepoint,
-                    .point = code,
-                    .font = &font,
-                    .letters = letters
-                });
+                node->glyph({.width = advance,
+                             .height = metric.ascent,
+                             .depth = -metric.descent,
+                             .offset = static_cast<float>(position[step].x_offset) * grain,
+                             .shift = static_cast<float>(position[step].y_offset) * grain,
+                             .code = info[step].codepoint,
+                             .point = code,
+                             .font = &font,
+                             .letters = letters});
                 nodes[step] = node;
             }
             return nodes;
@@ -214,12 +202,11 @@ namespace render::typography {
         // whole in its own face, so a Cyrillic word keeps its kerning and an
         // Arabic one joins, as neither would glyph by glyph. A mark goes with
         // the letter it sits on, and a joiner with the letter before it.
-        std::vector<std::pair<std::size_t, const Font *> > starts;
+        std::vector<std::pair<std::size_t, const Font *>> starts;
         hb_unicode_funcs_t *unicode = hb_unicode_funcs_get_default();
         for (std::size_t at = 0; at < text.size();) {
             const auto [code, size] = decode(text, at);
-            const hb_unicode_general_category_t category =
-                    hb_unicode_general_category(unicode, code);
+            const hb_unicode_general_category_t category = hb_unicode_general_category(unicode, code);
             const bool attached = category == HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK ||
                                   category == HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK ||
                                   category == HB_UNICODE_GENERAL_CATEGORY_ENCLOSING_MARK ||
@@ -261,8 +248,8 @@ namespace render::typography {
         gathered.reserve(text.size());
         for (std::size_t index = 0; index < starts.size(); ++index) {
             const std::size_t end = index + 1 < starts.size() ? starts[index + 1].first : text.size();
-            const memory::Slice<layout::Node *> part = set(*starts[index].second,
-                                                           text.substr(starts[index].first, end - starts[index].first));
+            const memory::Slice<layout::Node *> part =
+                    set(*starts[index].second, text.substr(starts[index].first, end - starts[index].first));
             gathered.insert(gathered.end(), part.begin(), part.end());
         }
 

@@ -28,28 +28,28 @@ namespace render::typography {
     public:
         /// @brief Vertical metrics, in points.
         struct Metric {
-            float ascent{0.0f}; ///< Above the baseline, positive.
+            float ascent{0.0f};  ///< Above the baseline, positive.
             float descent{0.0f}; ///< Below the baseline, negative as the file reports it.
-            float gap{0.0f}; ///< Extra leading the file asks for between lines.
-            float height{0.0f}; ///< Ascent less descent: the em's full extent.
-            float size{0.0f}; ///< The size this font was built at.
+            float gap{0.0f};     ///< Extra leading the file asks for between lines.
+            float height{0.0f};  ///< Ascent less descent: the em's full extent.
+            float size{0.0f};    ///< The size this font was built at.
         };
 
         /// @brief One glyph's ink extent, in points, relative to its origin.
         struct Box {
             float bearing{0.0f}; ///< Left bearing.
-            float top{0.0f}; ///< Top of the ink, above the baseline.
-            float width{0.0f}; ///< Ink width.
-            float height{0.0f}; ///< Ink height.
+            float top{0.0f};     ///< Top of the ink, above the baseline.
+            float width{0.0f};   ///< Ink width.
+            float height{0.0f};  ///< Ink height.
         };
 
         Font() noexcept = default;
 
         ~Font() noexcept;
 
-        Font(const Font &) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
+        Font(const Font &) = delete ("a font owns its HarfBuzz font, which would be destroyed twice");
 
-        Font &operator=(const Font &) = delete("a font owns its HarfBuzz font, which would be destroyed twice");
+        Font &operator=(const Font &) = delete ("a font owns its HarfBuzz font, which would be destroyed twice");
 
         Font(Font &&input) noexcept;
 
@@ -107,12 +107,12 @@ namespace render::typography {
 
     private:
         const Face *parent{nullptr}; ///< The file this font reads.
-        std::string_view name{}; ///< Family this face answers to.
-        hb_font_t *shaper{nullptr}; ///< HarfBuzz font, scaled to #points.
-        float points{0.0f}; ///< Size in points.
+        std::string_view name{};     ///< Family this face answers to.
+        hb_font_t *shaper{nullptr};  ///< HarfBuzz font, scaled to #points.
+        float points{0.0f};          ///< Size in points.
 
-        float ascent{0.0f}; ///< Above the baseline, in points.
+        float ascent{0.0f};  ///< Above the baseline, in points.
         float descent{0.0f}; ///< Below the baseline, in points.
-        float gap{0.0f}; ///< Extra leading, in points.
+        float gap{0.0f};     ///< Extra leading, in points.
     };
 }

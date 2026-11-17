@@ -15,8 +15,7 @@ namespace render::graphics {
     /// @return True when both characters were valid hex digits.
     [[nodiscard]] static bool byte(const std::string_view text, std::uint8_t &value) noexcept {
         unsigned parsed = 0;
-        const auto [stop, failure] =
-                std::from_chars(text.data(), text.data() + text.size(), parsed, 16);
+        const auto [stop, failure] = std::from_chars(text.data(), text.data() + text.size(), parsed, 16);
         if (failure != std::errc{} || stop != text.data() + text.size()) return false;
         value = static_cast<std::uint8_t>(parsed);
         return true;
@@ -25,11 +24,12 @@ namespace render::graphics {
     /// @brief Trims spaces from both ends.
     /// @param text Text to trim.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
-        while (!text.empty() && text.front() == ' ') text.remove_prefix(1);
-        while (!text.empty() && text.back() == ' ') text.remove_suffix(1);
+        while (!text.empty() && text.front() == ' ')
+            text.remove_prefix(1);
+        while (!text.empty() && text.back() == ' ')
+            text.remove_suffix(1);
         return text;
     }
-
 
     Color Color::hex(std::string_view text) noexcept {
         if (text.starts_with('#')) text.remove_prefix(1);
@@ -44,10 +44,10 @@ namespace render::graphics {
             return black;
         }
 
-        return {
-            .red = static_cast<float>(red) / 255.0f, .green = static_cast<float>(green) / 255.0f,
-            .blue = static_cast<float>(blue) / 255.0f, .alpha = static_cast<float>(alpha) / 255.0f
-        };
+        return {.red = static_cast<float>(red) / 255.0f,
+                .green = static_cast<float>(green) / 255.0f,
+                .blue = static_cast<float>(blue) / 255.0f,
+                .alpha = static_cast<float>(alpha) / 255.0f};
     }
 
     Color Color::parse(std::string_view text) noexcept {
@@ -75,10 +75,15 @@ namespace render::graphics {
             for (std::size_t index = 0; index < wanted; ++index) {
                 const std::string_view part = parts[index];
                 if (part.empty()) return black;
-                if (const auto [stop, failure] = patch::decimal(part.data(), part.data() + part.size(), channel[index]); failure != std::errc{} || stop != part.data() + part.size()) return black;
+                if (const auto [stop, failure] = patch::decimal(part.data(), part.data() + part.size(), channel[index]);
+                    failure != std::errc{} || stop != part.data() + part.size())
+                    return black;
             }
 
-            return {.red = channel[0] / 255.0f, .green = channel[1] / 255.0f, .blue = channel[2] / 255.0f, .alpha = channel[3]};
+            return {.red = channel[0] / 255.0f,
+                    .green = channel[1] / 255.0f,
+                    .blue = channel[2] / 255.0f,
+                    .alpha = channel[3]};
         }
 
         // A color by the name xcolor gives it.
@@ -87,16 +92,29 @@ namespace render::graphics {
             Color color;
         };
 
-        static constexpr std::array<Named, 20> table{
-            {
-                {.name = "black", .color = black}, {.name = "white", .color = white}, {"red", graphics::red}, {"green", graphics::green},
-                {.name = "blue", .color = graphics::blue}, {.name = "cyan", .color = cyan}, {"magenta", magenta}, {"yellow", yellow},
-                {.name = "gray", .color = gray}, {.name = "grey", .color = gray}, {"darkgray", darkgray}, {"lightgray", lightgray},
-                {.name = "brown", .color = brown}, {.name = "lime", .color = lime}, {"olive", olive}, {"orange", orange},
-                {.name = "pink", .color = pink}, {.name = "purple", .color = purple}, {"teal", teal}, {"violet", violet},
-            }
-        };
-        for (const auto &[name, color]: table) {
+        static constexpr std::array<Named, 20> table{{
+                {.name = "black", .color = black},
+                {.name = "white", .color = white},
+                {"red", graphics::red},
+                {"green", graphics::green},
+                {.name = "blue", .color = graphics::blue},
+                {.name = "cyan", .color = cyan},
+                {"magenta", magenta},
+                {"yellow", yellow},
+                {.name = "gray", .color = gray},
+                {.name = "grey", .color = gray},
+                {"darkgray", darkgray},
+                {"lightgray", lightgray},
+                {.name = "brown", .color = brown},
+                {.name = "lime", .color = lime},
+                {"olive", olive},
+                {"orange", orange},
+                {.name = "pink", .color = pink},
+                {.name = "purple", .color = purple},
+                {"teal", teal},
+                {"violet", violet},
+        }};
+        for (const auto &[name, color] : table) {
             if (text == name) return color;
         }
 

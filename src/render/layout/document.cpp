@@ -14,26 +14,16 @@
 #include <utility>
 
 namespace render::layout {
-    Document::Document(
-        memory::Arena &arena,
-        memory::Arena &scratch,
-        const typography::Shaper &shaper,
-        const Typesetter &typesetter,
-        const Configuration &page
-    ) noexcept
-        : configuration(page), arena(arena), scratch(scratch), shaper(shaper), typesetter(typesetter),
-          ledger(arena), words(arena, 4096) {
+    Document::Document(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                       const Typesetter &typesetter, const Configuration &page) noexcept
+        : configuration(page), arena(arena), scratch(scratch), shaper(shaper), typesetter(typesetter), ledger(arena),
+          words(arena, 4096) {
         pending.reserve(1024);
     }
 
-    Document::Document(
-        memory::Arena &arena,
-        memory::Arena &scratch,
-        const typography::Shaper &shaper,
-        const Typesetter &typesetter
-    ) noexcept
-        : Document(arena, scratch, shaper, typesetter, Configuration{}) {
-    }
+    Document::Document(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                       const Typesetter &typesetter) noexcept
+        : Document(arena, scratch, shaper, typesetter, Configuration{}) {}
 
     void Document::attach(Element *element) noexcept {
         if (tail) {
@@ -122,8 +112,7 @@ namespace render::layout {
         // space is dropped at the start of a paragraph and kept elsewhere.
         if (start == 0 && pending.size() > start) {
             const memory::Slice<Node *> shaped = arena.allocate<Node *>(pending.size() - start);
-            std::copy(pending.begin() + static_cast<std::ptrdiff_t>(start), pending.end(),
-                      shaped.begin());
+            std::copy(pending.begin() + static_cast<std::ptrdiff_t>(start), pending.end(), shaped.begin());
             ledger.set(key, shaped);
         }
         trace(start);
@@ -204,13 +193,18 @@ namespace render::layout {
         const char last = text.back();
         if (text.size() >= 2 && text[text.size() - 2] >= 'A' && text[text.size() - 2] <= 'Z') return 1000;
         switch (last) {
-            case '.':
-            case '?':
-            case '!': return 3000;
-            case ':': return 2000;
-            case ';': return 1500;
-            case ',': return 1250;
-            default: return 1000;
+        case '.':
+        case '?':
+        case '!':
+            return 3000;
+        case ':':
+            return 2000;
+        case ';':
+            return 1500;
+        case ',':
+            return 1250;
+        default:
+            return 1000;
         }
     }
 
@@ -278,9 +272,9 @@ namespace render::layout {
                     }
                     at += length;
 
-                    const bool letter = (code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z') ||
-                                        (code >= 0xC0 && code != 0xD7 && code != 0xF7 &&
-                                         !(code >= 0x2000 && code <= 0x206F));
+                    const bool letter =
+                            (code >= 'A' && code <= 'Z') || (code >= 'a' && code <= 'z') ||
+                            (code >= 0xC0 && code != 0xD7 && code != 0xF7 && !(code >= 0x2000 && code <= 0x206F));
                     if (letter && !found) {
                         found = true;
                         opened = count;
@@ -297,8 +291,10 @@ namespace render::layout {
                     } else if (code >= 0x531 && code <= 0x556) {
                         code += 0x30;
                     } else if ((((code >= 0x100 && code <= 0x137) || (code >= 0x14A && code <= 0x177) ||
-                                 (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) && code % 2 == 0) ||
-                               (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) && code % 2 == 1)) {
+                                 (code >= 0x460 && code <= 0x4BF) || (code >= 0x4D0 && code <= 0x4FF)) &&
+                                code % 2 == 0) ||
+                               (((code >= 0x139 && code <= 0x148) || (code >= 0x179 && code <= 0x17E)) &&
+                                code % 2 == 1)) {
                         code += 1;
                     }
 
@@ -323,9 +319,9 @@ namespace render::layout {
                     if (!points.empty()) {
                         breaks = scratch.allocate<std::uint8_t>(count);
                         for (std::size_t index = 0; index < count; ++index) {
-                            breaks[index] = index >= opened && index + 1 < closed &&
-                                            index + 1 - opened >= before && closed - index - 1 >= after &&
-                                            ends[index] - from < points.count && points[ends[index] - from];
+                            breaks[index] = index >= opened && index + 1 < closed && index + 1 - opened >= before &&
+                                            closed - index - 1 >= after && ends[index] - from < points.count &&
+                                            points[ends[index] - from];
                         }
                     }
                 }
@@ -392,7 +388,8 @@ namespace render::layout {
                     const std::string_view letters = mark.letters;
                     if (letters.size() < 2) return {mark.point, mark.point};
                     std::size_t at = letters.size() - 1;
-                    while (at > 0 && (static_cast<unsigned char>(letters[at]) & 0xC0) == 0x80) --at;
+                    while (at > 0 && (static_cast<unsigned char>(letters[at]) & 0xC0) == 0x80)
+                        --at;
                     const auto *data = reinterpret_cast<const std::uint8_t *>(letters.data() + at);
                     std::uint32_t last = data[0];
                     if ((data[0] & 0xE0) == 0xC0 && letters.size() - at >= 2)
@@ -403,7 +400,7 @@ namespace render::layout {
                 // from the word as written: 064B to 065F and 0670 are two
                 // bytes from D9, 06D6 to 06ED two from DB.
                 bool arabic = true;
-                for (const Node *node: nodes) {
+                for (const Node *node : nodes) {
                     const std::uint32_t code = node->type == Node::Type::Glyph ? node->glyph().point : 0;
                     arabic = arabic && node->type == Node::Type::Glyph && code >= 0x0600 && code <= 0x06FF;
                 }
@@ -460,8 +457,7 @@ namespace render::layout {
         std::size_t cursor = 0;
         while (cursor < text.size()) {
             if (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n') {
-                while (cursor < text.size() &&
-                       (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
+                while (cursor < text.size() && (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
                     ++cursor;
                 }
 
@@ -504,11 +500,7 @@ namespace render::layout {
                     ++hyphens;
                 }
 
-                const std::string_view dash = hyphens >= 3
-                                                  ? "—"
-                                                  : hyphens == 2
-                                                        ? "–"
-                                                        : "-";
+                const std::string_view dash = hyphens >= 3 ? "—" : hyphens == 2 ? "–" : "-";
                 const memory::Slice<Node *> drawn = piece(dash, false);
                 into.insert(into.end(), drawn.begin(), drawn.end());
                 factor = 1000;
@@ -535,10 +527,7 @@ namespace render::layout {
                     ++run;
                 }
 
-                const std::string_view quote =
-                        mark == '`'
-                            ? (run >= 2 ? "“" : "‘")
-                            : (run >= 2 ? "”" : "’");
+                const std::string_view quote = mark == '`' ? (run >= 2 ? "“" : "‘") : (run >= 2 ? "”" : "’");
                 const memory::Slice<Node *> drawn = piece(quote, false);
                 into.insert(into.end(), drawn.begin(), drawn.end());
                 continue;
@@ -555,14 +544,13 @@ namespace render::layout {
                 if (rest.front() == ':') return rest.size() < 2 || (rest[1] != '/' && (rest[1] < '0' || rest[1] > '9'));
                 return rest.front() == ';' || rest.front() == '!' || rest.front() == '?';
             };
-            if (spaced &&high(cursor)) {
+            if (spaced && high(cursor)) {
                 const std::string_view rest = text.substr(cursor);
                 const bool opens = rest.starts_with("«");
                 const std::size_t length = opens || rest.starts_with("»") ? 2 : 1;
                 const memory::Slice<Node *> space = piece(" ", false);
-                const float word = !space.empty() && space[0]->type == Node::Type::Glue
-                                       ? space[0]->glue().width
-                                       : font.size() / 3.0f;
+                const float word = !space.empty() && space[0]->type == Node::Type::Glue ? space[0]->glue().width
+                                                                                        : font.size() / 3.0f;
                 const auto hold = [&](const float width) {
                     auto *kern = arena.compose<Node>(Node::Type::Kern);
                     kern->kern({.width = width});
@@ -576,8 +564,8 @@ namespace render::layout {
                 into.insert(into.end(), mark.begin(), mark.end());
                 cursor += length;
                 if (opens) {
-                    while (cursor < text.size() && (
-                               text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
+                    while (cursor < text.size() &&
+                           (text[cursor] == ' ' || text[cursor] == '\t' || text[cursor] == '\n')) {
                         ++cursor;
                     }
                     hold(word * 0.5f);
@@ -587,9 +575,8 @@ namespace render::layout {
             }
 
             const std::size_t begun = cursor;
-            while (cursor < text.size() && text[cursor] != ' ' && text[cursor] != '\t' &&
-                   text[cursor] != '\n' && text[cursor] != '-' && text[cursor] != '`' &&
-                   text[cursor] != '\'' && !(spaced && high(cursor))) {
+            while (cursor < text.size() && text[cursor] != ' ' && text[cursor] != '\t' && text[cursor] != '\n' &&
+                   text[cursor] != '-' && text[cursor] != '`' && text[cursor] != '\'' && !(spaced && high(cursor))) {
                 ++cursor;
             }
 
@@ -598,7 +585,7 @@ namespace render::layout {
             std::string_view written = text.substr(begun, cursor - begun);
             if (digits != 0 && written.find_first_of("0123456789") != std::string_view::npos) {
                 std::string mapped;
-                for (const char letter: written) {
+                for (const char letter : written) {
                     if (letter < '0' || letter > '9') {
                         mapped += letter;
                         continue;
@@ -627,11 +614,9 @@ namespace render::layout {
                     return {((data[0] & 0x0Fu) << 12) | ((data[1] & 0x3Fu) << 6) | (data[2] & 0x3Fu), 3};
                 }
                 if ((data[0] & 0xF8) == 0xF0 && rest >= 4) {
-                    return {
-                        ((data[0] & 0x07u) << 18) | ((data[1] & 0x3Fu) << 12) | ((data[2] & 0x3Fu) << 6) |
-                        (data[3] & 0x3Fu),
-                        4
-                    };
+                    return {((data[0] & 0x07u) << 18) | ((data[1] & 0x3Fu) << 12) | ((data[2] & 0x3Fu) << 6) |
+                                    (data[3] & 0x3Fu),
+                            4};
                 }
                 return {data[0], 1};
             };
@@ -642,7 +627,7 @@ namespace render::layout {
                        (code >= 0xFF00 && code <= 0xFFEF) || (code >= 0x20000 && code <= 0x2FA1F);
             };
             static constexpr std::u32string_view closers = U"、。，．・：；？！ー」』）】〉》〕〗〙〛〟｝］"
-                    U"ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐゠〜";
+                                                           U"ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐゠〜";
             static constexpr std::u32string_view openers = U"「『（【〈《〔〖〘〚〝｛［";
             bool mixed = false;
             for (std::size_t at = 0; !mixed && at < written.size();) {
@@ -700,7 +685,8 @@ namespace render::layout {
         if (expression->style != syntax::expression::Node::Style::Display) {
             const memory::Slice<Node *> pieces = typesetter.unfold(expression, font);
             if (color) {
-                for (Node *piece: pieces) Typesetter::paint(piece, *color);
+                for (Node *piece : pieces)
+                    Typesetter::paint(piece, *color);
             }
             const std::size_t start = pending.size();
             pending.insert(pending.end(), pieces.begin(), pieces.end());
@@ -741,94 +727,96 @@ namespace render::layout {
         if (node->type == Node::Type::Directive) {
             const Node::Directive &order = node->directive();
             switch (order.command) {
-                case Node::Directive::Command::Indent:
-                    // Before a paragraph, the paragraph's own indentation;
-                    // part way through one, an indent where it stands.
-                    if (pending.empty()) {
-                        indentation = true;
-                        suppression = false;
-                    } else {
-                        auto *space = arena.compose<Node>(Node::Type::Kern);
-                        space->kern({.width = configuration.indent});
-                        pending.push_back(space);
-                    }
-                    break;
-                case Node::Directive::Command::Flush:
-                    if (pending.empty()) indentation = false;
-                    break;
-                case Node::Directive::Command::Suppress:
-                    indentation = false;
-                    suppression = true;
-                    break;
-                case Node::Directive::Command::Align:
-                    justification = order.justification;
-                    break;
-                case Node::Directive::Command::Margin:
-                    if (order.trailing) gutter = order.width;
-                    else margin = order.width;
-                    break;
-                case Node::Directive::Command::Save:
-                    shapes.push_back(Shape{justification, margin, gutter, reversed});
-                    break;
-                case Node::Directive::Command::Restore:
-                    if (!shapes.empty()) {
-                        justification = shapes.back().justification;
-                        margin = shapes.back().margin;
-                        gutter = shapes.back().gutter;
-                        reversed = shapes.back().reversed;
-                        shapes.pop_back();
-                    }
-                    break;
-                case Node::Directive::Command::Language:
-                    hyphenate(order);
-                    break;
-                case Node::Directive::Command::Direction:
-                    reversed = order.reversed;
-                    break;
-                case Node::Directive::Command::Number:
-                case Node::Directive::Command::Marked:
-                case Node::Directive::Command::Note:
-                case Node::Directive::Command::Aside:
-                case Node::Directive::Command::Link:
-                case Node::Directive::Command::Unlink:
-                    // Material after all: the number, set in the line, and a
-                    // footnote or a margin note, carried in the line to the
-                    // page -- and the height on it -- it lands at.
+            case Node::Directive::Command::Indent:
+                // Before a paragraph, the paragraph's own indentation;
+                // part way through one, an indent where it stands.
+                if (pending.empty()) {
+                    indentation = true;
+                    suppression = false;
+                } else {
+                    auto *space = arena.compose<Node>(Node::Type::Kern);
+                    space->kern({.width = configuration.indent});
+                    pending.push_back(space);
+                }
+                break;
+            case Node::Directive::Command::Flush:
+                if (pending.empty()) indentation = false;
+                break;
+            case Node::Directive::Command::Suppress:
+                indentation = false;
+                suppression = true;
+                break;
+            case Node::Directive::Command::Align:
+                justification = order.justification;
+                break;
+            case Node::Directive::Command::Margin:
+                if (order.trailing)
+                    gutter = order.width;
+                else
+                    margin = order.width;
+                break;
+            case Node::Directive::Command::Save:
+                shapes.push_back(Shape{justification, margin, gutter, reversed});
+                break;
+            case Node::Directive::Command::Restore:
+                if (!shapes.empty()) {
+                    justification = shapes.back().justification;
+                    margin = shapes.back().margin;
+                    gutter = shapes.back().gutter;
+                    reversed = shapes.back().reversed;
+                    shapes.pop_back();
+                }
+                break;
+            case Node::Directive::Command::Language:
+                hyphenate(order);
+                break;
+            case Node::Directive::Command::Direction:
+                reversed = order.reversed;
+                break;
+            case Node::Directive::Command::Number:
+            case Node::Directive::Command::Marked:
+            case Node::Directive::Command::Note:
+            case Node::Directive::Command::Aside:
+            case Node::Directive::Command::Link:
+            case Node::Directive::Command::Unlink:
+                // Material after all: the number, set in the line, and a
+                // footnote or a margin note, carried in the line to the
+                // page -- and the height on it -- it lands at.
+                pending.push_back(node);
+                break;
+            case Node::Directive::Command::Mark:
+            case Node::Directive::Command::Anchor:
+            case Node::Directive::Command::Source:
+                // In the line when there is one, so it lands where the
+                // words around it do; between blocks otherwise, where it
+                // must not open a paragraph of nothing.
+                if (!pending.empty()) {
                     pending.push_back(node);
                     break;
-                case Node::Directive::Command::Mark:
-                case Node::Directive::Command::Anchor:
-                case Node::Directive::Command::Source:
-                    // In the line when there is one, so it lands where the
-                    // words around it do; between blocks otherwise, where it
-                    // must not open a paragraph of nothing.
-                    if (!pending.empty()) {
-                        pending.push_back(node);
-                        break;
-                    }
-                    [[fallthrough]];
-                case Node::Directive::Command::Hold:
-                case Node::Directive::Command::Release:
-                case Node::Directive::Command::Page:
-                case Node::Directive::Command::Barrier:
-                case Node::Directive::Command::Repeat:
-                case Node::Directive::Command::Columns: {
-                    // A block of no height in the column, so it lands on the
-                    // page where the text around it did, and the composer
-                    // meets it as it draws that page -- or, around a float,
-                    // so the pager knows which blocks it may not part, where
-                    // no float may pass, where the columns change, and which
-                    // rows a long table repeats where it breaks. The
-                    // paragraph before a change is set in the columns it was
-                    // written in.
-                    if (!pending.empty()) separate();
-                    if (order.command == Node::Directive::Command::Columns) split = order.index;
-                    auto *element = arena.compose<Element>();
-                    element->type = Element::Type::Directive;
-                    element->node = node;
-                    attach(element);
-                    break;
                 }
+                [[fallthrough]];
+            case Node::Directive::Command::Hold:
+            case Node::Directive::Command::Release:
+            case Node::Directive::Command::Page:
+            case Node::Directive::Command::Barrier:
+            case Node::Directive::Command::Repeat:
+            case Node::Directive::Command::Columns: {
+                // A block of no height in the column, so it lands on the
+                // page where the text around it did, and the composer
+                // meets it as it draws that page -- or, around a float,
+                // so the pager knows which blocks it may not part, where
+                // no float may pass, where the columns change, and which
+                // rows a long table repeats where it breaks. The
+                // paragraph before a change is set in the columns it was
+                // written in.
+                if (!pending.empty()) separate();
+                if (order.command == Node::Directive::Command::Columns) split = order.index;
+                auto *element = arena.compose<Element>();
+                element->type = Element::Type::Directive;
+                element->node = node;
+                attach(element);
+                break;
+            }
             }
             return;
         }
@@ -890,7 +878,8 @@ namespace render::layout {
             Node::Box shape = node->box();
             const memory::Slice<Node *> list = arena.allocate<Node *>(shape.list.count + 1);
             list[0] = arena.compose<Node>(Node::Type::Directive);
-            list[0]->directive({.command = Node::Directive::Command::Source, .file = origin.file, .index = origin.line});
+            list[0]->directive(
+                    {.command = Node::Directive::Command::Source, .file = origin.file, .index = origin.line});
             std::ranges::copy(shape.list, list.begin() + 1);
             shape.list = list;
             node->box(shape);
@@ -919,8 +908,7 @@ namespace render::layout {
         // The indentation is a kern of its own ahead of the first word, and
         // only a justified paragraph has one: LaTeX's ragged and centred
         // settings take it away.
-        const bool indented = indentation && justification == Node::Justification::Full &&
-                              configuration.indent > 0.0f;
+        const bool indented = indentation && justification == Node::Justification::Full && configuration.indent > 0.0f;
         const std::size_t lead = indented ? 1 : 0;
 
         const memory::Slice<Node *> content = arena.allocate<Node *>(pending.size() + lead);

@@ -23,8 +23,7 @@ namespace syntax {
             this->tokens = std::move(stream);
             std::ranges::reverse(this->tokens);
             this->depth = this->tokens.size();
-            Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
-                        "Cursor stream initialized (size={})", this->depth);
+            Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Cursor stream initialized (size={})", this->depth);
         }
     }
 
@@ -40,8 +39,8 @@ namespace syntax {
 
         const Token token = this->tokens.data()[--this->depth];
         if (this->depth < this->unread) this->unread = this->depth;
-        Logger::log(Logger::Type::Mouth, Logger::Level::Traceback,
-                    "Cursor -> [pending={}, text='{}']", this->depth, token.text);
+        Logger::log(Logger::Type::Mouth, Logger::Level::Traceback, "Cursor -> [pending={}, text='{}']", this->depth,
+                    token.text);
         return token;
     }
 
@@ -64,8 +63,8 @@ namespace syntax {
         }
         this->depth = this->tokens.size();
 
-        Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
-                    "Cursor injected {} token(s), {} now pending", batch.size(), this->depth);
+        Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Cursor injected {} token(s), {} now pending",
+                    batch.size(), this->depth);
     }
 
     void Cursor::adopt(std::vector<Token> &&incoming) {
@@ -76,8 +75,7 @@ namespace syntax {
             std::ranges::reverse(this->tokens);
             this->depth = this->tokens.size();
             this->unread = this->depth;
-            Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
-                        "Cursor adopted {} token(s)", this->depth);
+            Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Cursor adopted {} token(s)", this->depth);
             return;
         }
 
@@ -98,13 +96,9 @@ namespace syntax {
         this->unread = replacement.size();
     }
 
-    bool Cursor::empty() const noexcept {
-        return this->depth == 0;
-    }
+    bool Cursor::empty() const noexcept { return this->depth == 0; }
 
-    std::size_t Cursor::size() const noexcept {
-        return this->depth;
-    }
+    std::size_t Cursor::size() const noexcept { return this->depth; }
 
     void Cursor::dispose() noexcept {
         this->tokens.clear();

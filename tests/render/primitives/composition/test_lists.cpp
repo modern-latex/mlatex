@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -23,13 +23,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -53,18 +53,22 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\begin{itemize}\\item a \\begin{itemize}\\item b\\end{itemize}"
-                                      "\\end{itemize}"
-                                      "\\begin{enumerate}\\item one \\begin{enumerate}\\item two\\end{enumerate}"
-                                      "\\item three\\end{enumerate}"
-                                      "\\begin{description}\\item[term] meaning\\end{description}");
+                                          "\\end{itemize}"
+                                          "\\begin{enumerate}\\item one \\begin{enumerate}\\item two\\end{enumerate}"
+                                          "\\item three\\end{enumerate}"
+                                          "\\begin{description}\\item[term] meaning\\end{description}");
         assert((result.clean) && "every type of list, nested");
-        assert((holds(result.text, "\xE2\x80\xA2" "a")) && "a bullet before each item");
+        assert((holds(result.text, "\xE2\x80\xA2"
+                                   "a")) &&
+               "a bullet before each item");
         assert((holds(result.text, "1.one(a)two2.three")) && "numbered, nested ones lettered in parentheses");
         assert((holds(result.text, "termmeaning")) && "a description's term before its meaning");
     }
     {
         const Result result = article("", "\\begin{itemize}\\item[--] dashed \\item[] bare\\end{itemize}");
-        assert((result.clean && holds(result.text, "\xE2\x80\x93" "dashedbare")) && "an item's own label, or none");
+        assert((result.clean && holds(result.text, "\xE2\x80\x93"
+                                                   "dashedbare")) &&
+               "an item's own label, or none");
     }
     {
         const Result result = article("\\usepackage{enumitem}",
@@ -74,11 +78,10 @@ int main() {
         assert((holds(result.text, "5.five")) && "and start");
     }
     {
-        const Result result = article("\\usepackage{paralist}",
-                                      "\\begin{compactenum}\\item a \\item b\\end{compactenum}"
-                                      "\\begin{compactitem}\\item c\\end{compactitem}");
-        assert((result.clean && holds(result.text, "1.a2.b") && holds(result.text, "c")) &&
-               "paralist's compact lists");
+        const Result result =
+                article("\\usepackage{paralist}", "\\begin{compactenum}\\item a \\item b\\end{compactenum}"
+                                                  "\\begin{compactitem}\\item c\\end{compactitem}");
+        assert((result.clean && holds(result.text, "1.a2.b") && holds(result.text, "c")) && "paralist's compact lists");
     }
     {
         const Result result = article("\\newcounter{step}",
@@ -86,14 +89,17 @@ int main() {
                                       "\\item one \\item two\\end{list}"
                                       "\\begin{list}{Step \\arabic{step}:}{\\usecounter{step}}"
                                       "\\item first \\item second\\end{list}\\the\\textwidth");
-        assert((result.clean && holds(result.text, "\xE2\x80\x93" "one" "\xE2\x80\x93" "two")) &&
+        assert((result.clean && holds(result.text, "\xE2\x80\x93"
+                                                   "one"
+                                                   "\xE2\x80\x93"
+                                                   "two")) &&
                "LaTeX's own list, its items carrying the label given");
         assert((holds(result.text, "Step1:firstStep2:second")) && "one that counts its items with \\usecounter");
         assert((holds(result.text, "345.0pt")) && "its \\leftmargin is the list's, not the page's");
     }
     {
         const Result result = typeset("\\documentclass{article}\\begin{document}\\begin{itemize}\\item a"
-            "\\end{document}");
+                                      "\\end{document}");
         assert((!result.clean && holds(result.errors, "ended by \\end{document}")) && "a list left open is reported");
     }
     {
@@ -102,8 +108,8 @@ int main() {
                "beamer's overlays on an item, read and let go");
     }
     {
-        const Result result = article("\\renewcommand{\\labelitemi}{$\\star$}",
-                                      "\\begin{itemize}\\item One\\end{itemize}");
+        const Result result =
+                article("\\renewcommand{\\labelitemi}{$\\star$}", "\\begin{itemize}\\item One\\end{itemize}");
         assert((result.clean && holds(result.text, "\xE2\x8B\x86One")) && "a document's own \\labelitemi");
     }
     {

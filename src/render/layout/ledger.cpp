@@ -19,7 +19,7 @@ namespace render::layout {
         // a pointer into the arena and the size a float, so both are taken as
         // bits rather than as values.
         std::uint64_t value = 1469598103934665603ull; // sixty-four bits whatever a size_t is
-        for (const char letter: key.text) {
+        for (const char letter : key.text) {
             value ^= static_cast<std::uint64_t>(static_cast<unsigned char>(letter));
             value *= 1099511628211ull;
         }

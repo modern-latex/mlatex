@@ -57,13 +57,13 @@ namespace render::primitives::typesetting {
     private:
         /// @brief A block opened and not yet read: what it is, and its options.
         struct Opening {
-            std::string type; ///< `verbatim`, `lstlisting` or `comment`.
+            std::string type;    ///< `verbatim`, `lstlisting` or `comment`.
             std::string options; ///< As written between its brackets.
-            bool headed{false}; ///< Its caption, if it has one, has been read.
+            bool headed{false};  ///< Its caption, if it has one, has been read.
         };
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Opening> openings{}; ///< Blocks opened, innermost last.
+        mutable std::vector<Opening> openings{};             ///< Blocks opened, innermost last.
 
         syntax::Symbol start{}; ///< The mark a block's opening leaves; no document can write it.
     };

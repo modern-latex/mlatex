@@ -16,7 +16,8 @@ namespace layout = render::layout;
 /// @brief How many strokes a canvas's box holds.
 static std::size_t strokes(const layout::Node *box) {
     std::size_t found = 0;
-    for (const layout::Node *child: box->box().list) found += child && child->type == layout::Node::Type::Path;
+    for (const layout::Node *child : box->box().list)
+        found += child && child->type == layout::Node::Type::Path;
     return found;
 }
 
@@ -29,14 +30,13 @@ int main() {
         canvas.line({0.0f, 0.0f}, {100.0f, 50.0f});
         canvas.line({0.0f, 50.0f}, {100.0f, 0.0f}, graphics::Color{1.0f, 0.0f, 0.0f, 1.0f}, 2.0f, true);
         const layout::Node *box = canvas.compose(arena, graphics::Canvas::Room::Declared);
-        assert((box && box->type == layout::Node::Type::Box && box->box().absolute) &&
-               "a canvas is a box of its own");
+        assert((box && box->type == layout::Node::Type::Box && box->box().absolute) && "a canvas is a box of its own");
         assert((box->box().width == 100.0f && box->box().depth == 50.0f && box->box().height == 0.0f) &&
                "as large as it declared, hanging from its top edge as any block does");
         assert((strokes(box) == 2) && "holding each stroke");
 
         bool styled = false;
-        for (const layout::Node *child: box->box().list) {
+        for (const layout::Node *child : box->box().list) {
             styled = styled || (child->path().dashed && child->path().width == 2.0f && child->path().color.red == 1.0f);
         }
         assert((styled) && "each stroke keeps its color, width and dashes");
@@ -66,8 +66,7 @@ int main() {
         graphics::Canvas canvas(50.0f, 50.0f);
         canvas.line(graphics::Point3{0.0f, 0.0f, 0.0f}, graphics::Point3{10.0f, 10.0f, 10.0f},
                     graphics::Projection::isometric());
-        assert((strokes(canvas.compose(arena, graphics::Canvas::Room::Grown)) == 1) &&
-               "a line in space is one stroke");
+        assert((strokes(canvas.compose(arena, graphics::Canvas::Room::Grown)) == 1) && "a line in space is one stroke");
     }
 
     // Nothing drawn is still a box.

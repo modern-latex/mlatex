@@ -39,8 +39,7 @@ namespace render::graphics {
         Image(int width, int height, std::vector<std::uint8_t> pixels, std::vector<std::uint8_t> encoded = {},
               int components = 3, float resolution = 72.0f) noexcept
             : width(width), height(height), pixels(std::move(pixels)), encoded(std::move(encoded)),
-              components(components), resolution(resolution) {
-        }
+              components(components), resolution(resolution) {}
 
         /// @brief Its pixels, three bytes each, top row first: #pixels, or a
         ///        kept JPEG decoded, for a screen to draw.
@@ -48,11 +47,11 @@ namespace render::graphics {
         /// @complexity O(n) in the pixels.
         [[nodiscard]] std::vector<std::uint8_t> raster() const;
 
-        int width; ///< Pixels across.
-        int height; ///< Pixels down.
-        std::vector<std::uint8_t> pixels; ///< Row-major, top row first, three bytes each; empty when kept #encoded.
+        int width;                         ///< Pixels across.
+        int height;                        ///< Pixels down.
+        std::vector<std::uint8_t> pixels;  ///< Row-major, top row first, three bytes each; empty when kept #encoded.
         std::vector<std::uint8_t> encoded; ///< A JPEG's own bytes, kept whole for a PDF to decode; empty for #pixels.
-        int components; ///< How many colour components #encoded holds: 1 for grey, 3 for colour.
+        int components;                    ///< How many colour components #encoded holds: 1 for grey, 3 for colour.
 
         /// How many of its pixels make an inch, as the file says: PNG's pHYs,
         /// JPEG's JFIF density. 72 when it says nothing, so a pixel is a

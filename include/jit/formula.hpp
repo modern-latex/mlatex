@@ -87,6 +87,5 @@ namespace jit {
     /// function of its own from the steps and hand its bytes to JavaScript's
     /// `WebAssembly.instantiate`, through an `EM_JS` function; that is a
     /// project of its own, for once the steps are in.
-    class Formula {
-    };
+    class Formula {};
 }

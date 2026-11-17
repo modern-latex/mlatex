@@ -20,8 +20,7 @@ namespace render::typography {
         // the end of the name. It is a file path, so the copy is nothing.
         std::ifstream file{std::string(path), std::ios::binary | std::ios::ate};
         if (!file) {
-            Logger::log(Logger::Type::Layout, Logger::Level::Warning,
-                        "Hyphenation patterns missing: {}", path);
+            Logger::log(Logger::Type::Layout, Logger::Level::Warning, "Hyphenation patterns missing: {}", path);
             return 0;
         }
 
@@ -36,8 +35,8 @@ namespace render::typography {
         if (!file.read(contents.data(), size)) return 0;
 
         const std::size_t added = parse(contents);
-        Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                    "Loaded {} hyphenation patterns from {}", added, path);
+        Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Loaded {} hyphenation patterns from {}", added,
+                    path);
         return added;
     }
 
@@ -58,13 +57,9 @@ namespace render::typography {
         return added;
     }
 
-    memory::Slice<std::uint8_t> Hyphenator::execute(
-        memory::Arena &scratch,
-        const memory::Slice<std::uint32_t> word,
-        const std::uint32_t pad,
-        const std::size_t left,
-        const std::size_t right
-    ) const {
+    memory::Slice<std::uint8_t> Hyphenator::execute(memory::Arena &scratch, const memory::Slice<std::uint32_t> word,
+                                                    const std::uint32_t pad, const std::size_t left,
+                                                    const std::size_t right) const {
         // A break needs `left` letters before it and `right` after, so a word
         // shorter than both together has nowhere legal to break.
         if (nodes.size() < 2 || left == 0 || right == 0 || word.count < left + right) return {};
@@ -76,11 +71,13 @@ namespace render::typography {
         // word is padded with that marker before any of them can match.
         const memory::Slice<std::uint32_t> padded = scratch.allocate<std::uint32_t>(total);
         padded[0] = pad;
-        for (std::size_t index = 0; index < length; ++index) padded[index + 1] = word[index];
+        for (std::size_t index = 0; index < length; ++index)
+            padded[index + 1] = word[index];
         padded[total - 1] = pad;
 
         const memory::Slice<std::uint8_t> claimed = scratch.allocate<std::uint8_t>(total + 1);
-        for (std::size_t index = 0; index <= total; ++index) claimed[index] = 0;
+        for (std::size_t index = 0; index <= total; ++index)
+            claimed[index] = 0;
 
         // The walk reads through plain pointers: it is the innermost loop of
         // hyphenating a document, and a checked accessor per letter would be
@@ -120,7 +117,8 @@ namespace render::typography {
         }
 
         const memory::Slice<std::uint8_t> result = scratch.allocate<std::uint8_t>(length);
-        for (std::size_t index = 0; index < length; ++index) result[index] = 0;
+        for (std::size_t index = 0; index < length; ++index)
+            result[index] = 0;
 
         // Odd means a break is allowed. Level `index + 2` is the gap after the
         // word's letter `index`, because the accumulator is indexed over the

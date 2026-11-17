@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <string>
 #include <string_view>

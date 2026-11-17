@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <optional>
 #include <string>
@@ -80,9 +80,7 @@ namespace syntax::primitives::definitions {
         [[nodiscard]] bool loaded(std::string_view name) const;
 
         /// @brief Errors this module has recorded: a name found nowhere embedded.
-        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief Reads one embedded file into the stream, as part of a folder.
@@ -131,7 +129,7 @@ namespace syntax::primitives::definitions {
         /// top of `src/modules`.
         mutable std::vector<std::string> folders{};
 
-        mutable memory::Names packages{}; ///< Every package loaded so far.
+        mutable memory::Names packages{};            ///< Every package loaded so far.
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
     };
 }

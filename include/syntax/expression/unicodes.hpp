@@ -17,21 +17,21 @@ namespace syntax::expression {
     public:
         /// @brief What type of atom a symbol makes, as TeX classes them.
         enum class Category : std::uint8_t {
-            Ordinary, ///< Standard math symbols, variables, and digits (e.g., x, 1)
-            Operator, ///< Prefix operators and functions (e.g., \\sum, \\sin)
-            Binary, ///< Binary operations (e.g., +, \\times)
-            Relation, ///< Comparison operators (e.g., =, \\le)
-            Opening, ///< Left delimiters (e.g., (, [)
-            Closing, ///< Right delimiters (e.g., ), ])
+            Ordinary,    ///< Standard math symbols, variables, and digits (e.g., x, 1)
+            Operator,    ///< Prefix operators and functions (e.g., \\sum, \\sin)
+            Binary,      ///< Binary operations (e.g., +, \\times)
+            Relation,    ///< Comparison operators (e.g., =, \\le)
+            Opening,     ///< Left delimiters (e.g., (, [)
+            Closing,     ///< Right delimiters (e.g., ), ])
             Punctuation, ///< Punctuation marks (e.g., ,, ;)
-            Inner, ///< Enclosed structures like fractions
-            Accent ///< Math diacritics (e.g., \\hat, \\vec)
+            Inner,       ///< Enclosed structures like fractions
+            Accent       ///< Math diacritics (e.g., \\hat, \\vec)
         };
 
         /// @brief One symbol: its character, and the atom it makes.
         struct Symbol {
             std::uint32_t codepoint; ///< The character.
-            Category category; ///< The type of atom.
+            Category category;       ///< The type of atom.
         };
 
         /// The replacement character, for a symbol that has none of its own.

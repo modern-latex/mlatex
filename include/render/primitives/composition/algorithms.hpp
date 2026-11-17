@@ -48,9 +48,7 @@ namespace render::primitives::composition {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One `algorithmic` block being read.
@@ -72,6 +70,6 @@ namespace render::primitives::composition {
         static constexpr float indent = 1.5f;
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Block> blocks{}; ///< The blocks being read, innermost last.
+        mutable std::vector<Block> blocks{};                 ///< The blocks being read, innermost last.
     };
 }

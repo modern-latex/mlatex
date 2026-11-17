@@ -5,13 +5,13 @@
 /// optional `=`, scan a dimension, store it -- so they are bound from one loop
 /// over a table of which field each name writes. Adding `\\gutter` is a row.
 #include "render/primitives/composition/pages.hpp"
-#include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/typesetting/styles.hpp"
 #include "layout/line.hpp"
-#include "syntax/argument.hpp"
-#include "syntax/semantics/scope.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
+#include "render/primitives/referencing/counters.hpp"
+#include "render/primitives/typesetting/styles.hpp"
+#include "syntax/argument.hpp"
+#include "syntax/semantics/scope.hpp"
 
 #include "syntax/modules.hpp"
 #include "syntax/number.hpp"
@@ -51,8 +51,7 @@ namespace render::primitives::composition {
 
         // Which field each name writes. A pointer-to-member keeps the handler
         // below a single closure rather than seven copies of it.
-        static constexpr std::array<std::pair<std::string_view, float Configuration::*>, 8> fields{
-            {
+        static constexpr std::array<std::pair<std::string_view, float Configuration::*>, 8> fields{{
                 {"\\pagewidth", &Configuration::width},
                 {"\\pageheight", &Configuration::height},
                 {"\\@leftmargin", &Configuration::left},
@@ -61,8 +60,7 @@ namespace render::primitives::composition {
                 {"\\@bottommargin", &Configuration::bottom},
                 {"\\leading", &Configuration::leading},
                 {"\\parindent", &Configuration::indent},
-            }
-        };
+        }};
 
         // The page's own lengths, as registers, so that any dimension may be
         // written in terms of them -- `0.4\\textwidth`, `-\\baselineskip` --
@@ -70,8 +68,8 @@ namespace render::primitives::composition {
         // step with the page wherever the page changes.
         using Registers = syntax::semantics::Registers;
         static constexpr std::array<std::string_view, 8> extents{
-            "\\textwidth", "\\linewidth", "\\columnwidth", "\\hsize",
-            "\\textheight", "\\paperwidth", "\\paperheight", "\\baselineskip",
+                "\\textwidth",  "\\linewidth",  "\\columnwidth", "\\hsize",
+                "\\textheight", "\\paperwidth", "\\paperheight", "\\baselineskip",
         };
         for (std::size_t index = 0; index < extents.size(); ++index) {
             context.registers.bind(parser.mouth.lexicon.intern(extents[index]), Registers::Type::Dimension,
@@ -86,8 +84,8 @@ namespace render::primitives::composition {
             const Configuration &page = context.document.configuration;
             const float column = context.document.column(page.columns);
             const std::array<float, extents.size()> values{
-                page.width - page.left - page.right, column, column, column, page.height - page.top - page.bottom,
-                page.width, page.height, page.leading,
+                    page.width - page.left - page.right,  column,     column,      column,
+                    page.height - page.top - page.bottom, page.width, page.height, page.leading,
             };
             for (std::size_t index = 0; index < values.size(); ++index) {
                 context.registers.set(Registers::Type::Dimension, Registers::reserved + index,
@@ -107,7 +105,7 @@ namespace render::primitives::composition {
             context.counters->set("dbltopnumber", 2);
         }
 
-        for (const auto &[name, field]: fields) {
+        for (const auto &[name, field] : fields) {
             parser.mouth.bind(name, [this, &context, field, name, publish](syntax::Mouth &mouth) {
                 // The `=` is noise, as it is everywhere in the language: read
                 // it if it is there, and put back whatever else was.
@@ -116,9 +114,8 @@ namespace render::primitives::composition {
 
                 const auto scanned = syntax::Number::dimension(mouth, context.registers);
                 if (!scanned) {
-                    tracebacks.emplace_back(
-                        syntax::Traceback::Type::Dimension, mouth.lookahead().location,
-                        std::format("{} needs a dimension", name));
+                    tracebacks.emplace_back(syntax::Traceback::Type::Dimension, mouth.lookahead().location,
+                                            std::format("{} needs a dimension", name));
                     return;
                 }
 
@@ -177,11 +174,12 @@ namespace render::primitives::composition {
             return true;
         };
 
-        for (const bool added: {false, true}) {
+        for (const bool added : {false, true}) {
             parser.mouth.bind(added ? "\\addtolength" : "\\setlength",
                               [&context, adjust, added, publish](syntax::Mouth &mouth) {
                                   std::string name;
-                                  for (const syntax::Token &token: mouth.argument({}, 0)) name += token.text;
+                                  for (const syntax::Token &token : mouth.argument({}, 0))
+                                      name += token.text;
                                   const std::string value = syntax::Argument::text(mouth);
 
                                   // The page's own, and \parskip's register beside it; any
@@ -192,13 +190,9 @@ namespace render::primitives::composition {
                                       if (name != "\\parskip") return;
                                   }
                                   if (name.empty()) return;
-                                  mouth.ingest(context.arena.copy(
-                                      std::format("{}{}{}\\dimexpr {}\\relax ",
-                                                  added ? "\\@increase" : "\\@set",
-                                                  name,
-                                                  added ? " by " : "=",
-                                                  value)
-                                  ));
+                                  mouth.ingest(context.arena.copy(std::format("{}{}{}\\dimexpr {}\\relax ",
+                                                                              added ? "\\@increase" : "\\@set", name,
+                                                                              added ? " by " : "=", value)));
                               });
         }
 
@@ -209,8 +203,8 @@ namespace render::primitives::composition {
         context.environments.watch("document", {}, [&context, publish](syntax::Mouth &mouth) {
             Configuration &page = context.document.configuration;
             const auto held = [&context](const std::size_t index) {
-                return static_cast<float>(context.registers.
-                           get(Registers::Type::Dimension, Registers::reserved + index)) /
+                return static_cast<float>(
+                               context.registers.get(Registers::Type::Dimension, Registers::reserved + index)) /
                        65536.0f;
             };
             const auto moved = [](const float value, const float current) { return std::abs(value - current) > 0.01f; };
@@ -234,7 +228,8 @@ namespace render::primitives::composition {
                 const syntax::Mouth::Macro *macro = mouth.macro(mouth.lexicon.intern(name));
                 if (!macro) return;
                 std::string written;
-                for (const syntax::Token &token: macro->body) written += token.text;
+                for (const syntax::Token &token : macro->body)
+                    written += token.text;
                 float value = field;
                 if (patch::decimal(written.data(), written.data() + written.size(), value).ec == std::errc{} &&
                     value >= 0.0f && value <= 1.0f) {
@@ -271,7 +266,7 @@ namespace render::primitives::composition {
 
         parser.mouth.bind("\\documentclass", [this, &context, publish](syntax::Mouth &mouth) {
             std::string options;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 options += token.text;
             }
             const memory::Location origin = mouth.lookahead().location;
@@ -286,48 +281,48 @@ namespace render::primitives::composition {
             // and says so.
             struct Class {
                 std::string_view name; ///< The class.
-                std::size_t columns; ///< How many columns it sets unless told otherwise.
+                std::size_t columns;   ///< How many columns it sets unless told otherwise.
             };
-            static constexpr std::array<Class, 36> classes{
-                {
-                    {.name = "article", .columns = 1}, {.name = "report", .columns = 1}, {.name = "book", .columns = 1},
-                    {.name = "letter", .columns = 1}, {.name = "memoir", .columns = 1},
-                    {.name = "minimal", .columns = 1}, {.name = "proc", .columns = 2}, {.name = "slides", .columns = 1},
+            static constexpr std::array<Class, 36> classes{{
+                    {.name = "article", .columns = 1},    {.name = "report", .columns = 1},
+                    {.name = "book", .columns = 1},       {.name = "letter", .columns = 1},
+                    {.name = "memoir", .columns = 1},     {.name = "minimal", .columns = 1},
+                    {.name = "proc", .columns = 2},       {.name = "slides", .columns = 1},
                     {.name = "extarticle", .columns = 1}, {.name = "extreport", .columns = 1},
-                    {.name = "extbook", .columns = 1}, {.name = "amsart", .columns = 1},
-                    {.name = "amsbook", .columns = 1}, {.name = "amsproc", .columns = 1},
-                    {.name = "scrartcl", .columns = 1}, {.name = "scrreprt", .columns = 1},
-                    {.name = "scrbook", .columns = 1}, {.name = "scrlttr2", .columns = 1},
-                    {.name = "IEEEtran", .columns = 2}, {.name = "IEEEconf", .columns = 2},
-                    {.name = "acmart", .columns = 1}, {.name = "sig-alternate", .columns = 2},
-                    {.name = "llncs", .columns = 1}, {.name = "elsarticle", .columns = 1},
-                    {.name = "revtex4", .columns = 1}, {.name = "revtex4-1", .columns = 1},
-                    {.name = "revtex4-2", .columns = 1}, {.name = "svjour3", .columns = 1},
-                    {.name = "svmult", .columns = 1}, {.name = "sn-jnl", .columns = 1}, {.name = "aa", .columns = 2},
-                    {.name = "mnras", .columns = 2}, {.name = "aastex631", .columns = 1},
-                    {.name = "aastex7", .columns = 1}, {.name = "standalone", .columns = 1},
-                    {.name = "tufte-handout", .columns = 1},
-                }
-            };
+                    {.name = "extbook", .columns = 1},    {.name = "amsart", .columns = 1},
+                    {.name = "amsbook", .columns = 1},    {.name = "amsproc", .columns = 1},
+                    {.name = "scrartcl", .columns = 1},   {.name = "scrreprt", .columns = 1},
+                    {.name = "scrbook", .columns = 1},    {.name = "scrlttr2", .columns = 1},
+                    {.name = "IEEEtran", .columns = 2},   {.name = "IEEEconf", .columns = 2},
+                    {.name = "acmart", .columns = 1},     {.name = "sig-alternate", .columns = 2},
+                    {.name = "llncs", .columns = 1},      {.name = "elsarticle", .columns = 1},
+                    {.name = "revtex4", .columns = 1},    {.name = "revtex4-1", .columns = 1},
+                    {.name = "revtex4-2", .columns = 1},  {.name = "svjour3", .columns = 1},
+                    {.name = "svmult", .columns = 1},     {.name = "sn-jnl", .columns = 1},
+                    {.name = "aa", .columns = 2},         {.name = "mnras", .columns = 2},
+                    {.name = "aastex631", .columns = 1},  {.name = "aastex7", .columns = 1},
+                    {.name = "standalone", .columns = 1}, {.name = "tufte-handout", .columns = 1},
+            }};
             const auto known = std::ranges::find(classes, std::string_view(name), &Class::name);
             const std::string module = std::format("{}/main.mtex", name);
             const bool carried = syntax::modules::get(module).has_value();
             if (known == classes.end() && !carried) {
-                tracebacks.emplace_back(
-                    syntax::Traceback::Type::Warning, origin,
-                    std::format("File `{}.cls' not found; the document is set as article", name));
+                tracebacks.emplace_back(syntax::Traceback::Type::Warning, origin,
+                                        std::format("File `{}.cls' not found; the document is set as article", name));
             }
 
             float width = 612.0f; // letter paper, as LaTeX's own default
             float height = 792.0f;
             float body = name == "beamer" ? 10.95f : 10.0f; // beamer's slides are eleven-point
-            float border = 0.5f; // standalone's own default
+            float border = 0.5f;                            // standalone's own default
             bool turned = false;
             std::size_t columns = known == classes.end() ? 1 : known->columns;
-            for (const auto piece: std::views::split(std::string_view(options), ',')) {
+            for (const auto piece : std::views::split(std::string_view(options), ',')) {
                 std::string_view option(piece.begin(), piece.end());
-                while (!option.empty() && option.front() == ' ') option.remove_prefix(1);
-                while (!option.empty() && option.back() == ' ') option.remove_suffix(1);
+                while (!option.empty() && option.front() == ' ')
+                    option.remove_prefix(1);
+                while (!option.empty() && option.back() == ' ')
+                    option.remove_suffix(1);
 
                 if (option == "a4paper") {
                     width = 595.28f;
@@ -349,8 +344,8 @@ namespace render::primitives::composition {
                     height = 756.0f;
                 } else if (option == "landscape") {
                     turned = true;
-                } else if (option == "twocolumn" || option == "sigconf" || option == "sigplan" ||
-                           option == "reprint" || option == "5p") {
+                } else if (option == "twocolumn" || option == "sigconf" || option == "sigplan" || option == "reprint" ||
+                           option == "5p") {
                     // acmart's proceedings, revtex's journal pages and
                     // elsarticle's widest layout are two columns too.
                     columns = 2;
@@ -382,13 +377,18 @@ namespace render::primitives::composition {
             const bool twelve = body >= 11.5f;
             const float baseline = twelve ? 14.5f : eleven ? 13.6f : 12.0f;
             const float indentation = twelve ? 18.0f : eleven ? 17.0f : 15.0f;
-            const float line = columns > 1
-                                   ? std::min(twelve ? 450.0f : eleven ? 430.0f : 410.0f, width - 108.0f)
-                                   : std::min(twelve ? 390.0f : eleven ? 360.0f : 345.0f, width - 144.0f);
+            const float line = columns > 1 ? std::min(twelve   ? 450.0f
+                                                      : eleven ? 430.0f
+                                                               : 410.0f,
+                                                      width - 108.0f)
+                                           : std::min(twelve   ? 390.0f
+                                                      : eleven ? 360.0f
+                                                               : 345.0f,
+                                                      width - 144.0f);
             const float lines = std::floor((height - 252.0f) / baseline);
             const float tall = lines * baseline + body;
             constexpr float head = 12.0f + 25.0f; // \headheight and \headsep
-            constexpr float foot = 30.0f; // \footskip
+            constexpr float foot = 30.0f;         // \footskip
             const float top = 72.0f + (height - 144.0f - head - tall - foot) * 0.5f + head;
 
             Configuration page = context.document.configuration;
@@ -451,13 +451,15 @@ namespace render::primitives::composition {
         // the last unbounded when none is written.
         const auto ranges = [](const std::string_view spec, int &step) {
             const auto trim = [](std::string_view text) {
-                while (!text.empty() && (text.front() == ' ' || text.front() == '\n')) text.remove_prefix(1);
-                while (!text.empty() && (text.back() == ' ' || text.back() == '\n')) text.remove_suffix(1);
+                while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
+                    text.remove_prefix(1);
+                while (!text.empty() && (text.back() == ' ' || text.back() == '\n'))
+                    text.remove_suffix(1);
                 return text;
             };
-            std::vector<std::pair<int, int> > found;
+            std::vector<std::pair<int, int>> found;
             bool stepped = false;
-            for (const auto piece: std::views::split(spec, ',')) {
+            for (const auto piece : std::views::split(spec, ',')) {
                 std::string_view item(piece.begin(), piece.end());
                 if (const std::size_t bar = item.find('|'); bar != std::string_view::npos) item = item.substr(0, bar);
                 if (const std::size_t colon = item.find(':'); colon != std::string_view::npos)
@@ -516,304 +518,312 @@ namespace render::primitives::composition {
         const syntax::Symbol titled = parser.mouth.lexicon.intern("\\frametitle");
         const syntax::Symbol subtitled = parser.mouth.lexicon.intern("\\framesubtitle");
         context.environments.watch(
-            "frame",
-            [this, &context, titled, subtitled, ranges](syntax::Mouth &mouth) {
-                using Category = syntax::Catcodes::Category;
-                const auto blank = [&mouth] {
-                    while (mouth.lookahead().category == Category::Space) mouth.read();
-                };
-                blank();
-                std::string marked;
-                if (mouth.lookahead().is('<')) {
-                    mouth.read();
-                    for (syntax::Token token = mouth.read(); !token.empty() && !token.is('>'); token = mouth.read())
-                        marked += token.text;
-                }
-                if (marked.starts_with('@')) {
-                    slide = 1;
-                    std::from_chars(marked.data() + 1, marked.data() + marked.size(), slide);
-                } else {
-                    slide = 1;
-
-                    // What the frame holds, to its end.
-                    std::vector<syntax::Token> body;
-                    for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
-                        if (token.text == "\\end" && mouth.lookahead().is(Category::Group, '{')) {
-                            std::string called;
-                            for (std::size_t index = 1; index < 12; ++index) {
-                                const syntax::Token letter = mouth.lookahead(index);
-                                if (letter.empty() || letter.is('}')) break;
-                                called += letter.text;
-                            }
-                            if (called == "frame") {
-                                mouth.stream().inject(std::span{&token, 1});
-                                break;
-                            }
-                        }
-                        body.push_back(token);
+                "frame",
+                [this, &context, titled, subtitled, ranges](syntax::Mouth &mouth) {
+                    using Category = syntax::Catcodes::Category;
+                    const auto blank = [&mouth] {
+                        while (mouth.lookahead().category == Category::Space)
+                            mouth.read();
+                    };
+                    blank();
+                    std::string marked;
+                    if (mouth.lookahead().is('<')) {
+                        mouth.read();
+                        for (syntax::Token token = mouth.read(); !token.empty() && !token.is('>'); token = mouth.read())
+                            marked += token.text;
                     }
+                    if (marked.starts_with('@')) {
+                        slide = 1;
+                        std::from_chars(marked.data() + 1, marked.data() + marked.size(), slide);
+                    } else {
+                        slide = 1;
 
-                    // Read through, as each slide will read it: its steps
-                    // counted, its slides' highest found, and the text each
-                    // slide reads written, its defaults and its blocks'
-                    // overlays written out.
-                    static constexpr std::array<std::string_view, 15> aware{
-                        "\\only", "\\uncover", "\\visible", "\\invisible", "\\onslide", "\\alt", "\\temporal", "\\item",
-                        "\\alert", "\\textbf", "\\textit", "\\emph", "\\structure", "\\color", "\\textcolor",
-                    };
-                    static constexpr std::array<std::string_view, 3> lists{"itemize", "enumerate", "description"};
-                    static constexpr std::array<std::string_view, 4> shown{
-                        "onlyenv", "uncoverenv", "visibleenv", "invisibleenv"
-                    };
-                    const auto after = [&body](std::size_t at) {
-                        while (at < body.size() && body[at].category == Category::Space) ++at;
-                        return at;
-                    };
-                    // The name in braces from a place, and where it ends.
-                    const auto called = [&body](const std::size_t at) -> std::pair<std::string, std::size_t> {
-                        if (at >= body.size() || !body[at].is(Category::Group, '{')) return {std::string{}, at};
-                        std::string name;
-                        std::size_t end = at + 1;
-                        for (; end < body.size() && !body[end].is(Category::Group, '}'); ++end) name += body[end].text;
-                        return {name, std::min(end + 1, body.size())};
-                    };
-                    // An overlay from a place, `<...>`, and where it ends.
-                    const auto overlay = [&body](
-                        const std::size_t at) -> std::pair<std::optional<std::string>, std::size_t> {
-                        if (at >= body.size() || !body[at].is('<')) return {std::nullopt, at};
-                        std::string spec;
-                        std::size_t end = at + 1;
-                        for (; end < body.size() && !body[end].is('>'); ++end) spec += body[end].text;
-                        return {spec, std::min(end + 1, body.size())};
-                    };
-                    // A braced group from a place, and where it ends.
-                    const auto group = [&body](const std::size_t at) {
-                        if (at >= body.size() || !body[at].is(Category::Group, '{')) return at;
-                        int depth = 0;
-                        for (std::size_t end = at; end < body.size(); ++end) {
-                            if (body[end].is(Category::Group, '{')) ++depth;
-                            if (body[end].is(Category::Group, '}') && --depth == 0) return end + 1;
+                        // What the frame holds, to its end.
+                        std::vector<syntax::Token> body;
+                        for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) {
+                            if (token.text == "\\end" && mouth.lookahead().is(Category::Group, '{')) {
+                                std::string called;
+                                for (std::size_t index = 1; index < 12; ++index) {
+                                    const syntax::Token letter = mouth.lookahead(index);
+                                    if (letter.empty() || letter.is('}')) break;
+                                    called += letter.text;
+                                }
+                                if (called == "frame") {
+                                    mouth.stream().inject(std::span{&token, 1});
+                                    break;
+                                }
+                            }
+                            body.push_back(token);
                         }
-                        return body.size();
-                    };
 
-                    int step = 1;
-                    int last = 1;
-                    bool marks = false;
-                    const auto count = [&](const std::string &spec) {
-                        marks = true;
-                        for (const auto &[first, final]: ranges(spec, step)) {
-                            last = std::max(last, first);
-                            if (final != std::numeric_limits<int>::max()) last = std::max(last, final);
-                        }
-                    };
-                    std::string text;
-                    std::vector<std::string> defaults;
-                    std::vector<std::pair<std::string, std::string> > closings;
-                    // an environment, and what follows its end
-                    for (std::size_t at = 0; at < body.size();) {
-                        const syntax::Token &token = body[at];
-                        if (token.text == "\\pause") {
+                        // Read through, as each slide will read it: its steps
+                        // counted, its slides' highest found, and the text each
+                        // slide reads written, its defaults and its blocks'
+                        // overlays written out.
+                        static constexpr std::array<std::string_view, 15> aware{
+                                "\\only",   "\\uncover",  "\\visible",   "\\invisible", "\\onslide",
+                                "\\alt",    "\\temporal", "\\item",      "\\alert",     "\\textbf",
+                                "\\textit", "\\emph",     "\\structure", "\\color",     "\\textcolor",
+                        };
+                        static constexpr std::array<std::string_view, 3> lists{"itemize", "enumerate", "description"};
+                        static constexpr std::array<std::string_view, 4> shown{"onlyenv", "uncoverenv", "visibleenv",
+                                                                               "invisibleenv"};
+                        const auto after = [&body](std::size_t at) {
+                            while (at < body.size() && body[at].category == Category::Space)
+                                ++at;
+                            return at;
+                        };
+                        // The name in braces from a place, and where it ends.
+                        const auto called = [&body](const std::size_t at) -> std::pair<std::string, std::size_t> {
+                            if (at >= body.size() || !body[at].is(Category::Group, '{')) return {std::string{}, at};
+                            std::string name;
+                            std::size_t end = at + 1;
+                            for (; end < body.size() && !body[end].is(Category::Group, '}'); ++end)
+                                name += body[end].text;
+                            return {name, std::min(end + 1, body.size())};
+                        };
+                        // An overlay from a place, `<...>`, and where it ends.
+                        const auto overlay =
+                                [&body](const std::size_t at) -> std::pair<std::optional<std::string>, std::size_t> {
+                            if (at >= body.size() || !body[at].is('<')) return {std::nullopt, at};
+                            std::string spec;
+                            std::size_t end = at + 1;
+                            for (; end < body.size() && !body[end].is('>'); ++end)
+                                spec += body[end].text;
+                            return {spec, std::min(end + 1, body.size())};
+                        };
+                        // A braced group from a place, and where it ends.
+                        const auto group = [&body](const std::size_t at) {
+                            if (at >= body.size() || !body[at].is(Category::Group, '{')) return at;
+                            int depth = 0;
+                            for (std::size_t end = at; end < body.size(); ++end) {
+                                if (body[end].is(Category::Group, '{')) ++depth;
+                                if (body[end].is(Category::Group, '}') && --depth == 0) return end + 1;
+                            }
+                            return body.size();
+                        };
+
+                        int step = 1;
+                        int last = 1;
+                        bool marks = false;
+                        const auto count = [&](const std::string &spec) {
                             marks = true;
-                            std::size_t next = after(at + 1);
-                            text += "\\@pause";
-                            if (next < body.size() && body[next].is('[')) {
-                                std::string written;
-                                for (++next; next < body.size() && !body[next].is(']'); ++next)
-                                    written += body[next].text;
-                                std::from_chars(written.data(), written.data() + written.size(), step);
-                                text += std::format("[{}]", written);
-                                at = std::min(next + 1, body.size());
-                            } else {
-                                ++step;
-                                at = next;
+                            for (const auto &[first, final] : ranges(spec, step)) {
+                                last = std::max(last, first);
+                                if (final != std::numeric_limits<int>::max()) last = std::max(last, final);
                             }
-                            text += ' ';
-                            last = std::max(last, step);
-                            continue;
-                        }
-                        if (token.text == "\\begin" || token.text == "\\end") {
-                            const auto [name, end] = called(after(at + 1));
-                            const bool opening = token.text == "\\begin";
-                            if (opening && std::ranges::contains(lists, name)) {
-                                // A list's default overlay, `[<+->]`, kept for its items.
-                                if (std::size_t next = after(end);
-                                    next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
-                                    std::string spec;
-                                    const auto [given, past] = overlay(next + 1);
-                                    spec = given.value_or("");
-                                    next = after(past);
-                                    if (next < body.size() && body[next].is(']')) ++next;
-                                    text += std::format("\\begin{{{}}}", name);
-                                    defaults.push_back(spec);
+                        };
+                        std::string text;
+                        std::vector<std::string> defaults;
+                        std::vector<std::pair<std::string, std::string>> closings;
+                        // an environment, and what follows its end
+                        for (std::size_t at = 0; at < body.size();) {
+                            const syntax::Token &token = body[at];
+                            if (token.text == "\\pause") {
+                                marks = true;
+                                std::size_t next = after(at + 1);
+                                text += "\\@pause";
+                                if (next < body.size() && body[next].is('[')) {
+                                    std::string written;
+                                    for (++next; next < body.size() && !body[next].is(']'); ++next)
+                                        written += body[next].text;
+                                    std::from_chars(written.data(), written.data() + written.size(), step);
+                                    text += std::format("[{}]", written);
+                                    at = std::min(next + 1, body.size());
+                                } else {
+                                    ++step;
                                     at = next;
-                                    continue;
                                 }
-                                defaults.emplace_back();
-                            } else if (!opening && std::ranges::contains(lists, name) && !defaults.empty()) {
-                                defaults.pop_back();
+                                text += ' ';
+                                last = std::max(last, step);
+                                continue;
                             }
-                            if (opening) {
-                                if (const auto [given, past] = overlay(after(end)); given) {
-                                    count(*given);
-                                    if (std::ranges::contains(shown, name)) {
-                                        // `\@onslide{2}{` opens what only those slides show;
-                                        // the others what they hide, or what they show.
-                                        if (name == "onlyenv") {
-                                            text += std::format(R"(\@onslide{{{}}}{{)", *given);
-                                        } else if (name == "invisibleenv") {
-                                            text += std::format(R"({{\@onslide{{{}}}{{\@conceal}}{{}})", *given);
-                                        } else {
-                                            text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}})", *given);
-                                        }
-                                        closings.emplace_back(name, name == "onlyenv" ? "}{}" : "}");
-                                    } else {
-                                        text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}}\begin{{{}}})", *given,
-                                                            name);
-                                        closings.emplace_back(name, std::format("\\end{{{}}}}}", name));
+                            if (token.text == "\\begin" || token.text == "\\end") {
+                                const auto [name, end] = called(after(at + 1));
+                                const bool opening = token.text == "\\begin";
+                                if (opening && std::ranges::contains(lists, name)) {
+                                    // A list's default overlay, `[<+->]`, kept for its items.
+                                    if (std::size_t next = after(end);
+                                        next + 1 < body.size() && body[next].is('[') && body[next + 1].is('<')) {
+                                        std::string spec;
+                                        const auto [given, past] = overlay(next + 1);
+                                        spec = given.value_or("");
+                                        next = after(past);
+                                        if (next < body.size() && body[next].is(']')) ++next;
+                                        text += std::format("\\begin{{{}}}", name);
+                                        defaults.push_back(spec);
+                                        at = next;
+                                        continue;
                                     }
-                                    at = past;
+                                    defaults.emplace_back();
+                                } else if (!opening && std::ranges::contains(lists, name) && !defaults.empty()) {
+                                    defaults.pop_back();
+                                }
+                                if (opening) {
+                                    if (const auto [given, past] = overlay(after(end)); given) {
+                                        count(*given);
+                                        if (std::ranges::contains(shown, name)) {
+                                            // `\@onslide{2}{` opens what only those slides show;
+                                            // the others what they hide, or what they show.
+                                            if (name == "onlyenv") {
+                                                text += std::format(R"(\@onslide{{{}}}{{)", *given);
+                                            } else if (name == "invisibleenv") {
+                                                text += std::format(R"({{\@onslide{{{}}}{{\@conceal}}{{}})", *given);
+                                            } else {
+                                                text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}})", *given);
+                                            }
+                                            closings.emplace_back(name, name == "onlyenv" ? "}{}" : "}");
+                                        } else {
+                                            text += std::format(R"({{\@onslide{{{}}}{{}}{{\@conceal}}\begin{{{}}})",
+                                                                *given, name);
+                                            closings.emplace_back(name, std::format("\\end{{{}}}}}", name));
+                                        }
+                                        at = past;
+                                        continue;
+                                    }
+                                } else if (!closings.empty() && closings.back().first == name) {
+                                    text += closings.back().second;
+                                    closings.pop_back();
+                                    at = end;
                                     continue;
                                 }
-                            } else if (!closings.empty() && closings.back().first == name) {
-                                text += closings.back().second;
-                                closings.pop_back();
+                                text += std::format("{}{{{}}}", token.text, name);
                                 at = end;
                                 continue;
                             }
-                            text += std::format("{}{{{}}}", token.text, name);
-                            at = end;
-                            continue;
-                        }
-                        if (std::ranges::contains(aware, token.text)) {
-                            text += std::string(token.text) + ' ';
-                            std::size_t next = after(at + 1);
-                            // `\only{...}<2>` and `\alt{...}{...}<2>` may
-                            // write theirs after what they hold.
-                            if (next < body.size() && !body[next].is('<') && (
-                                    token.text == "\\only" || token.text == "\\alt")) {
-                                std::size_t past = group(next);
-                                if (token.text == "\\alt") past = group(after(past));
-                                const auto [given, end] = overlay(after(past));
-                                if (given) count(*given);
-                                at += 1;
+                            if (std::ranges::contains(aware, token.text)) {
+                                text += std::string(token.text) + ' ';
+                                std::size_t next = after(at + 1);
+                                // `\only{...}<2>` and `\alt{...}{...}<2>` may
+                                // write theirs after what they hold.
+                                if (next < body.size() && !body[next].is('<') &&
+                                    (token.text == "\\only" || token.text == "\\alt")) {
+                                    std::size_t past = group(next);
+                                    if (token.text == "\\alt") past = group(after(past));
+                                    const auto [given, end] = overlay(after(past));
+                                    if (given) count(*given);
+                                    at += 1;
+                                    continue;
+                                }
+                                const auto [given, past] = overlay(next);
+                                if (given) {
+                                    count(*given);
+                                    text += std::format("<{}>", *given);
+                                    at = past;
+                                } else {
+                                    if (token.text == "\\item" && !defaults.empty() && !defaults.back().empty()) {
+                                        count(defaults.back());
+                                        text += std::format("<{}>", defaults.back());
+                                    }
+                                    at += 1;
+                                }
                                 continue;
                             }
-                            const auto [given, past] = overlay(next);
-                            if (given) {
-                                count(*given);
-                                text += std::format("<{}>", *given);
-                                at = past;
-                            } else {
-                                if (token.text == "\\item" && !defaults.empty() && !defaults.back().empty()) {
-                                    count(defaults.back());
-                                    text += std::format("<{}>", defaults.back());
-                                }
-                                at += 1;
+                            // A control word keeps the space that ended it; a
+                            // control symbol, `\%`, had none.
+                            text += token.text;
+                            if (token.text.size() > 1 && token.text.front() == '\\' &&
+                                std::isalpha(static_cast<unsigned char>(token.text[1]))) {
+                                text += ' ';
                             }
-                            continue;
+                            ++at;
                         }
-                        // A control word keeps the space that ended it; a
-                        // control symbol, `\%`, had none.
-                        text += token.text;
-                        if (token.text.size() > 1 && token.text.front() == '\\' &&
-                            std::isalpha(static_cast<unsigned char>(token.text[1]))) {
-                            text += ' ';
-                        }
-                        ++at;
-                    }
 
-                    // One slide, as it was written; or each, the first read
-                    // now and the rest after it, each its own frame.
-                    if (!marks) {
-                        if (!body.empty()) mouth.stream().inject(std::span{body});
-                    } else {
-                        std::string slides = text;
-                        for (int copy = 2; copy <= last; ++copy) {
-                            slides += std::format("\\end{{frame}}\\begin{{frame}}<@{}>{}", copy, text);
-                        }
-                        mouth.ingest(context.arena.copy(slides));
-                    }
-                }
-                pauses = 1;
-                context.selection.paused(false);
-
-                std::string options;
-                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                    options += token.text;
-                }
-                const auto has = [&options](const std::string_view key) {
-                    for (const auto piece: std::views::split(std::string_view(options), ',')) {
-                        std::string_view option(piece.begin(), piece.end());
-                        while (!option.empty() && option.front() == ' ') option.remove_prefix(1);
-                        while (!option.empty() && option.back() == ' ') option.remove_suffix(1);
-                        if (option == key) return true;
-                    }
-                    return false;
-                };
-                const char placement = has("t") ? 't' : has("b") ? 'b' : 'c';
-                frames.push_back(placement);
-
-                // The title and subtitle as arguments, or as the commands
-                // the frame opens with, their overlays and short forms let go.
-                std::array<std::vector<syntax::Token>, 2> heads{};
-                for (std::vector<syntax::Token> &head: heads) {
-                    blank();
-                    if (mouth.lookahead().is(Category::Group, '{')) head = mouth.argument({}, 0);
-                }
-                for (std::size_t which = 0; which < heads.size(); ++which) {
-                    blank();
-                    if (mouth.lookahead().symbol != (which == 0 ? titled : subtitled)) continue;
-                    mouth.read();
-                    // A title's own overlay, `\frametitle<2>`, let go.
-                    blank();
-                    if (mouth.lookahead().is('<')) {
-                        while (!mouth.lookahead().empty() && !mouth.read().is('>')) {
+                        // One slide, as it was written; or each, the first read
+                        // now and the rest after it, each its own frame.
+                        if (!marks) {
+                            if (!body.empty()) mouth.stream().inject(std::span{body});
+                        } else {
+                            std::string slides = text;
+                            for (int copy = 2; copy <= last; ++copy) {
+                                slides += std::format("\\end{{frame}}\\begin{{frame}}<@{}>{}", copy, text);
+                            }
+                            mouth.ingest(context.arena.copy(slides));
                         }
                     }
-                    static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                    heads[which] = mouth.argument({}, 0);
-                }
+                    pauses = 1;
+                    context.selection.paused(false);
 
-                // Read in this order: the title, the subtitle, and the fill
-                // above what the frame holds -- each put in front of the one
-                // after it, so last first. The page before ended with its
-                // frame, so what stands between two frames -- a section's
-                // line of the contents -- goes with the next.
-                if (placement != 't') mouth.ingest("\\vspace*{\\fill}");
-                for (std::size_t which = heads.size(); which-- > 0;) {
-                    if (heads[which].empty()) continue;
-                    const syntax::Symbol command = which == 0 ? titled : subtitled;
-                    std::vector<syntax::Token> written{
-                        {.symbol = command, .category = Category::Escape, .text = mouth.lexicon.resolve(command)},
-                        {.symbol = mouth.lexicon.intern("{"), .category = Category::Group, .text = "{"}
+                    std::string options;
+                    for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                        options += token.text;
+                    }
+                    const auto has = [&options](const std::string_view key) {
+                        for (const auto piece : std::views::split(std::string_view(options), ',')) {
+                            std::string_view option(piece.begin(), piece.end());
+                            while (!option.empty() && option.front() == ' ')
+                                option.remove_prefix(1);
+                            while (!option.empty() && option.back() == ' ')
+                                option.remove_suffix(1);
+                            if (option == key) return true;
+                        }
+                        return false;
                     };
-                    written.insert(written.end(), heads[which].begin(), heads[which].end());
-                    written.push_back({.symbol = mouth.lexicon.intern("}"), .category = Category::Group, .text = "}"});
-                    mouth.stream().inject(std::span{written});
-                }
-            },
-            [this, &context](syntax::Mouth &mouth) {
-                const char placement = frames.empty() ? 'c' : frames.back();
-                if (!frames.empty()) frames.pop_back();
-                context.selection.paused(false);
-                mouth.ingest(placement == 'b' ? "\\par\\clearpage " : R"(\par\vfill\clearpage )");
-            });
+                    const char placement = has("t") ? 't' : has("b") ? 'b' : 'c';
+                    frames.push_back(placement);
+
+                    // The title and subtitle as arguments, or as the commands
+                    // the frame opens with, their overlays and short forms let go.
+                    std::array<std::vector<syntax::Token>, 2> heads{};
+                    for (std::vector<syntax::Token> &head : heads) {
+                        blank();
+                        if (mouth.lookahead().is(Category::Group, '{')) head = mouth.argument({}, 0);
+                    }
+                    for (std::size_t which = 0; which < heads.size(); ++which) {
+                        blank();
+                        if (mouth.lookahead().symbol != (which == 0 ? titled : subtitled)) continue;
+                        mouth.read();
+                        // A title's own overlay, `\frametitle<2>`, let go.
+                        blank();
+                        if (mouth.lookahead().is('<')) {
+                            while (!mouth.lookahead().empty() && !mouth.read().is('>')) {}
+                        }
+                        static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                        heads[which] = mouth.argument({}, 0);
+                    }
+
+                    // Read in this order: the title, the subtitle, and the fill
+                    // above what the frame holds -- each put in front of the one
+                    // after it, so last first. The page before ended with its
+                    // frame, so what stands between two frames -- a section's
+                    // line of the contents -- goes with the next.
+                    if (placement != 't') mouth.ingest("\\vspace*{\\fill}");
+                    for (std::size_t which = heads.size(); which-- > 0;) {
+                        if (heads[which].empty()) continue;
+                        const syntax::Symbol command = which == 0 ? titled : subtitled;
+                        std::vector<syntax::Token> written{
+                                {.symbol = command,
+                                 .category = Category::Escape,
+                                 .text = mouth.lexicon.resolve(command)},
+                                {.symbol = mouth.lexicon.intern("{"), .category = Category::Group, .text = "{"}};
+                        written.insert(written.end(), heads[which].begin(), heads[which].end());
+                        written.push_back(
+                                {.symbol = mouth.lexicon.intern("}"), .category = Category::Group, .text = "}"});
+                        mouth.stream().inject(std::span{written});
+                    }
+                },
+                [this, &context](syntax::Mouth &mouth) {
+                    const char placement = frames.empty() ? 'c' : frames.back();
+                    if (!frames.empty()) frames.pop_back();
+                    context.selection.paused(false);
+                    mouth.ingest(placement == 'b' ? "\\par\\clearpage " : R"(\par\vfill\clearpage )");
+                });
 
         // What a slide shows: `\@onslide{2-}{shown}{hidden}`, one of the two
         // as the slide being set is or is not among the overlay's -- an
         // empty overlay all of them -- moving the frame's step on past a `+`.
         parser.mouth.bind("\\@onslide", [this, ranges](syntax::Mouth &mouth) {
             std::string spec;
-            for (const syntax::Token &token: mouth.argument({}, 0)) spec += token.text;
+            for (const syntax::Token &token : mouth.argument({}, 0))
+                spec += token.text;
             const std::vector<syntax::Token> shown = mouth.argument({}, 0);
             const std::vector<syntax::Token> hidden = mouth.argument({}, 0);
-            const std::vector<std::pair<int, int> > found = ranges(spec, pauses);
+            const std::vector<std::pair<int, int>> found = ranges(spec, pauses);
             const bool on = found.empty() || std::ranges::any_of(found, [this](const std::pair<int, int> &range) {
-                return slide >= range.first && slide <= range.second;
-            });
-            if (const std::vector<syntax::Token> &chosen = on ? shown : hidden; !chosen.empty()) mouth.stream().inject(
-                std::span{chosen});
+                                return slide >= range.first && slide <= range.second;
+                            });
+            if (const std::vector<syntax::Token> &chosen = on ? shown : hidden; !chosen.empty())
+                mouth.stream().inject(std::span{chosen});
         });
 
         // `\pause`: what follows shows from the frame's next step on -- or
@@ -841,14 +851,14 @@ namespace render::primitives::composition {
         // closing -- is the class's \@letter, which reads that argument, and
         // its \@endletter.
         context.environments.watch(
-            "letter", [](syntax::Mouth &mouth) { mouth.ingest("\\@letter "); },
-            [](syntax::Mouth &mouth) { mouth.ingest("\\@endletter "); });
+                "letter", [](syntax::Mouth &mouth) { mouth.ingest("\\@letter "); },
+                [](syntax::Mouth &mouth) { mouth.ingest("\\@endletter "); });
 
         // LaTeX's titlepage: a page of its own with no number on it, the
         // pages after counted from one.
         context.environments.watch(
-            "titlepage", [](syntax::Mouth &mouth) { mouth.ingest("\\clearpage\\thispagestyle{empty}"); },
-            [](syntax::Mouth &mouth) { mouth.ingest(R"(\par\clearpage\setcounter{page}{1})"); });
+                "titlepage", [](syntax::Mouth &mouth) { mouth.ingest("\\clearpage\\thispagestyle{empty}"); },
+                [](syntax::Mouth &mouth) { mouth.ingest(R"(\par\clearpage\setcounter{page}{1})"); });
 
         using Directive = layout::Node::Directive;
 
@@ -869,7 +879,7 @@ namespace render::primitives::composition {
                 const typography::Font *fonts[] = {font};
                 const memory::Slice<layout::Node *> digits =
                         context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, "00", {});
-                for (const layout::Node *piece: digits) {
+                for (const layout::Node *piece : digits) {
                     width += layout::Line::advance(piece);
                 }
             }
@@ -901,7 +911,7 @@ namespace render::primitives::composition {
                         static_cast<float>(context.registers.get(gap->type, gap->slot)) / 65536.0f;
             }
             const float width = context.document.column(spread.back());
-            for (const std::size_t index: {1uz, 2uz, 3uz}) {
+            for (const std::size_t index : {1uz, 2uz, 3uz}) {
                 context.registers.set(Registers::Type::Dimension, Registers::reserved + index,
                                       static_cast<std::int32_t>(width * 65536.0f), false);
             }
@@ -916,32 +926,32 @@ namespace render::primitives::composition {
         // text in so many columns, balanced where the block ends, and the
         // space again. The starred form, which leaves its columns
         // unbalanced, is set the same.
-        for (const std::string_view name: {"multicols", "multicols*"}) {
+        for (const std::string_view name : {"multicols", "multicols*"}) {
             context.environments.watch(
-                name,
-                [&context](syntax::Mouth &mouth) {
-                    const std::string count = syntax::Argument::text(mouth);
-                    std::string heading;
-                    for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                        heading += token.text;
-                        if (token.text.size() > 1 && token.text.front() == '\\') heading += ' ';
-                    }
-                    mouth.ingest(context.arena.copy(
-                        std::format(R"(\par\vskip\multicolsep {}\par\@columns {} )", heading, count)
-                    ));
-                },
-                [](syntax::Mouth &mouth) { mouth.ingest(R"(\par\@columns0 \vskip\multicolsep )"); });
+                    name,
+                    [&context](syntax::Mouth &mouth) {
+                        const std::string count = syntax::Argument::text(mouth);
+                        std::string heading;
+                        for (const syntax::Token &token :
+                             mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                            heading += token.text;
+                            if (token.text.size() > 1 && token.text.front() == '\\') heading += ' ';
+                        }
+                        mouth.ingest(context.arena.copy(
+                                std::format(R"(\par\vskip\multicolsep {}\par\@columns {} )", heading, count)));
+                    },
+                    [](syntax::Mouth &mouth) { mouth.ingest(R"(\par\@columns0 \vskip\multicolsep )"); });
         }
 
         // A style from this page on, or for this page alone.
-        static constexpr std::array<std::pair<std::string_view, Directive::Style>, 5> styles{
-            {
-                {"plain", Directive::Style::Plain}, {"empty", Directive::Style::Empty},
-                {"headings", Directive::Style::Headings}, {"myheadings", Directive::Style::Headings},
+        static constexpr std::array<std::pair<std::string_view, Directive::Style>, 5> styles{{
+                {"plain", Directive::Style::Plain},
+                {"empty", Directive::Style::Empty},
+                {"headings", Directive::Style::Headings},
+                {"myheadings", Directive::Style::Headings},
                 {"fancy", Directive::Style::Fancy},
-            }
-        };
-        for (const bool local: {false, true}) {
+        }};
+        for (const bool local : {false, true}) {
             parser.bind(local ? "\\thispagestyle" : "\\pagestyle",
                         [this, local](const syntax::Parser &parser) -> syntax::Node * {
                             memory::Arena &arena = parser.arena;
@@ -963,10 +973,9 @@ namespace render::primitives::composition {
                                                             std::format("Unknown page style '{}'", name));
                                     return directive(arena, nullptr, origin);
                                 }
-                                const syntax::Token call{
-                                    .symbol = defined, .category = syntax::Catcodes::Category::Escape,
-                                    .text = mouth.lexicon.resolve(defined)
-                                };
+                                const syntax::Token call{.symbol = defined,
+                                                         .category = syntax::Catcodes::Category::Escape,
+                                                         .text = mouth.lexicon.resolve(defined)};
                                 mouth.stream().inject(std::span{&call, 1});
                             }
 
@@ -1027,7 +1036,7 @@ namespace render::primitives::composition {
             const memory::Location origin = mouth.lookahead().location;
 
             std::string places;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 places += token.text;
             }
 
@@ -1044,7 +1053,8 @@ namespace render::primitives::composition {
             stamp(content, context);
 
             std::vector<layout::Node *> gathered;
-            for (const syntax::Node *child: content) compose(gathered, child, context);
+            for (const syntax::Node *child : content)
+                compose(gathered, child, context);
             const memory::Slice<layout::Node *> nodes = arena.allocate<layout::Node *>(gathered.size());
             std::ranges::copy(gathered, nodes.begin());
 
@@ -1064,7 +1074,8 @@ namespace render::primitives::composition {
         const auto mark = [&context](syntax::Parser &parser, const std::size_t which) -> layout::Node * {
             syntax::Mouth &mouth = parser.mouth;
             memory::Arena &arena = parser.arena;
-            while (mouth.lookahead().category == syntax::Catcodes::Category::Space) mouth.read();
+            while (mouth.lookahead().category == syntax::Catcodes::Category::Space)
+                mouth.read();
             syntax::Token open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
@@ -1077,14 +1088,14 @@ namespace render::primitives::composition {
             stamp(content, context);
             context.selection = kept;
             std::vector<layout::Node *> gathered;
-            for (const syntax::Node *child: content) compose(gathered, child, context);
+            for (const syntax::Node *child : content)
+                compose(gathered, child, context);
             const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(gathered.size());
             std::ranges::copy(gathered, row.begin());
             auto *node = arena.compose<layout::Node>();
-            node->directive({
-                .command = layout::Node::Directive::Command::Mark,
-                .note = layout::Line::horizontal(arena, row, 0.0f), .index = which
-            });
+            node->directive({.command = layout::Node::Directive::Command::Mark,
+                             .note = layout::Line::horizontal(arena, row, 0.0f),
+                             .index = which});
             return node;
         };
         // Between paragraphs a mark stands on its own, in a paragraph in it.
@@ -1103,7 +1114,7 @@ namespace render::primitives::composition {
             const bool between = parser.mouth.vertical;
             return directive(parser.arena, mark(parser, 1), origin, between);
         });
-        for (const auto &[name, which]: {std::pair{"\\leftmark", 0uz}, std::pair{"\\rightmark", 1uz}}) {
+        for (const auto &[name, which] : {std::pair{"\\leftmark", 0uz}, std::pair{"\\rightmark", 1uz}}) {
             parser.bind(name, [which](const syntax::Parser &parser) -> syntax::Node * {
                 auto *node = parser.arena.compose<layout::Node>();
                 node->directive({.command = layout::Node::Directive::Command::Marked, .index = which});
@@ -1117,7 +1128,7 @@ namespace render::primitives::composition {
 
         parser.mouth.bind("\\pagerules", [&context](syntax::Mouth &mouth) {
             std::array widths{context.document.furniture.rule, context.document.furniture.line};
-            for (float &width: widths) {
+            for (float &width : widths) {
                 syntax::Token open = mouth.read();
                 if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});

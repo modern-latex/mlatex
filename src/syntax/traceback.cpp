@@ -8,8 +8,8 @@
 namespace syntax {
     std::string Traceback::format(const std::span<const std::string> files) const {
         static constexpr std::array<std::string_view, 15> types{
-            "group", "equation", "environment", "delimiter", "argument", "token", "end-of-input",
-            "macro", "recursion", "memory", "scope", "primitive", "dimension", "register", "syntax",
+                "group",     "equation", "environment", "delimiter", "argument",  "token",    "end-of-input", "macro",
+                "recursion", "memory",   "scope",       "primitive", "dimension", "register", "syntax",
         };
         // Where, as a compiler says it: the file when it has a name, then the
         // line and column, when they are known.

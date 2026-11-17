@@ -23,8 +23,10 @@ namespace render::primitives::figures {
 
     /// @brief Text without the blanks around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
-        while (!text.empty() && (text.front() == ' ' || text.front() == '\n')) text.remove_prefix(1);
-        while (!text.empty() && (text.back() == ' ' || text.back() == '\n')) text.remove_suffix(1);
+        while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
+            text.remove_prefix(1);
+        while (!text.empty() && (text.back() == ' ' || text.back() == '\n'))
+            text.remove_suffix(1);
         return text;
     }
 
@@ -78,9 +80,9 @@ namespace render::primitives::figures {
         return text;
     }
 
-    std::vector<std::vector<std::string> >
-    Diagrams::grid(const std::string_view text, const std::string_view separator) {
-        std::vector<std::vector<std::string> > rows(1);
+    std::vector<std::vector<std::string>> Diagrams::grid(const std::string_view text,
+                                                         const std::string_view separator) {
+        std::vector<std::vector<std::string>> rows(1);
         std::size_t begin = 0;
         int depth = 0;
         for (std::size_t at = 0; at < text.size(); ++at) {
@@ -91,13 +93,14 @@ namespace render::primitives::figures {
                 rows.back().emplace_back(trim(text.substr(begin, at - begin)));
                 rows.emplace_back();
                 at += 2;
-                while (at < text.size() && text[at] == ' ') ++at;
+                while (at < text.size() && text[at] == ' ')
+                    ++at;
                 // The room a `\\[4pt]` asks for is the diagram's own spacing here.
                 if (at < text.size() && text[at] == '[') at = closing(text, at) + 1;
                 begin = at;
                 --at;
-            } else if (text.substr(at).starts_with(separator) && (
-                           separator != "&" || at == 0 || text[at - 1] != '\\')) {
+            } else if (text.substr(at).starts_with(separator) &&
+                       (separator != "&" || at == 0 || text[at - 1] != '\\')) {
                 rows.back().emplace_back(trim(text.substr(begin, at - begin)));
                 at += separator.size() - 1;
                 begin = at + 1;
@@ -115,7 +118,7 @@ namespace render::primitives::figures {
         std::string out = std::format("\\begin{{tikzpicture}}[baseline=([yshift=-0.25em]cd.center)]"
                                       "\\matrix[matrix of math nodes, column sep={}, row sep={}, nodes={{{}}}] (cd) {{",
                                       diagram.columns, diagram.rows, diagram.nodes);
-        for (const std::vector<std::string> &row: diagram.cells) {
+        for (const std::vector<std::string> &row : diagram.cells) {
             for (std::size_t column = 0; column < row.size(); ++column) {
                 if (column > 0) out += " & ";
                 out += row[column];
@@ -127,16 +130,17 @@ namespace render::primitives::figures {
             return row >= 1 && row <= diagram.cells.size() && column >= 1 && column <= diagram.cells[row - 1].size() &&
                    !diagram.cells[row - 1][column - 1].empty();
         };
-        for (const Arrow &arrow: diagram.arrows) {
+        for (const Arrow &arrow : diagram.arrows) {
             if (!present(arrow.row, arrow.column) || !present(arrow.down, arrow.across)) {
                 tracebacks.emplace_back(
-                    syntax::Traceback::Type::Warning, origin,
-                    std::format("a diagram's arrow from row {}, column {} goes to no object and is not drawn",
-                                arrow.row, arrow.column));
+                        syntax::Traceback::Type::Warning, origin,
+                        std::format("a diagram's arrow from row {}, column {} goes to no object and is not drawn",
+                                    arrow.row, arrow.column));
                 continue;
             }
             out += std::format("\\draw[{}] (cd-{}-{}) to ", arrow.style, arrow.row, arrow.column);
-            for (const std::string &label: arrow.labels) out += std::format("{} ", label);
+            for (const std::string &label : arrow.labels)
+                out += std::format("{} ", label);
             out += std::format("(cd-{}-{});", arrow.down, arrow.across);
         }
         out += "\\end{tikzpicture}";
@@ -184,13 +188,15 @@ namespace render::primitives::figures {
 
         // Its children: bracketed nodes, and in qtree's words bare leaves.
         while (at < text.size()) {
-            while (at < text.size() && (text[at] == ' ' || text[at] == '\n')) ++at;
+            while (at < text.size() && (text[at] == ' ' || text[at] == '\n'))
+                ++at;
             if (at >= text.size()) break;
             if (text[at] == ']') {
                 ++at;
                 // qtree may name a node again after its end: `]` `.S`.
                 if (at < text.size() && text[at] == '.') {
-                    while (at < text.size() && text[at] != ' ' && text[at] != ']' && text[at] != '[') ++at;
+                    while (at < text.size() && text[at] != ' ' && text[at] != ']' && text[at] != '[')
+                        ++at;
                 }
                 break;
             }
@@ -216,22 +222,22 @@ namespace render::primitives::figures {
     std::string Diagrams::plant(Branch &tree, const float left, const int depth, int &count, std::string &out) {
         // The children side by side, centred under the room this node has.
         float under = 0.0f;
-        for (const Branch &child: tree.children) under += child.width;
+        for (const Branch &child : tree.children)
+            under += child.width;
         if (!tree.children.empty()) under += 10.0f * static_cast<float>(tree.children.size() - 1);
         float place = left + (tree.width - under) * 0.5f;
         std::vector<std::string> names;
-        for (Branch &child: tree.children) {
+        for (Branch &child : tree.children) {
             names.push_back(plant(child, place, depth + 1, count, out));
             place += child.width + 10.0f;
         }
-        tree.center = tree.children.empty()
-                     ? left + tree.width * 0.5f
-                     : (tree.children.front().center + tree.children.back().center) * 0.5f;
+        tree.center = tree.children.empty() ? left + tree.width * 0.5f
+                                            : (tree.children.front().center + tree.children.back().center) * 0.5f;
         const std::string name = std::format("@t{}", ++count);
         out += std::format("\\node ({}) at ({:.2f}pt,{:.2f}pt) {{{}}};", name, tree.center,
-                           -22.0f * static_cast<float>(depth),
-                           tree.label);
-        for (const std::string &child: names) out += std::format("\\draw ({}) -- ({});", name, child);
+                           -22.0f * static_cast<float>(depth), tree.label);
+        for (const std::string &child : names)
+            out += std::format("\\draw ({}) -- ({});", name, child);
         return name;
     }
 
@@ -249,8 +255,8 @@ namespace render::primitives::figures {
                 if (!quoted && (letter == '{' || letter == '[')) ++depth;
                 if (!quoted && (letter == '}' || letter == ']') && depth > 0) --depth;
                 if (letter != ',' || depth != 0 || quoted) continue;
-                if (const std::string_view piece = trim(list.substr(begin, at - begin)); !piece.empty()) found.
-                        push_back(piece);
+                if (const std::string_view piece = trim(list.substr(begin, at - begin)); !piece.empty())
+                    found.push_back(piece);
                 begin = at + 1;
             }
             return found;
@@ -260,7 +266,7 @@ namespace render::primitives::figures {
         // options, `|[draw]|`, left out.
         const auto objects = [](const Diagram &diagram) {
             std::string out = "\\matrix{";
-            for (const std::vector<std::string> &row: diagram.cells) {
+            for (const std::vector<std::string> &row : diagram.cells) {
                 for (std::size_t column = 0; column < row.size(); ++column) {
                     std::string_view cell = row[column];
                     if (cell.starts_with("|[")) cell = trim(cell.substr(std::min(cell.find("]|") + 2, cell.size())));
@@ -276,232 +282,245 @@ namespace render::primitives::figures {
         // arrow's left, or its right when swapped, with `auto`; across it
         // with `description`; or where a side it names puts it.
         const auto label = [](const std::string_view text, const bool swapped, const std::string_view options) {
-            const bool placed = options.contains("above") || options.contains("below") ||
-                                options.contains("left") || options.contains("right");
+            const bool placed = options.contains("above") || options.contains("below") || options.contains("left") ||
+                                options.contains("right");
             const bool across = options.contains("description");
             std::string written = "font=\\scriptsize,inner sep=0.5ex,";
-            if (across) written += "fill=white,";
-            else if (!placed) written += swapped ? "auto,swap," : "auto,";
+            if (across)
+                written += "fill=white,";
+            else if (!placed)
+                written += swapped ? "auto,swap," : "auto,";
             written += options;
             return std::format("node[{}] {{${}$}}", written, text);
         };
 
         // tikz-cd: `\begin{tikzcd}[column sep=large] A \arrow[r, "f"] & B \end{tikzcd}`.
         context.environments.watch(
-            "tikzcd",
-            [this, &context, split, objects, label](syntax::Mouth &mouth) {
-                const memory::Location origin = mouth.lookahead().location;
-                std::string options;
-                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                    options += token.text;
-                    if (token.text.size() > 1 && token.text.front() == '\\') options += ' ';
-                }
-                const std::string text = body(mouth, "tikzcd");
+                "tikzcd",
+                [this, &context, split, objects, label](syntax::Mouth &mouth) {
+                    const memory::Location origin = mouth.lookahead().location;
+                    std::string options;
+                    for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                        options += token.text;
+                        if (token.text.size() > 1 && token.text.front() == '\\') options += ' ';
+                    }
+                    const std::string text = body(mouth, "tikzcd");
 
-                // Its spacing by tikz-cd's names or as a length, the
-                // separator between cells, and what every arrow and every
-                // object takes.
-                Diagram diagram;
-                std::string separator = "&";
-                std::string every;
-                static constexpr std::array<std::pair<std::string_view, std::array<std::string_view, 2> >, 6> sizes{
-                    {
-                        {"tiny", {"0.6em", "0.45em"}}, {"small", {"1.2em", "0.9em"}},
-                        {"scriptsize", {"1.8em", "1.35em"}},
-                        {"normal", {"2.4em", "1.8em"}}, {"large", {"3.6em", "2.7em"}}, {"huge", {"4.8em", "3.6em"}},
+                    // Its spacing by tikz-cd's names or as a length, the
+                    // separator between cells, and what every arrow and every
+                    // object takes.
+                    Diagram diagram;
+                    std::string separator = "&";
+                    std::string every;
+                    static constexpr std::array<std::pair<std::string_view, std::array<std::string_view, 2>>, 6> sizes{{
+                            {"tiny", {"0.6em", "0.45em"}},
+                            {"small", {"1.2em", "0.9em"}},
+                            {"scriptsize", {"1.8em", "1.35em"}},
+                            {"normal", {"2.4em", "1.8em"}},
+                            {"large", {"3.6em", "2.7em"}},
+                            {"huge", {"4.8em", "3.6em"}},
+                    }};
+                    const auto sized = [](const std::string_view value, const std::size_t which) {
+                        const auto named = std::ranges::find(
+                                sizes, value, &std::pair<std::string_view, std::array<std::string_view, 2>>::first);
+                        return std::string(named != sizes.end() ? named->second[which] : value);
+                    };
+                    for (const std::string_view option : split(options)) {
+                        const std::size_t equals = option.find('=');
+                        const std::string_view key = trim(option.substr(0, equals));
+                        std::string_view value =
+                                equals == std::string_view::npos ? std::string_view{} : trim(option.substr(equals + 1));
+                        if (value.starts_with('{') && value.ends_with('}')) value = value.substr(1, value.size() - 2);
+                        if (key == "column sep" || key == "sep") diagram.columns = sized(value, 0);
+                        if (key == "row sep" || key == "sep") diagram.rows = sized(value, 1);
+                        if (key == "ampersand replacement") separator = trim(value);
+                        if (key == "arrows" || key == "every arrow/.append style") every += std::format("{},", value);
+                        if (key == "cells" && value.starts_with("nodes=")) {
+                            std::string_view nodes = trim(value.substr(6));
+                            if (nodes.starts_with('{') && nodes.ends_with('}'))
+                                nodes = nodes.substr(1, nodes.size() - 2);
+                            diagram.nodes = nodes;
+                        }
                     }
-                };
-                const auto sized = [](const std::string_view value, const std::size_t which) {
-                    const auto named = std::ranges::find(sizes, value,
-                                                         &std::pair<std::string_view, std::array<std::string_view,
-                                                             2> >::first);
-                    return std::string(named != sizes.end() ? named->second[which] : value);
-                };
-                for (const std::string_view option: split(options)) {
-                    const std::size_t equals = option.find('=');
-                    const std::string_view key = trim(option.substr(0, equals));
-                    std::string_view value = equals == std::string_view::npos
-                                                 ? std::string_view{}
-                                                 : trim(option.substr(equals + 1));
-                    if (value.starts_with('{') && value.ends_with('}')) value = value.substr(1, value.size() - 2);
-                    if (key == "column sep" || key == "sep") diagram.columns = sized(value, 0);
-                    if (key == "row sep" || key == "sep") diagram.rows = sized(value, 1);
-                    if (key == "ampersand replacement") separator = trim(value);
-                    if (key == "arrows" || key == "every arrow/.append style") every += std::format("{},", value);
-                    if (key == "cells" && value.starts_with("nodes=")) {
-                        std::string_view nodes = trim(value.substr(6));
-                        if (nodes.starts_with('{') && nodes.ends_with('}')) nodes = nodes.substr(1, nodes.size() - 2);
-                        diagram.nodes = nodes;
-                    }
-                }
 
-                // Each cell's object, and the arrows written in it.
-                static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> commands{
-                    {
-                        {"\\arrow ", ""}, {"\\ar ", ""}, {"\\rar ", "r"}, {"\\lar ", "l"}, {"\\dar ", "d"},
-                        {"\\uar ", "u"},
-                        {"\\drar ", "dr"}, {"\\urar ", "ur"}, {"\\dlar ", "dl"}, {"\\ular ", "ul"},
-                    }
-                };
-                const std::vector<std::vector<std::string> > rows = grid(text, separator);
-                for (std::size_t r = 0; r < rows.size(); ++r) {
-                    diagram.cells.emplace_back();
-                    for (std::size_t c = 0; c < rows[r].size(); ++c) {
-                        const std::string_view cell = rows[r][c];
-                        std::string object;
-                        std::size_t at = 0;
-                        while (at < cell.size()) {
-                            const auto command = std::ranges::find_if(commands, [&](const auto &pair) {
-                                return cell.substr(at).starts_with(pair.first);
-                            });
-                            if (command == commands.end()) {
-                                if (cell[at] == '{') {
-                                    const std::size_t shut = closing(cell, at);
-                                    object += cell.substr(at, shut + 1 - at);
-                                    at = shut + 1;
-                                } else {
-                                    object += cell[at++];
+                    // Each cell's object, and the arrows written in it.
+                    static constexpr std::array<std::pair<std::string_view, std::string_view>, 10> commands{{
+                            {"\\arrow ", ""},
+                            {"\\ar ", ""},
+                            {"\\rar ", "r"},
+                            {"\\lar ", "l"},
+                            {"\\dar ", "d"},
+                            {"\\uar ", "u"},
+                            {"\\drar ", "dr"},
+                            {"\\urar ", "ur"},
+                            {"\\dlar ", "dl"},
+                            {"\\ular ", "ul"},
+                    }};
+                    const std::vector<std::vector<std::string>> rows = grid(text, separator);
+                    for (std::size_t r = 0; r < rows.size(); ++r) {
+                        diagram.cells.emplace_back();
+                        for (std::size_t c = 0; c < rows[r].size(); ++c) {
+                            const std::string_view cell = rows[r][c];
+                            std::string object;
+                            std::size_t at = 0;
+                            while (at < cell.size()) {
+                                const auto command = std::ranges::find_if(commands, [&](const auto &pair) {
+                                    return cell.substr(at).starts_with(pair.first);
+                                });
+                                if (command == commands.end()) {
+                                    if (cell[at] == '{') {
+                                        const std::size_t shut = closing(cell, at);
+                                        object += cell.substr(at, shut + 1 - at);
+                                        at = shut + 1;
+                                    } else {
+                                        object += cell[at++];
+                                    }
+                                    continue;
                                 }
-                                continue;
-                            }
-                            at += command->first.size();
-                            while (at < cell.size() && cell[at] == ' ') ++at;
-                            std::string direction(command->second);
-                            std::string list;
-                            std::vector<std::string_view> old;
-                            if (at < cell.size() && cell[at] == '[') {
-                                const std::size_t shut = closing(cell, at);
-                                list = cell.substr(at + 1, shut - at - 1);
-                                at = shut + 1;
-                            }
-                            // The older form: `\arrow{r}{f}`, its way and its label.
-                            while (at < cell.size() && cell[at] == '{' && old.size() < 2) {
-                                const std::size_t shut = closing(cell, at);
-                                old.push_back(cell.substr(at + 1, shut - at - 1));
-                                at = shut + 1;
-                                while (at < cell.size() && cell[at] == ' ') ++at;
-                            }
-                            if (!old.empty() && direction.empty()) {
-                                direction = old.front();
-                                old.erase(old.begin());
-                            }
+                                at += command->first.size();
+                                while (at < cell.size() && cell[at] == ' ')
+                                    ++at;
+                                std::string direction(command->second);
+                                std::string list;
+                                std::vector<std::string_view> old;
+                                if (at < cell.size() && cell[at] == '[') {
+                                    const std::size_t shut = closing(cell, at);
+                                    list = cell.substr(at + 1, shut - at - 1);
+                                    at = shut + 1;
+                                }
+                                // The older form: `\arrow{r}{f}`, its way and its label.
+                                while (at < cell.size() && cell[at] == '{' && old.size() < 2) {
+                                    const std::size_t shut = closing(cell, at);
+                                    old.push_back(cell.substr(at + 1, shut - at - 1));
+                                    at = shut + 1;
+                                    while (at < cell.size() && cell[at] == ' ')
+                                        ++at;
+                                }
+                                if (!old.empty() && direction.empty()) {
+                                    direction = old.front();
+                                    old.erase(old.begin());
+                                }
 
-                            Arrow arrow{.row = r + 1, .column = c + 1};
-                            std::string foot;
-                            std::string head = ">";
-                            bool doubled = false;
-                            bool swapped = false;
-                            bool across = false;
-                            std::string style;
-                            std::vector<std::pair<std::string, std::pair<bool, std::string> > > labels;
-                            for (const std::string_view item: split(every + list)) {
-                                if (item.starts_with('"')) {
-                                    const std::size_t shut = item.find('"', 1);
-                                    const std::string_view written = item.substr(1, std::min(shut, item.size()) - 1);
-                                    std::string_view rest = shut == std::string_view::npos
-                                                                ? std::string_view{}
-                                                                : trim(item.substr(shut + 1));
-                                    const bool turned = rest.starts_with('\'');
-                                    if (turned) rest = trim(rest.substr(1));
-                                    if (rest.starts_with('{') && rest.ends_with('}'))
-                                        rest = rest.substr(1, rest.size() - 2);
-                                    labels.push_back({std::string(written), {turned, std::string(rest)}});
-                                } else if (item.find_first_not_of("rlud") == std::string_view::npos) {
-                                    direction = item;
-                                } else if (item == "Rightarrow" || item == "Longrightarrow" || item == "Rrightarrow") {
-                                    doubled = true;
-                                } else if (item == "Leftarrow") {
-                                    doubled = true;
-                                    foot = "<";
-                                    head.clear();
-                                } else if (item == "Leftrightarrow") {
-                                    doubled = true;
-                                    foot = "<";
-                                } else if (item == "equal" || item == "Equal" || item == "equals") {
-                                    doubled = true;
-                                    head.clear();
-                                } else if (item == "dash" || item == "no head" || item == "-") {
-                                    head.clear();
-                                } else if (item == "hook") {
-                                    foot = "hook";
-                                } else if (item == "hook'") {
-                                    foot = "right hook";
-                                } else if (item == "tail") {
-                                    foot = ">";
-                                } else if (item == "two heads" || item == "twoheadrightarrow") {
-                                    head = ">>";
-                                } else if (item == "mapsto" || item == "maps to") {
-                                    foot = "|";
-                                } else if (item == "leftarrow") {
-                                    foot = "<";
-                                    head.clear();
-                                } else if (item == "leftrightarrow") {
-                                    foot = "<";
-                                } else if (item == "swap") {
-                                    swapped = true;
-                                } else if (item == "description" || item == "labels=description") {
-                                    across = true;
-                                } else if (item == "phantom") {
-                                    style += "phantom,";
-                                    across = true;
-                                } else if (item.starts_with("from=") || item.starts_with("to=")) {
-                                    // A cell by its place, `2-3`.
-                                    const std::string_view place = trim(item.substr(item.find('=') + 1));
-                                    const std::size_t dash = place.find('-');
+                                Arrow arrow{.row = r + 1, .column = c + 1};
+                                std::string foot;
+                                std::string head = ">";
+                                bool doubled = false;
+                                bool swapped = false;
+                                bool across = false;
+                                std::string style;
+                                std::vector<std::pair<std::string, std::pair<bool, std::string>>> labels;
+                                for (const std::string_view item : split(every + list)) {
+                                    if (item.starts_with('"')) {
+                                        const std::size_t shut = item.find('"', 1);
+                                        const std::string_view written =
+                                                item.substr(1, std::min(shut, item.size()) - 1);
+                                        std::string_view rest = shut == std::string_view::npos
+                                                                        ? std::string_view{}
+                                                                        : trim(item.substr(shut + 1));
+                                        const bool turned = rest.starts_with('\'');
+                                        if (turned) rest = trim(rest.substr(1));
+                                        if (rest.starts_with('{') && rest.ends_with('}'))
+                                            rest = rest.substr(1, rest.size() - 2);
+                                        labels.push_back({std::string(written), {turned, std::string(rest)}});
+                                    } else if (item.find_first_not_of("rlud") == std::string_view::npos) {
+                                        direction = item;
+                                    } else if (item == "Rightarrow" || item == "Longrightarrow" ||
+                                               item == "Rrightarrow") {
+                                        doubled = true;
+                                    } else if (item == "Leftarrow") {
+                                        doubled = true;
+                                        foot = "<";
+                                        head.clear();
+                                    } else if (item == "Leftrightarrow") {
+                                        doubled = true;
+                                        foot = "<";
+                                    } else if (item == "equal" || item == "Equal" || item == "equals") {
+                                        doubled = true;
+                                        head.clear();
+                                    } else if (item == "dash" || item == "no head" || item == "-") {
+                                        head.clear();
+                                    } else if (item == "hook") {
+                                        foot = "hook";
+                                    } else if (item == "hook'") {
+                                        foot = "right hook";
+                                    } else if (item == "tail") {
+                                        foot = ">";
+                                    } else if (item == "two heads" || item == "twoheadrightarrow") {
+                                        head = ">>";
+                                    } else if (item == "mapsto" || item == "maps to") {
+                                        foot = "|";
+                                    } else if (item == "leftarrow") {
+                                        foot = "<";
+                                        head.clear();
+                                    } else if (item == "leftrightarrow") {
+                                        foot = "<";
+                                    } else if (item == "swap") {
+                                        swapped = true;
+                                    } else if (item == "description" || item == "labels=description") {
+                                        across = true;
+                                    } else if (item == "phantom") {
+                                        style += "phantom,";
+                                        across = true;
+                                    } else if (item.starts_with("from=") || item.starts_with("to=")) {
+                                        // A cell by its place, `2-3`.
+                                        const std::string_view place = trim(item.substr(item.find('=') + 1));
+                                        const std::size_t dash = place.find('-');
+                                        std::size_t down = 0;
+                                        std::size_t over = 0;
+                                        std::from_chars(place.data(), place.data() + std::min(dash, place.size()),
+                                                        down);
+                                        if (dash != std::string_view::npos)
+                                            std::from_chars(place.data() + dash + 1, place.data() + place.size(), over);
+                                        if (item.starts_with("from=")) {
+                                            arrow.row = down;
+                                            arrow.column = over;
+                                        } else {
+                                            direction = std::format("@{}-{}", down, over);
+                                        }
+                                    } else if (item == "crossing over" || item == "rightarrow" || item == "squiggly" ||
+                                               item == "rightsquigarrow" || item == "harpoon" || item == "harpoon'" ||
+                                               item.starts_with("start anchor") || item.starts_with("end anchor") ||
+                                               item.starts_with("outer sep") || item == "cramped") {
+                                        // Drawn as a plain arrow.
+                                    } else {
+                                        style += std::format("{},", item);
+                                    }
+                                }
+                                if (!old.empty()) labels.push_back({std::string(old.front()), {false, std::string{}}});
+
+                                // Where it goes: its way from here, or a cell named.
+                                if (direction.starts_with('@')) {
                                     std::size_t down = 0;
                                     std::size_t over = 0;
-                                    std::from_chars(place.data(), place.data() + std::min(dash, place.size()), down);
-                                    if (dash != std::string_view::npos) std::from_chars(
-                                        place.data() + dash + 1, place.data() + place.size(), over);
-                                    if (item.starts_with("from=")) {
-                                        arrow.row = down;
-                                        arrow.column = over;
-                                    } else {
-                                        direction = std::format("@{}-{}", down, over);
-                                    }
-                                } else if (item == "crossing over" || item == "rightarrow" || item == "squiggly" ||
-                                           item == "rightsquigarrow" || item == "harpoon" || item == "harpoon'" ||
-                                           item.starts_with("start anchor") || item.starts_with("end anchor") ||
-                                           item.starts_with("outer sep") || item == "cramped") {
-                                    // Drawn as a plain arrow.
+                                    const std::size_t dash = direction.find('-');
+                                    std::from_chars(direction.data() + 1, direction.data() + dash, down);
+                                    std::from_chars(direction.data() + dash + 1, direction.data() + direction.size(),
+                                                    over);
+                                    arrow.down = down;
+                                    arrow.across = over;
                                 } else {
-                                    style += std::format("{},", item);
+                                    arrow.down = arrow.row +
+                                                 static_cast<std::size_t>(std::ranges::count(direction, 'd')) -
+                                                 static_cast<std::size_t>(std::ranges::count(direction, 'u'));
+                                    arrow.across = arrow.column +
+                                                   static_cast<std::size_t>(std::ranges::count(direction, 'r')) -
+                                                   static_cast<std::size_t>(std::ranges::count(direction, 'l'));
                                 }
+                                arrow.style = std::format("{}{}-{},{}", doubled ? "double,double distance=1.6pt," : "",
+                                                          foot, head, style);
+                                for (const auto &[written, how] : labels) {
+                                    std::string extra = how.second;
+                                    if (across && !extra.contains("description")) extra += ",description";
+                                    arrow.labels.push_back(label(written, how.first != swapped, extra));
+                                }
+                                diagram.arrows.push_back(std::move(arrow));
                             }
-                            if (!old.empty()) labels.push_back({std::string(old.front()), {false, std::string{}}});
-
-                            // Where it goes: its way from here, or a cell named.
-                            if (direction.starts_with('@')) {
-                                std::size_t down = 0;
-                                std::size_t over = 0;
-                                const std::size_t dash = direction.find('-');
-                                std::from_chars(direction.data() + 1, direction.data() + dash, down);
-                                std::from_chars(direction.data() + dash + 1, direction.data() + direction.size(), over);
-                                arrow.down = down;
-                                arrow.across = over;
-                            } else {
-                                arrow.down = arrow.row + static_cast<std::size_t>(std::ranges::count(direction, 'd')) -
-                                             static_cast<std::size_t>(std::ranges::count(direction, 'u'));
-                                arrow.across = arrow.column + static_cast<std::size_t>(std::ranges::count(
-                                                   direction, 'r')) -
-                                               static_cast<std::size_t>(std::ranges::count(direction, 'l'));
-                            }
-                            arrow.style = std::format("{}{}-{},{}", doubled ? "double,double distance=1.6pt," : "",
-                                                      foot, head, style);
-                            for (const auto &[written, how]: labels) {
-                                std::string extra = how.second;
-                                if (across && !extra.contains("description")) extra += ",description";
-                                arrow.labels.push_back(label(written, how.first != swapped, extra));
-                            }
-                            diagram.arrows.push_back(std::move(arrow));
+                            diagram.cells.back().emplace_back(trim(object));
                         }
-                        diagram.cells.back().emplace_back(trim(object));
                     }
-                }
-                mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
-            },
-            [](syntax::Mouth &) {
-            });
+                    mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
+                },
+                [](syntax::Mouth &) {});
 
         // xy-pic: `\xymatrix@C=3em{A \ar[r]^f \ar@{-->}[d]_g & B}`.
         parser.mouth.bind("\\xymatrix", [this, &context, objects, label](syntax::Mouth &mouth) {
@@ -528,7 +547,7 @@ namespace render::primitives::figures {
                 if (which == "R" || which.empty()) diagram.rows = trim(length);
             }
             std::string text;
-            for (const syntax::Token &token: mouth.argument({}, 0)) {
+            for (const syntax::Token &token : mouth.argument({}, 0)) {
                 // `\ar@{-->}` is one control word where `@` is a letter.
                 if (token.text == "\\ar@") {
                     text += "\\ar @";
@@ -538,9 +557,9 @@ namespace render::primitives::figures {
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
 
-            for (const std::vector<std::string> &row: grid(text, "&")) {
+            for (const std::vector<std::string> &row : grid(text, "&")) {
                 diagram.cells.emplace_back();
-                for (const std::string_view cell: row) {
+                for (const std::string_view cell : row) {
                     std::string object;
                     std::size_t at = 0;
                     while (at < cell.size()) {
@@ -563,7 +582,8 @@ namespace render::primitives::figures {
                         bool doubled = false;
                         // What each piece of it says, until something it is not.
                         while (at < cell.size()) {
-                            while (at < cell.size() && cell[at] == ' ') ++at;
+                            while (at < cell.size() && cell[at] == ' ')
+                                ++at;
                             if (at >= cell.size()) break;
                             if (cell[at] == '@' && at + 1 < cell.size()) {
                                 const char type = cell[at + 1];
@@ -617,8 +637,8 @@ namespace render::primitives::figures {
                             } else if (cell[at] == '^' || cell[at] == '_' || cell[at] == '|') {
                                 // A label: `^` on its left, `_` its right, `|` across it.
                                 const char side = cell[at++];
-                                while (at < cell.size() && (cell[at] == '<' || cell[at] == '>' || cell[at] == ' ')) ++
-                                        at;
+                                while (at < cell.size() && (cell[at] == '<' || cell[at] == '>' || cell[at] == ' '))
+                                    ++at;
                                 if (at < cell.size() && cell[at] == '(') at = closing(cell, at) + 1;
                                 std::string_view written;
                                 if (at < cell.size() && cell[at] == '{') {
@@ -702,16 +722,13 @@ namespace render::primitives::figures {
                                 // Its lines, each text, in a column of their own --
                                 // braced, so the matrix does not end a row at them.
                                 entry = trim(entry.substr(4));
-                                if (entry.starts_with('<')) entry = trim(
-                                                                entry.substr(
-                                                                    std::min(entry.find('>') + 1, entry.size())));
-                                const std::size_t shut = entry.starts_with('{')
-                                                             ? closing(entry, 0)
-                                                             : std::string_view::npos;
-                                const std::string_view lines = shut == std::string_view::npos
-                                                                   ? entry
-                                                                   : entry.substr(1, shut - 1);
-                                const std::vector<std::vector<std::string> > rows = grid(lines, "\x01");
+                                if (entry.starts_with('<'))
+                                    entry = trim(entry.substr(std::min(entry.find('>') + 1, entry.size())));
+                                const std::size_t shut =
+                                        entry.starts_with('{') ? closing(entry, 0) : std::string_view::npos;
+                                const std::string_view lines =
+                                        shut == std::string_view::npos ? entry : entry.substr(1, shut - 1);
+                                const std::vector<std::vector<std::string>> rows = grid(lines, "\x01");
                                 content = "{\\begin{array}{c}";
                                 for (std::size_t line = 0; line < rows.size(); ++line) {
                                     if (line > 0) content += "\\\\";
@@ -740,90 +757,88 @@ namespace render::primitives::figures {
         // its rows of objects and horizontal arrows between rows of
         // vertical ones, each vertical arrow under the object it leaves.
         context.environments.watch(
-            "CD",
-            [this, &context, objects, label](syntax::Mouth &mouth) {
-                const memory::Location origin = mouth.lookahead().location;
-                const std::string text = body(mouth, "CD");
-                Diagram diagram{.columns = "2.8em", .rows = "2em"};
-                const std::vector<std::vector<std::string> > rows = grid(text, "\x01");
-                for (std::size_t index = 0; index < rows.size(); ++index) {
-                    const std::string_view line = rows[index].front();
-                    const bool upright = index % 2 == 1;
-                    if (!upright) diagram.cells.emplace_back();
-                    const std::size_t row = diagram.cells.size();
-                    std::size_t column = 1;
-                    std::string object;
-                    std::size_t at = 0;
-                    // The text up to the next of a character, braces kept whole.
-                    const auto until = [&](const char stop) {
-                        const std::size_t begin = at;
-                        while (at < line.size() && line[at] != stop) at = line[at] == '{'
-                                                                              ? closing(line, at) + 1
-                                                                              : at + 1;
-                        const std::string_view found = trim(line.substr(begin, std::min(at, line.size()) - begin));
-                        ++at;
-                        return found;
-                    };
-                    while (at < line.size()) {
-                        if (line[at] != '@' || at + 1 >= line.size()) {
-                            object += line[at++];
-                            continue;
-                        }
-                        const char type = line[at + 1];
-                        at += 2;
-                        if (!upright) {
-                            diagram.cells.back().emplace_back(trim(object));
-                            object.clear();
-                        }
-                        Arrow arrow{.row = row, .column = column};
-                        if (upright) {
-                            arrow.down = row + 1;
-                            arrow.across = column;
-                        } else {
-                            arrow.down = row;
-                            arrow.across = column + 1;
-                        }
-                        ++column;
-                        if (type == '>' || type == '<' || type == 'V' || type == 'A') {
-                            const std::string_view first = until(type);
-                            const std::string_view second = until(type);
-                            // Drawn from the object it leaves; its first
-                            // label above a horizontal arrow or left of a
-                            // vertical one, which is the arrow's right side
-                            // going left or down, and its second the other.
-                            if (type == '<' || type == 'A') {
-                                std::swap(arrow.row, arrow.down);
-                                std::swap(arrow.column, arrow.across);
+                "CD",
+                [this, &context, objects, label](syntax::Mouth &mouth) {
+                    const memory::Location origin = mouth.lookahead().location;
+                    const std::string text = body(mouth, "CD");
+                    Diagram diagram{.columns = "2.8em", .rows = "2em"};
+                    const std::vector<std::vector<std::string>> rows = grid(text, "\x01");
+                    for (std::size_t index = 0; index < rows.size(); ++index) {
+                        const std::string_view line = rows[index].front();
+                        const bool upright = index % 2 == 1;
+                        if (!upright) diagram.cells.emplace_back();
+                        const std::size_t row = diagram.cells.size();
+                        std::size_t column = 1;
+                        std::string object;
+                        std::size_t at = 0;
+                        // The text up to the next of a character, braces kept whole.
+                        const auto until = [&](const char stop) {
+                            const std::size_t begin = at;
+                            while (at < line.size() && line[at] != stop)
+                                at = line[at] == '{' ? closing(line, at) + 1 : at + 1;
+                            const std::string_view found = trim(line.substr(begin, std::min(at, line.size()) - begin));
+                            ++at;
+                            return found;
+                        };
+                        while (at < line.size()) {
+                            if (line[at] != '@' || at + 1 >= line.size()) {
+                                object += line[at++];
+                                continue;
                             }
-                            const bool turned = type == '<' || type == 'V';
-                            arrow.style = "->,";
-                            if (!first.empty()) arrow.labels.push_back(label(first, turned, ""));
-                            if (!second.empty()) arrow.labels.push_back(label(second, !turned, ""));
-                        } else if (type == '=' || type == '|') {
-                            arrow.style = "double,double distance=1.6pt,-,";
-                        } else {
-                            continue;
+                            const char type = line[at + 1];
+                            at += 2;
+                            if (!upright) {
+                                diagram.cells.back().emplace_back(trim(object));
+                                object.clear();
+                            }
+                            Arrow arrow{.row = row, .column = column};
+                            if (upright) {
+                                arrow.down = row + 1;
+                                arrow.across = column;
+                            } else {
+                                arrow.down = row;
+                                arrow.across = column + 1;
+                            }
+                            ++column;
+                            if (type == '>' || type == '<' || type == 'V' || type == 'A') {
+                                const std::string_view first = until(type);
+                                const std::string_view second = until(type);
+                                // Drawn from the object it leaves; its first
+                                // label above a horizontal arrow or left of a
+                                // vertical one, which is the arrow's right side
+                                // going left or down, and its second the other.
+                                if (type == '<' || type == 'A') {
+                                    std::swap(arrow.row, arrow.down);
+                                    std::swap(arrow.column, arrow.across);
+                                }
+                                const bool turned = type == '<' || type == 'V';
+                                arrow.style = "->,";
+                                if (!first.empty()) arrow.labels.push_back(label(first, turned, ""));
+                                if (!second.empty()) arrow.labels.push_back(label(second, !turned, ""));
+                            } else if (type == '=' || type == '|') {
+                                arrow.style = "double,double distance=1.6pt,-,";
+                            } else {
+                                continue;
+                            }
+                            diagram.arrows.push_back(std::move(arrow));
                         }
-                        diagram.arrows.push_back(std::move(arrow));
+                        if (!upright) diagram.cells.back().emplace_back(trim(object));
                     }
-                    if (!upright) diagram.cells.back().emplace_back(trim(object));
-                }
-                mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
-            },
-            [](syntax::Mouth &) {
-            });
+                    mouth.ingest(context.arena.copy(mouth.formula() ? objects(diagram) : picture(diagram, origin)));
+                },
+                [](syntax::Mouth &) {});
 
         // A circuit, quantikz's or Qcircuit's: a row a wire, a cell a gate
         // on it -- boxed, a control's dot joined to its target's circle, a
         // meter, a label at its start or end -- and the wire run from its
         // first cell to its last, broken by each box it passes through.
         const auto circuit = [](const std::string_view text, const std::string_view columns,
-                                const std::string_view rows,
-                                const bool maths) {
+                                const std::string_view rows, const bool maths) {
             std::string out = std::format("\\begin{{tikzpicture}}[baseline=([yshift=-0.25em]q.center)]"
-                                          "\\matrix[column sep={}, row sep={}] (q) {{", columns, rows);
+                                          "\\matrix[column sep={}, row sep={}] (q) {{",
+                                          columns, rows);
             std::string after;
-            const std::vector<std::vector<std::string> > lines = grid(text, "&");
+            const std::vector<std::vector<std::string>> lines = grid(text, "&");
             for (std::size_t row = 0; row < lines.size(); ++row) {
                 std::size_t first = lines[row].size();
                 std::size_t last = 0;
@@ -840,14 +855,17 @@ namespace render::primitives::figures {
                     std::string_view argument;
                     if (cell.starts_with('\\')) {
                         std::size_t stop = 1;
-                        while (stop < cell.size() && std::isalpha(static_cast<unsigned char>(cell[stop]))) ++stop;
+                        while (stop < cell.size() && std::isalpha(static_cast<unsigned char>(cell[stop])))
+                            ++stop;
                         name = cell.substr(1, stop - 1);
                         std::size_t at = stop;
-                        while (at < cell.size() && cell[at] == ' ') ++at;
+                        while (at < cell.size() && cell[at] == ' ')
+                            ++at;
                         if (at < cell.size() && cell[at] == '[') at = closing(cell, at) + 1;
-                        while (at < cell.size() && cell[at] == ' ') ++at;
-                        if (at < cell.size() && cell[at] == '{') argument = cell.substr(
-                                                                     at + 1, closing(cell, at) - at - 1);
+                        while (at < cell.size() && cell[at] == ' ')
+                            ++at;
+                        if (at < cell.size() && cell[at] == '{')
+                            argument = cell.substr(at + 1, closing(cell, at) - at - 1);
                     }
                     const std::string called = std::format("q-{}-{}", row + 1, column + 1);
                     const std::string shown = maths ? std::format("${}$", argument) : std::string(argument);
@@ -856,8 +874,8 @@ namespace render::primitives::figures {
                         // Qcircuit's multigate names its wires first, its gate last.
                         const std::size_t open = cell.rfind('{');
                         const std::string_view written = name == "multigate" && open != std::string_view::npos
-                                                             ? cell.substr(open + 1, closing(cell, open) - open - 1)
-                                                             : argument;
+                                                                 ? cell.substr(open + 1, closing(cell, open) - open - 1)
+                                                                 : argument;
                         node = std::format("\\node[draw, fill=white, minimum size=1.6em] {{${}$}};", written);
                     } else if (name == "lstick" || name == "rstick" || name == "push" || name == "midstick") {
                         node = std::format("\\node {{{}}};",
@@ -873,13 +891,14 @@ namespace render::primitives::figures {
                                              called);
                     } else if (name == "swap" || name == "targX" || name == "qswap") {
                         node = "\\node[inner sep=0, minimum size=0.55em] {};";
-                        after += std::format(
-                            "\\draw ({0}.north west) -- ({0}.south east);\\draw ({0}.north east) -- ({0}.south west);",
-                            called);
+                        after += std::format("\\draw ({0}.north west) -- ({0}.south east);\\draw ({0}.north east) -- "
+                                             "({0}.south west);",
+                                             called);
                     } else if (name == "meter" || name == "measure" || name == "measureD" || name == "meterD") {
                         node = "\\node[draw, fill=white, minimum width=1.7em, minimum height=1.3em] {};";
                         after += std::format("\\draw ({0}.south) ++(-0.2em,0.2em) -- ++(0.55em,0.75em);"
-                                             "\\draw ({0}.center) ++(-0.5em,-0.25em) arc (160:20:0.53em);", called);
+                                             "\\draw ({0}.center) ++(-0.5em,-0.25em) arc (160:20:0.53em);",
+                                             called);
                     } else if (name == "cw" || name == "cwx") {
                         classical[column] = true;
                     }
@@ -887,18 +906,19 @@ namespace render::primitives::figures {
                     out += node;
                     // What joins it to another wire: a control's line.
                     if ((name == "ctrl" || name == "octrl" || name == "ctrlo" || name == "swap" || name == "qwx" ||
-                         name == "cwx") && !argument.empty()) {
+                         name == "cwx") &&
+                        !argument.empty()) {
                         int reach = 0;
                         std::from_chars(argument.data(), argument.data() + argument.size(), reach);
-                        if (const int target = static_cast<int>(row) + 1 + reach; reach != 0 && target >= 1) after += std::format("\\draw ({}) -- (q-{}-{});", called, target,
-                                                                                                                                  column + 1);
+                        if (const int target = static_cast<int>(row) + 1 + reach; reach != 0 && target >= 1)
+                            after += std::format("\\draw ({}) -- (q-{}-{});", called, target, column + 1);
                     }
                 }
                 out += " \\\\ ";
                 for (std::size_t column = first; column < last; ++column) {
                     after += std::format("\\draw{} (q-{}-{}) -- (q-{}-{});",
-                                         classical[column + 1] ? "[double, double distance=1pt]" : "",
-                                         row + 1, column + 1, row + 1, column + 2);
+                                         classical[column + 1] ? "[double, double distance=1pt]" : "", row + 1,
+                                         column + 1, row + 1, column + 2);
                 }
             }
             out += std::format("}};{}\\end{{tikzpicture}}", after);
@@ -906,23 +926,22 @@ namespace render::primitives::figures {
         };
 
         context.environments.watch(
-            "quantikz",
-            [&context, circuit](syntax::Mouth &mouth) {
-                std::string options;
-                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))
-                    options += token.text;
-                std::string columns = "0.9em";
-                std::string rows = "0.9em";
-                for (const auto piece: std::views::split(std::string_view{options}, ',')) {
-                    const std::string_view option = trim(std::string_view(piece.begin(), piece.end()));
-                    if (option.starts_with("column sep=")) columns = trim(option.substr(11));
-                    if (option.starts_with("row sep=")) rows = trim(option.substr(8));
-                }
-                const std::string text = body(mouth, "quantikz");
-                mouth.ingest(context.arena.copy(circuit(text, columns, rows, false)));
-            },
-            [](syntax::Mouth &) {
-            });
+                "quantikz",
+                [&context, circuit](syntax::Mouth &mouth) {
+                    std::string options;
+                    for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0))
+                        options += token.text;
+                    std::string columns = "0.9em";
+                    std::string rows = "0.9em";
+                    for (const auto piece : std::views::split(std::string_view{options}, ',')) {
+                        const std::string_view option = trim(std::string_view(piece.begin(), piece.end()));
+                        if (option.starts_with("column sep=")) columns = trim(option.substr(11));
+                        if (option.starts_with("row sep=")) rows = trim(option.substr(8));
+                    }
+                    const std::string text = body(mouth, "quantikz");
+                    mouth.ingest(context.arena.copy(circuit(text, columns, rows, false)));
+                },
+                [](syntax::Mouth &) {});
 
         parser.mouth.bind("\\Qcircuit", [&context, circuit](syntax::Mouth &mouth) {
             std::string columns = "1em";
@@ -932,15 +951,15 @@ namespace render::primitives::figures {
                 const std::string which(mouth.read().text);
                 if (mouth.lookahead().is('=')) static_cast<void>(mouth.read());
                 std::string length;
-                while (!mouth.lookahead().empty() && !mouth.lookahead().is('@') && !mouth.lookahead().is(
-                           Category::Group, '{')) {
+                while (!mouth.lookahead().empty() && !mouth.lookahead().is('@') &&
+                       !mouth.lookahead().is(Category::Group, '{')) {
                     length += mouth.read().text;
                 }
                 if (which == "C") columns = trim(length);
                 if (which == "R") rows = trim(length);
             }
             std::string text;
-            for (const syntax::Token &token: mouth.argument({}, 0)) {
+            for (const syntax::Token &token : mouth.argument({}, 0)) {
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
@@ -954,12 +973,11 @@ namespace render::primitives::figures {
         // the tree is placed and written out as a TikZ picture of its own,
         // or into the one it is written in.
         context.environments.watch(
-            "forest",
-            [&context](syntax::Mouth &mouth) {
-                mouth.ingest(context.arena.copy(std::format("\\@tree{{{}}}", body(mouth, "forest"))));
-            },
-            [](syntax::Mouth &) {
-            });
+                "forest",
+                [&context](syntax::Mouth &mouth) {
+                    mouth.ingest(context.arena.copy(std::format("\\@tree{{{}}}", body(mouth, "forest"))));
+                },
+                [](syntax::Mouth &) {});
         parser.mouth.bind("\\Tree", [&context](syntax::Mouth &mouth) {
             std::string text;
             int depth = 0;
@@ -974,7 +992,7 @@ namespace render::primitives::figures {
         parser.bind("\\@tree", [&context](syntax::Parser &reader) -> syntax::Node * {
             syntax::Mouth &mouth = reader.mouth;
             std::string text;
-            for (const syntax::Token &token: mouth.argument({}, 0)) {
+            for (const syntax::Token &token : mouth.argument({}, 0)) {
                 text += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') text += ' ';
             }
@@ -987,7 +1005,8 @@ namespace render::primitives::figures {
             // its children's side by side and an em apart, whichever is wider.
             const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
             const auto size = [&](this const auto &self, Branch &node) -> void {
-                for (Branch &child: node.children) self(child);
+                for (Branch &child : node.children)
+                    self(child);
 
                 mouth.ingest(context.arena.copy(std::format("{{{}}}", node.label)));
                 mouth.read();
@@ -998,12 +1017,15 @@ namespace render::primitives::figures {
                 context.selection = restore;
                 mouth.pop(syntax::semantics::Scope::Type::Group);
                 std::vector<layout::Node *> set;
-                for (const syntax::Node *child: read) compose(set, child, context);
+                for (const syntax::Node *child : read)
+                    compose(set, child, context);
                 float wide = 2.0f * em / 3.0f;
-                for (const layout::Node *piece: set) wide += layout::Line::advance(piece);
+                for (const layout::Node *piece : set)
+                    wide += layout::Line::advance(piece);
 
                 float under = 0.0f;
-                for (const Branch &child: node.children) under += child.width;
+                for (const Branch &child : node.children)
+                    under += child.width;
                 if (!node.children.empty()) under += 10.0f * static_cast<float>(node.children.size() - 1);
                 node.width = std::max(wide, under);
             };

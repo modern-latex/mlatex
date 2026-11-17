@@ -10,9 +10,9 @@
 #include "render/pdf.hpp"
 #include "logger.hpp"
 
-#include <harfbuzz/hb.h>
 #include <harfbuzz/hb-ot.h>
 #include <harfbuzz/hb-subset.h>
+#include <harfbuzz/hb.h>
 #include <zlib.h>
 
 #include <algorithm>
@@ -76,8 +76,7 @@ namespace render {
     /// @complexity O(1).
     static void fraction(std::string &text, const float value) {
         char buffer[32];
-        const auto [stop, failure] =
-                std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::fixed, 3);
+        const auto [stop, failure] = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::fixed, 3);
         if (failure != std::errc{}) {
             text += '0';
             return;
@@ -85,7 +84,8 @@ namespace render {
 
         std::string_view digits(buffer, static_cast<std::size_t>(stop - buffer));
         if (digits.find('.') != std::string_view::npos) {
-            while (digits.ends_with('0')) digits.remove_suffix(1);
+            while (digits.ends_with('0'))
+                digits.remove_suffix(1);
             if (digits.ends_with('.')) digits.remove_suffix(1);
         }
         text += digits.empty() ? std::string_view("0") : digits;
@@ -114,15 +114,9 @@ namespace render {
         bytes += " 0 obj\n";
     }
 
-    void Pdf::File::close() {
-        bytes += "\nendobj\n";
-    }
+    void Pdf::File::close() { bytes += "\nendobj\n"; }
 
-    void Pdf::File::stream(
-        const std::size_t number,
-        const std::string_view extra,
-        const std::string_view payload
-    ) {
+    void Pdf::File::stream(const std::size_t number, const std::string_view extra, const std::string_view payload) {
         open(number);
         bytes += "<<";
         bytes += extra;
@@ -133,7 +127,6 @@ namespace render {
         bytes += "\nendstream";
         close();
     }
-
 
     std::string Pdf::render(Composer &composer, const memory::Slice<layout::Pager::Page> pages, Screen *screen) {
         if (pages.empty()) return {};
@@ -161,10 +154,10 @@ namespace render {
         // name.
         std::vector<std::size_t> bodies;
         bodies.reserve(pages.count);
-        std::vector<std::array<float, 4> > extents; // what each page put ink on, for a fitted one's box
+        std::vector<std::array<float, 4>> extents; // what each page put ink on, for a fitted one's box
         extents.reserve(pages.count);
 
-        for (const layout::Pager::Page &sheet: pages) {
+        for (const layout::Pager::Page &sheet : pages) {
             const std::string_view content = composer.draw(sheet.nodes, sheet.notes, page.left, page.top);
             const std::size_t body = file.reserve();
             file.stream(body, "", content);
@@ -183,7 +176,7 @@ namespace render {
 
         /// @brief One face's cut, and whether it has been made yet.
         struct Cut {
-            hb_blob_t *program{nullptr}; ///< What cut() made of the face.
+            hb_blob_t *program{nullptr};    ///< What cut() made of the face.
             std::atomic<bool> ready{false}; ///< Set once the program is.
         };
 
@@ -226,11 +219,10 @@ namespace render {
                 }
 
                 hb_set_t *dropped = hb_subset_input_set(input, HB_SUBSET_SETS_DROP_TABLE_TAG);
-                for (const hb_tag_t tag: {
-                         HB_TAG('G', 'S', 'U', 'B'), HB_TAG('G', 'P', 'O', 'S'), HB_TAG('G', 'D', 'E', 'F'),
-                         HB_TAG('M', 'A', 'T', 'H'), HB_TAG('B', 'A', 'S', 'E'), HB_TAG('J', 'S', 'T', 'F'),
-                         HB_TAG('k', 'e', 'r', 'n'), HB_TAG('D', 'S', 'I', 'G')
-                     })
+                for (const hb_tag_t tag :
+                     {HB_TAG('G', 'S', 'U', 'B'), HB_TAG('G', 'P', 'O', 'S'), HB_TAG('G', 'D', 'E', 'F'),
+                      HB_TAG('M', 'A', 'T', 'H'), HB_TAG('B', 'A', 'S', 'E'), HB_TAG('J', 'S', 'T', 'F'),
+                      HB_TAG('k', 'e', 'r', 'n'), HB_TAG('D', 'S', 'I', 'G')})
                     hb_set_add(dropped, tag);
                 hb_face_t *subset = hb_subset_or_fail(face, input);
                 hb_subset_input_destroy(input);
@@ -278,21 +270,22 @@ namespace render {
             // -- and handing one work costs microseconds where starting a
             // thread costs a tenth of a millisecond, every one of it paid on
             // the writing thread before it can write anything.
-            const PTP_WORK work = helpers > 0
-                                      ? CreateThreadpoolWork([](PTP_CALLBACK_INSTANCE, void *context, PTP_WORK) {
-                                          const auto &claim = *static_cast<const decltype(take) *>(context);
-                                          while (claim()) {
-                                          }
-                                      }, const_cast<void *>(static_cast<const void *>(&take)), nullptr)
-                                      : nullptr;
-            for (std::size_t index = 0; work && index < helpers; ++index) SubmitThreadpoolWork(work);
+            const PTP_WORK work = helpers > 0 ? CreateThreadpoolWork(
+                                                        [](PTP_CALLBACK_INSTANCE, void *context, PTP_WORK) {
+                                                            const auto &claim =
+                                                                    *static_cast<const decltype(take) *>(context);
+                                                            while (claim()) {}
+                                                        },
+                                                        const_cast<void *>(static_cast<const void *>(&take)), nullptr)
+                                              : nullptr;
+            for (std::size_t index = 0; work && index < helpers; ++index)
+                SubmitThreadpoolWork(work);
 #else
             std::vector<std::jthread> threads;
             threads.reserve(helpers);
             for (std::size_t index = 0; index < helpers; ++index) {
                 threads.emplace_back([&take] {
-                    while (take()) {
-                    }
+                    while (take()) {}
                 });
             }
 #endif
@@ -339,8 +332,9 @@ namespace render {
                     // name table. A viewer shows it; nothing else reads it.
                     std::string name(6, 'A');
                     std::uint64_t digest = 14695981039346656037ull;
-                    for (const auto glyph: entry.glyphs) digest = (digest ^ glyph) * 1099511628211ull;
-                    for (char &letter: name) {
+                    for (const auto glyph : entry.glyphs)
+                        digest = (digest ^ glyph) * 1099511628211ull;
+                    for (char &letter : name) {
                         letter = static_cast<char>('A' + digest % 26);
                         digest /= 26;
                     }
@@ -348,7 +342,7 @@ namespace render {
                     char spelled[128];
                     unsigned int size = sizeof spelled;
                     hb_ot_name_get_utf8(face, HB_OT_NAME_ID_POSTSCRIPT_NAME, HB_LANGUAGE_INVALID, &size, spelled);
-                    for (const char letter:
+                    for (const char letter :
                          std::string_view(spelled, std::min<std::size_t>(size, sizeof spelled - 1))) {
                         if (std::isalnum(static_cast<unsigned char>(letter)) || letter == '-' || letter == '_')
                             name += letter;
@@ -361,9 +355,8 @@ namespace render {
                     const std::size_t descendant = file.reserve();
                     const std::size_t font = file.reserve();
 
-                    file.stream(program, truetype
-                                             ? "/Length1 " + std::to_string(length)
-                                             : std::string("/Subtype /OpenType"),
+                    file.stream(program,
+                                truetype ? "/Length1 " + std::to_string(length) : std::string("/Subtype /OpenType"),
                                 std::string_view(data, length));
 
                     // The character map: which character each glyph stands for. Without
@@ -404,19 +397,18 @@ namespace render {
                                 // itself so the reading always moves on.
                                 const auto byte = [&letters](const std::size_t at) {
                                     return at < letters.size()
-                                               ? static_cast<std::uint32_t>(static_cast<unsigned char>(letters[at]))
-                                               : 0u;
+                                                   ? static_cast<std::uint32_t>(static_cast<unsigned char>(letters[at]))
+                                                   : 0u;
                                 };
                                 for (std::size_t at = 0; at < letters.size();) {
                                     const std::uint32_t lead = byte(at);
                                     if (lead >= 0xF0 && lead < 0xF8) {
-                                        unit(((lead & 0x07) << 18) | ((byte(at + 1) & 0x3F) << 12) | (
-                                                 (byte(at + 2) & 0x3F) << 6) |
-                                             (byte(at + 3) & 0x3F));
+                                        unit(((lead & 0x07) << 18) | ((byte(at + 1) & 0x3F) << 12) |
+                                             ((byte(at + 2) & 0x3F) << 6) | (byte(at + 3) & 0x3F));
                                         at += 4;
                                     } else if (lead >= 0xE0 && lead < 0xF0) {
-                                        unit(((lead & 0x0F) << 12) | ((byte(at + 1) & 0x3F) << 6) | (
-                                                 byte(at + 2) & 0x3F));
+                                        unit(((lead & 0x0F) << 12) | ((byte(at + 1) & 0x3F) << 6) |
+                                             (byte(at + 2) & 0x3F));
                                         at += 3;
                                     } else if (lead >= 0xC0 && lead < 0xE0) {
                                         unit(((lead & 0x1F) << 6) | (byte(at + 1) & 0x3F));
@@ -468,11 +460,10 @@ namespace render {
                     widths += ']';
 
                     file.open(descendant);
-                    file.bytes += std::string("<</Type /Font\n/Subtype /") + (
-                                truetype ? "CIDFontType2" : "CIDFontType0") +
-                            "\n/BaseFont /" + name +
-                            "\n/CIDSystemInfo <</Registry (Adobe) /Ordering (Identity) /Supplement 0>>\n" +
-                            (truetype ? "/CIDToGIDMap /Identity\n" : "") + "/FontDescriptor ";
+                    file.bytes += std::string("<</Type /Font\n/Subtype /") +
+                                  (truetype ? "CIDFontType2" : "CIDFontType0") + "\n/BaseFont /" + name +
+                                  "\n/CIDSystemInfo <</Registry (Adobe) /Ordering (Identity) /Supplement 0>>\n" +
+                                  (truetype ? "/CIDToGIDMap /Identity\n" : "") + "/FontDescriptor ";
                     number(file.bytes, descriptor);
                     file.bytes += " 0 R\n/DW 1000\n/W [";
                     file.bytes += widths;
@@ -481,7 +472,7 @@ namespace render {
 
                     file.open(font);
                     file.bytes += "<</Type /Font\n/Subtype /Type0\n/BaseFont /" + name +
-                            "\n/Encoding /Identity-H\n/DescendantFonts [";
+                                  "\n/Encoding /Identity-H\n/DescendantFonts [";
                     number(file.bytes, descendant);
                     file.bytes += " 0 R]\n/ToUnicode ";
                     number(file.bytes, map);
@@ -491,8 +482,8 @@ namespace render {
                     hb_font_destroy(measure);
                     hb_blob_destroy(blob);
 
-                    Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                                "Embedded {} glyphs in {} bytes", entry.glyphs.size(), length);
+                    Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Embedded {} glyphs in {} bytes",
+                                entry.glyphs.size(), length);
                     return font;
                 }();
                 if (font == 0) {
@@ -521,7 +512,7 @@ namespace render {
         std::vector<std::size_t> states;
         states.reserve(composer.opacities.size());
 
-        for (const float value: composer.opacities) {
+        for (const float value : composer.opacities) {
             const std::size_t state = file.reserve();
             file.open(state);
             file.bytes += "<</Type /ExtGState\n/ca ";
@@ -538,70 +529,59 @@ namespace render {
         std::vector<std::size_t> pictures;
         pictures.reserve(composer.pictures.size());
 
-        for (const graphics::Image *source: composer.pictures) {
+        for (const graphics::Image *source : composer.pictures) {
             // The image, already decoded to plain pixels, as an XObject; 0
             // when it could not be compressed into the file.
-            const std::size_t object = !source
-                                           ? 0
-                                           : [&file, &picture = *source]() -> std::size_t {
-                                               // A JPEG kept as it came: its own bytes, which the reader
-                                               // decodes -- DCTDecode is the compression it already has.
-                                               if (const std::vector<std::uint8_t> &encoded = picture.encoded; !encoded.
-                                                   empty()) {
-                                                   const std::size_t object = file.reserve();
-                                                   std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
-                                                   number(extra, picture.width);
-                                                   extra += "\n/Height ";
-                                                   number(extra, picture.height);
-                                                   extra += picture.components == 1
-                                                                ? "\n/ColorSpace /DeviceGray"
-                                                                : "\n/ColorSpace /DeviceRGB";
-                                                   extra += "\n/BitsPerComponent 8\n/Filter /DCTDecode\n";
-                                                   file.stream(object, extra,
-                                                               std::string_view(
-                                                                   reinterpret_cast<const char *>(encoded.data()),
-                                                                   encoded.size()));
-                                                   Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                                                               "Embedded a {}x{} JPEG as it came, in {} bytes",
-                                                               picture.width, picture.height,
-                                                               encoded.size());
-                                                   return object;
-                                               }
+            const std::size_t object = !source ? 0 : [&file, &picture = *source]() -> std::size_t {
+                // A JPEG kept as it came: its own bytes, which the reader
+                // decodes -- DCTDecode is the compression it already has.
+                if (const std::vector<std::uint8_t> &encoded = picture.encoded; !encoded.empty()) {
+                    const std::size_t object = file.reserve();
+                    std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
+                    number(extra, picture.width);
+                    extra += "\n/Height ";
+                    number(extra, picture.height);
+                    extra += picture.components == 1 ? "\n/ColorSpace /DeviceGray" : "\n/ColorSpace /DeviceRGB";
+                    extra += "\n/BitsPerComponent 8\n/Filter /DCTDecode\n";
+                    file.stream(object, extra,
+                                std::string_view(reinterpret_cast<const char *>(encoded.data()), encoded.size()));
+                    Logger::log(Logger::Type::Layout, Logger::Level::Informative,
+                                "Embedded a {}x{} JPEG as it came, in {} bytes", picture.width, picture.height,
+                                encoded.size());
+                    return object;
+                }
 
-                                               const std::vector<std::uint8_t> &pixels = picture.pixels;
-                                               if (pixels.empty()) return 0;
+                const std::vector<std::uint8_t> &pixels = picture.pixels;
+                if (pixels.empty()) return 0;
 
-                                               // The same compression a PNG's own IDAT already used, asked for
-                                               // fresh: what decode() handed back is now plain RGB, not the bytes
-                                               // a PNG or a JPEG arrived as, so there is nothing left to embed
-                                               // as-is even when the source already was compressed.
-                                               uLongf bound = compressBound(static_cast<uLong>(pixels.size()));
-                                               std::string compressed(bound, '\0');
+                // The same compression a PNG's own IDAT already used, asked for
+                // fresh: what decode() handed back is now plain RGB, not the bytes
+                // a PNG or a JPEG arrived as, so there is nothing left to embed
+                // as-is even when the source already was compressed.
+                uLongf bound = compressBound(static_cast<uLong>(pixels.size()));
+                std::string compressed(bound, '\0');
 
-                                               if (compress2(reinterpret_cast<Bytef *>(compressed.data()), &bound,
-                                                             reinterpret_cast<const Bytef *>(pixels.data()),
-                                                             static_cast<uLong>(pixels.size()),
-                                                             Z_BEST_SPEED) != Z_OK) {
-                                                   return 0;
-                                               }
-                                               compressed.resize(bound);
+                if (compress2(reinterpret_cast<Bytef *>(compressed.data()), &bound,
+                              reinterpret_cast<const Bytef *>(pixels.data()), static_cast<uLong>(pixels.size()),
+                              Z_BEST_SPEED) != Z_OK) {
+                    return 0;
+                }
+                compressed.resize(bound);
 
-                                               const std::size_t object = file.reserve();
+                const std::size_t object = file.reserve();
 
-                                               std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
-                                               number(extra, picture.width);
-                                               extra += "\n/Height ";
-                                               number(extra, picture.height);
-                                               extra +=
-                                                       "\n/ColorSpace /DeviceRGB\n/BitsPerComponent 8\n/Filter /FlateDecode\n";
+                std::string extra = "/Type /XObject\n/Subtype /Image\n/Width ";
+                number(extra, picture.width);
+                extra += "\n/Height ";
+                number(extra, picture.height);
+                extra += "\n/ColorSpace /DeviceRGB\n/BitsPerComponent 8\n/Filter /FlateDecode\n";
 
-                                               file.stream(object, extra, compressed);
+                file.stream(object, extra, compressed);
 
-                                               Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                                                           "Embedded a {}x{} image in {} bytes", picture.width,
-                                                           picture.height, compressed.size());
-                                               return object;
-                                           }();
+                Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Embedded a {}x{} image in {} bytes",
+                            picture.width, picture.height, compressed.size());
+                return object;
+            }();
             if (object == 0) {
                 Logger::log(Logger::Type::Layout, Logger::Level::Error,
                             "An image could not be embedded; it will not show");
@@ -615,49 +595,50 @@ namespace render {
         // file's, and its references renumbered to them.
         std::vector<std::size_t> forms;
         forms.reserve(composer.drawings.size());
-        for (const graphics::Drawing *drawn: composer.drawings) {
+        for (const graphics::Drawing *drawn : composer.drawings) {
             using Value = graphics::Drawing::Value;
             const std::vector<graphics::Drawing::Object> &objects = drawn->objects;
             std::vector<std::size_t> numbers(objects.size());
-            for (std::size_t &slot: numbers) slot = file.reserve();
+            for (std::size_t &slot : numbers)
+                slot = file.reserve();
 
             // A value as the file writes it; a dictionary's entries alone,
             // when a stream's dictionary is written around them.
             const auto write = [&numbers](this const auto &self, std::string &out, const Value &value,
                                           const bool inner = false) -> void {
                 switch (value.type) {
-                    case Value::Type::Null:
+                case Value::Type::Null:
+                    out += "null";
+                    break;
+                case Value::Type::Plain:
+                case Value::Type::Name:
+                case Value::Type::Text:
+                    out += value.text;
+                    break;
+                case Value::Type::Reference:
+                    if (value.number < numbers.size()) {
+                        number(out, numbers[value.number]);
+                        out += " 0 R";
+                    } else {
                         out += "null";
-                        break;
-                    case Value::Type::Plain:
-                    case Value::Type::Name:
-                    case Value::Type::Text:
-                        out += value.text;
-                        break;
-                    case Value::Type::Reference:
-                        if (value.number < numbers.size()) {
-                            number(out, numbers[value.number]);
-                            out += " 0 R";
-                        } else {
-                            out += "null";
-                        }
-                        break;
-                    case Value::Type::List:
-                        out += '[';
-                        for (std::size_t index = 0; index < value.items.size(); ++index) {
-                            if (index > 0) out += ' ';
-                            self(out, value.items[index]);
-                        }
-                        out += ']';
-                        break;
-                    case Value::Type::Table:
-                        if (!inner) out += "<<";
-                        for (const Value &item: value.items) {
-                            self(out, item);
-                            out += ' ';
-                        }
-                        if (!inner) out += ">>";
-                        break;
+                    }
+                    break;
+                case Value::Type::List:
+                    out += '[';
+                    for (std::size_t index = 0; index < value.items.size(); ++index) {
+                        if (index > 0) out += ' ';
+                        self(out, value.items[index]);
+                    }
+                    out += ']';
+                    break;
+                case Value::Type::Table:
+                    if (!inner) out += "<<";
+                    for (const Value &item : value.items) {
+                        self(out, item);
+                        out += ' ';
+                    }
+                    if (!inner) out += ">>";
+                    break;
                 }
             };
 
@@ -709,16 +690,17 @@ namespace render {
         // Every page's number first, since a link on one may go to another.
         std::vector<std::size_t> sheets;
         sheets.reserve(bodies.size());
-        for (std::size_t index = 0; index < bodies.size(); ++index) sheets.push_back(file.reserve());
+        for (std::size_t index = 0; index < bodies.size(); ++index)
+            sheets.push_back(file.reserve());
 
         // A string as a PDF writes one: plain in parentheses, its parentheses
         // and backslashes escaped; anything past ASCII as UTF-16 with its
         // byte order mark, in hexadecimal.
         const auto text = [](std::string &out, const std::string_view written) {
-            if (std::ranges::all_of(
-                written, [](const char letter) { return static_cast<unsigned char>(letter) < 0x80; })) {
+            if (std::ranges::all_of(written,
+                                    [](const char letter) { return static_cast<unsigned char>(letter) < 0x80; })) {
                 out += '(';
-                for (const char letter: written) {
+                for (const char letter : written) {
                     if (letter == '(' || letter == ')' || letter == '\\') out += '\\';
                     out += letter;
                 }
@@ -761,10 +743,10 @@ namespace render {
         // The links of each page: an annotation each area they cover, framed
         // as hyperref frames one or not at all, going to an address or to an
         // anchor's place. Each marked to print, as PDF/A has every one.
-        const std::vector<std::vector<Composer::Link> > &links = composer.links;
-        std::vector<std::vector<std::size_t> > annotations(sheets.size());
+        const std::vector<std::vector<Composer::Link>> &links = composer.links;
+        std::vector<std::vector<std::size_t>> annotations(sheets.size());
         for (std::size_t sheet = 0; sheet < sheets.size() && sheet < links.size(); ++sheet) {
-            for (const auto &[target, anchor, border, areas]: links[sheet]) {
+            for (const auto &[target, anchor, border, areas] : links[sheet]) {
                 std::string action;
                 if (!target.empty()) {
                     action = "/A <</S /URI /URI ";
@@ -774,20 +756,19 @@ namespace render {
                     action = "/Dest ";
                     if (!destination(action, anchor)) continue;
                 }
-                for (const auto &[left, top, right, bottom]: areas) {
+                for (const auto &[left, top, right, bottom] : areas) {
                     const std::size_t made = file.reserve();
                     file.open(made);
                     file.bytes += "<</Type /Annot /Subtype /Link /F 4 /Rect [";
-                    for (const float value: {
-                             left - 1.0f, page.height - bottom - 1.0f, right + 1.0f, page.height - top + 1.0f
-                         }) {
+                    for (const float value :
+                         {left - 1.0f, page.height - bottom - 1.0f, right + 1.0f, page.height - top + 1.0f}) {
                         fraction(file.bytes, value);
                         file.bytes += ' ';
                     }
                     file.bytes += "] /Border [0 0 ";
                     file.bytes += border.alpha > 0.0f ? "1" : "0";
                     file.bytes += "] /C [";
-                    for (const float value: {border.red, border.green, border.blue}) {
+                    for (const float value : {border.red, border.green, border.blue}) {
                         fraction(file.bytes, value);
                         file.bytes += ' ';
                     }
@@ -814,10 +795,8 @@ namespace render {
             // PDF's box up from the bottom. A page with nothing on it, or any
             // other page, is the whole sheet.
             if (const std::array<float, 4> &ink = extents[sheet]; page.fitted && ink[0] <= ink[2]) {
-                for (const float value: {
-                         ink[0] - page.border, page.height - ink[3] - page.border,
-                         ink[2] + page.border, page.height - ink[1] + page.border
-                     }) {
+                for (const float value : {ink[0] - page.border, page.height - ink[3] - page.border,
+                                          ink[2] + page.border, page.height - ink[1] + page.border}) {
                     fraction(file.bytes, value);
                     file.bytes += ' ';
                 }
@@ -881,7 +860,7 @@ namespace render {
             file.bytes += ">>";
             if (!annotations[sheet].empty()) {
                 file.bytes += "\n/Annots [";
-                for (const std::size_t made: annotations[sheet]) {
+                for (const std::size_t made : annotations[sheet]) {
                     number(file.bytes, made);
                     file.bytes += " 0 R ";
                 }
@@ -911,14 +890,16 @@ namespace render {
         if (!marks.empty()) {
             outline = file.reserve();
             std::vector<std::size_t> made(marks.size());
-            for (std::size_t &slot: made) slot = file.reserve();
+            for (std::size_t &slot : made)
+                slot = file.reserve();
             // Each one's parent, and each one's children, the top's under
             // the outline itself.
             std::vector<std::size_t> parents(marks.size(), marks.size());
-            std::vector<std::vector<std::size_t> > children(marks.size() + 1);
+            std::vector<std::vector<std::size_t>> children(marks.size() + 1);
             std::vector<std::size_t> open;
             for (std::size_t index = 0; index < marks.size(); ++index) {
-                while (!open.empty() && marks[open.back()].level >= marks[index].level) open.pop_back();
+                while (!open.empty() && marks[open.back()].level >= marks[index].level)
+                    open.pop_back();
                 parents[index] = open.empty() ? marks.size() : open.back();
                 children[parents[index]].push_back(index);
                 open.push_back(index);
@@ -965,15 +946,14 @@ namespace render {
 
         // What the file says of itself: its title and the rest as hyperref
         // gave them, and what made it.
-        static constexpr std::string_view producer = "latex";
+        static constexpr std::string_view producer = "mlatex";
         const std::size_t information = file.reserve();
         file.open(information);
         file.bytes += "<</Producer ";
         text(file.bytes, producer);
-        for (const auto &[key, value]: {
-                 std::pair{"/Title", &about.title}, std::pair{"/Author", &about.author},
-                 std::pair{"/Subject", &about.subject}, std::pair{"/Keywords", &about.keywords}
-             }) {
+        for (const auto &[key, value] :
+             {std::pair{"/Title", &about.title}, std::pair{"/Author", &about.author},
+              std::pair{"/Subject", &about.subject}, std::pair{"/Keywords", &about.keywords}}) {
             if (value->empty()) continue;
             file.bytes += ' ';
             file.bytes += key;
@@ -991,31 +971,37 @@ namespace render {
         if (about.archival) {
             const auto escaped = [](const std::string_view written) {
                 std::string out;
-                for (const char letter: written) {
-                    if (letter == '&') out += "&amp;";
-                    else if (letter == '<') out += "&lt;";
-                    else if (letter == '>') out += "&gt;";
-                    else out += letter;
+                for (const char letter : written) {
+                    if (letter == '&')
+                        out += "&amp;";
+                    else if (letter == '<')
+                        out += "&lt;";
+                    else if (letter == '>')
+                        out += "&gt;";
+                    else
+                        out += letter;
                 }
                 return out;
             };
-            std::string xmp = "<?xpacket begin=\"\xEF\xBB\xBF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n"
-                              "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF "
-                              "xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
-                              "<rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\" "
-                              "xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\">"
-                              "<pdfaid:part>2</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance>"
-                              "<pdf:Producer>" + std::string(producer) + "</pdf:Producer>";
+            std::string xmp =
+                    "<?xpacket begin=\"\xEF\xBB\xBF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n"
+                    "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF "
+                    "xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
+                    "<rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\" "
+                    "xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\">"
+                    "<pdfaid:part>2</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance>"
+                    "<pdf:Producer>" +
+                    std::string(producer) + "</pdf:Producer>";
             if (!about.title.empty()) {
                 xmp += "<dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">" + escaped(about.title) +
-                        "</rdf:li></rdf:Alt></dc:title>";
+                       "</rdf:li></rdf:Alt></dc:title>";
             }
             if (!about.author.empty()) {
                 xmp += "<dc:creator><rdf:Seq><rdf:li>" + escaped(about.author) + "</rdf:li></rdf:Seq></dc:creator>";
             }
             if (!about.subject.empty()) {
                 xmp += "<dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">" + escaped(about.subject) +
-                        "</rdf:li></rdf:Alt></dc:description>";
+                       "</rdf:li></rdf:Alt></dc:description>";
             }
             if (!about.keywords.empty()) xmp += "<pdf:Keywords>" + escaped(about.keywords) + "</pdf:Keywords>";
             xmp += "</rdf:Description></rdf:RDF></x:xmpmeta>\n<?xpacket end=\"w\"?>";
@@ -1027,7 +1013,8 @@ namespace render {
             // 2.2 for each channel, the curve shared.
             std::string icc(128, '\0');
             const auto word = [](std::string &out, const std::uint32_t value) {
-                for (const int shift: {24, 16, 8, 0}) out += static_cast<char>((value >> shift) & 0xFF);
+                for (const int shift : {24, 16, 8, 0})
+                    out += static_cast<char>((value >> shift) & 0xFF);
             };
             const auto put = [](std::string &out, const std::size_t at, const std::uint32_t value) {
                 for (std::size_t index = 0; index < 4; ++index) {
@@ -1040,7 +1027,8 @@ namespace render {
             const auto xyz = [&word, &fixed](const double x, const double y, const double z) {
                 std::string tag = "XYZ ";
                 word(tag, 0);
-                for (const double value: {x, y, z}) word(tag, fixed(value));
+                for (const double value : {x, y, z})
+                    word(tag, fixed(value));
                 return tag;
             };
             std::string curve = "curv";
@@ -1052,14 +1040,19 @@ namespace render {
             word(description, 5);
             description += std::string("sRGB\0", 5);
             description += std::string(4 + 4 + 2 + 1 + 67, '\0');
-            while (description.size() % 4 != 0) description += '\0';
+            while (description.size() % 4 != 0)
+                description += '\0';
             std::string notice = "text";
             word(notice, 0);
             notice += std::string("No copyright\0\0\0\0", 16);
-            const std::vector<std::pair<std::string_view, std::string> > tags{
-                {"desc", description}, {"cprt", notice}, {"wtpt", xyz(0.9642, 1.0, 0.8249)},
-                {"rXYZ", xyz(0.4361, 0.2225, 0.0139)}, {"gXYZ", xyz(0.3851, 0.7169, 0.0971)},
-                {"bXYZ", xyz(0.1431, 0.0606, 0.7141)}, {"rTRC", curve},
+            const std::vector<std::pair<std::string_view, std::string>> tags{
+                    {"desc", description},
+                    {"cprt", notice},
+                    {"wtpt", xyz(0.9642, 1.0, 0.8249)},
+                    {"rXYZ", xyz(0.4361, 0.2225, 0.0139)},
+                    {"gXYZ", xyz(0.3851, 0.7169, 0.0971)},
+                    {"bXYZ", xyz(0.1431, 0.0606, 0.7141)},
+                    {"rTRC", curve},
             };
             // The table: every tag, and the other two curves pointing at the
             // red one's data.
@@ -1068,14 +1061,14 @@ namespace render {
             std::size_t offset = 128 + 4 + 12 * (tags.size() + 2);
             std::string data;
             std::size_t shared = 0;
-            for (const auto &[signature, body]: tags) {
+            for (const auto &[signature, body] : tags) {
                 table += signature;
                 word(table, static_cast<std::uint32_t>(offset + data.size()));
                 word(table, static_cast<std::uint32_t>(body.size()));
                 if (signature == "rTRC") shared = offset + data.size();
                 data += body;
             }
-            for (const std::string_view signature: {"gTRC", "bTRC"}) {
+            for (const std::string_view signature : {"gTRC", "bTRC"}) {
                 table += signature;
                 word(table, static_cast<std::uint32_t>(shared));
                 word(table, static_cast<std::uint32_t>(curve.size()));
@@ -1099,7 +1092,7 @@ namespace render {
             intent = file.reserve();
             file.open(intent);
             file.bytes += "<</Type /OutputIntent /S /GTS_PDFA1 /OutputConditionIdentifier (sRGB IEC61966-2.1) "
-                    "/Info (sRGB IEC61966-2.1) /DestOutputProfile ";
+                          "/Info (sRGB IEC61966-2.1) /DestOutputProfile ";
             number(file.bytes, profile);
             file.bytes += " 0 R>>";
             file.close();
@@ -1131,7 +1124,7 @@ namespace render {
         number(file.bytes, file.offsets.size() + 1);
         file.bytes += "\n0000000000 65535 f \n";
 
-        for (const std::size_t offset: file.offsets) {
+        for (const std::size_t offset : file.offsets) {
             const std::string entry = std::to_string(offset);
             file.bytes.append(10 - entry.size(), '0');
             file.bytes += entry;
@@ -1144,11 +1137,9 @@ namespace render {
         const auto *written = reinterpret_cast<const Bytef *>(file.bytes.data());
         const auto length = static_cast<uInt>(file.bytes.size());
         std::string identity;
-        for (const std::uint32_t part: {
-                 static_cast<std::uint32_t>(crc32(0, written, length)),
-                 static_cast<std::uint32_t>(adler32(1, written, length)),
-                 static_cast<std::uint32_t>(file.bytes.size()), 0x4C615465u
-             }) {
+        for (const std::uint32_t part : {static_cast<std::uint32_t>(crc32(0, written, length)),
+                                         static_cast<std::uint32_t>(adler32(1, written, length)),
+                                         static_cast<std::uint32_t>(file.bytes.size()), 0x4C615465u}) {
             hexadecimal(identity, part >> 16);
             hexadecimal(identity, part & 0xFFFF);
         }
@@ -1166,11 +1157,7 @@ namespace render {
         return std::move(file.bytes);
     }
 
-    bool Pdf::compose(
-        Composer &composer,
-        const memory::Slice<layout::Pager::Page> pages,
-        const std::string_view path
-    ) {
+    bool Pdf::compose(Composer &composer, const memory::Slice<layout::Pager::Page> pages, const std::string_view path) {
         if (path.empty()) return false;
 
         const std::string bytes = render(composer, pages);
@@ -1182,9 +1169,8 @@ namespace render {
         // through a buffer of its own. Opened the way the stream opened it --
         // truncated, and shared, so a viewer that has the last run's output
         // open does not stop this one being written.
-        const HANDLE output = CreateFileA(std::string(path).c_str(), GENERIC_WRITE,
-                                          FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
-                                          FILE_ATTRIBUTE_NORMAL, nullptr);
+        const HANDLE output = CreateFileA(std::string(path).c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                          nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
         if (output == INVALID_HANDLE_VALUE) return false;
 
         bool written = true;

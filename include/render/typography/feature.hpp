@@ -29,8 +29,7 @@ namespace render::typography {
         ///              longer one is cut, because the format allows four.
         /// @param value 1 to turn it on, 0 to turn it off, or an index for a
         ///              feature that offers alternates.
-        explicit constexpr Feature(const std::string_view tag,
-                                   const std::uint32_t value = 1) noexcept {
+        explicit constexpr Feature(const std::string_view tag, const std::uint32_t value = 1) noexcept {
             char letters[4] = {' ', ' ', ' ', ' '};
             for (std::size_t index = 0; index < tag.size() && index < 4; ++index) {
                 letters[index] = tag[index];

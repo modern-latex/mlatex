@@ -21,28 +21,31 @@ namespace syntax {
     public:
         /// @brief What a character means to the lexer.
         enum class Category : std::uint8_t {
-            Escape, ///< Starts a control sequence (`\`).
-            Group, ///< Opens or closes a group (`{` and `}`).
-            Shift, ///< Enters or leaves a formula (`$`).
-            Align, ///< Separates alignment cells (`&`).
+            Escape,    ///< Starts a control sequence (`\`).
+            Group,     ///< Opens or closes a group (`{` and `}`).
+            Shift,     ///< Enters or leaves a formula (`$`).
+            Align,     ///< Separates alignment cells (`&`).
             Parameter, ///< Marks a macro parameter (`#`).
-            Mark, ///< Superscript (`^`).
-            Index, ///< Subscript (`_`).
-            Letter, ///< Forms control words (`a`-`z`, `A`-`Z`).
-            Other, ///< Digits, punctuation and every other printable byte.
-            Space, ///< Blank space and line endings.
-            Comment, ///< Discards the rest of the line (`%`).
-            Active, ///< Acts as a control sequence on its own (`~`).
-            Ignore, ///< Skipped by the lexer (NUL).
-            Invalid ///< Rejected by the lexer (control bytes and DEL).
+            Mark,      ///< Superscript (`^`).
+            Index,     ///< Subscript (`_`).
+            Letter,    ///< Forms control words (`a`-`z`, `A`-`Z`).
+            Other,     ///< Digits, punctuation and every other printable byte.
+            Space,     ///< Blank space and line endings.
+            Comment,   ///< Discards the rest of the line (`%`).
+            Active,    ///< Acts as a control sequence on its own (`~`).
+            Ignore,    ///< Skipped by the lexer (NUL).
+            Invalid    ///< Rejected by the lexer (control bytes and DEL).
         };
 
         /// @brief Builds plain TeX's table.
         constexpr Catcodes() noexcept {
             table.fill(Category::Other);
-            for (std::size_t code = 0; code < 0x20; ++code) table[code] = Category::Invalid;
-            for (std::size_t code = 'a'; code <= 'z'; ++code) table[code] = Category::Letter;
-            for (std::size_t code = 'A'; code <= 'Z'; ++code) table[code] = Category::Letter;
+            for (std::size_t code = 0; code < 0x20; ++code)
+                table[code] = Category::Invalid;
+            for (std::size_t code = 'a'; code <= 'z'; ++code)
+                table[code] = Category::Letter;
+            for (std::size_t code = 'A'; code <= 'Z'; ++code)
+                table[code] = Category::Letter;
             // LaTeX's internals are named with `@` in them, and a package here
             // is written the same way; a document's own `@` prints as it did.
             table['@'] = Category::Letter;
@@ -58,7 +61,7 @@ namespace syntax {
             table['_'] = Category::Index;
             table['%'] = Category::Comment;
             table['~'] = Category::Active;
-            for (const char blank: {' ', '\t', '\n', '\r', '\f'})
+            for (const char blank : {' ', '\t', '\n', '\r', '\f'})
                 table[static_cast<unsigned char>(blank)] = Category::Space;
         }
 
@@ -72,7 +75,7 @@ namespace syntax {
             if (global) {
                 levels[code] = 0;
             } else if (const auto depth = static_cast<std::uint32_t>(marks.size());
-                depth != 0 && levels[code] != depth) {
+                       depth != 0 && levels[code] != depth) {
                 history.push_back(Entry{code, table[code], levels[code]});
                 levels[code] = depth;
             }
@@ -106,14 +109,14 @@ namespace syntax {
     private:
         /// @brief One undo record.
         struct Entry {
-            unsigned char code; ///< Character whose category was replaced.
-            Category category; ///< Category to restore.
+            unsigned char code;  ///< Character whose category was replaced.
+            Category category;   ///< Category to restore.
             std::uint32_t level; ///< Level stamp to restore.
         };
 
-        std::array<Category, 256> table{}; ///< Category of each byte.
+        std::array<Category, 256> table{};       ///< Category of each byte.
         std::array<std::uint32_t, 256> levels{}; ///< Level stamp of each byte.
-        std::vector<Entry> history{}; ///< Undo log, innermost last.
-        std::vector<std::size_t> marks{}; ///< Undo-log height at each open group.
+        std::vector<Entry> history{};            ///< Undo log, innermost last.
+        std::vector<std::size_t> marks{};        ///< Undo-log height at each open group.
     };
 }

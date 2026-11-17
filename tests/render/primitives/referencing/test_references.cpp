@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,13 +54,13 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\section{First}\\label{first} See \\ref{first} and \\ref{later}."
-                                      "\\section{Later}\\label{later}");
+                                          "\\section{Later}\\label{later}");
         assert((result.clean && holds(result.text, "See1and2.")) && "references, backwards and forwards");
     }
     {
         const Result result = article("", "\\begin{equation}x\\label{e}\\end{equation}\\eqref{e} "
-                                      "\\section{Named}\\label{s}\\nameref{s} on page \\pageref{s}. "
-                                      "\\ref{nosuch}");
+                                          "\\section{Named}\\label{s}\\nameref{s} on page \\pageref{s}. "
+                                          "\\ref{nosuch}");
         assert((holds(result.text, "(1)") && holds(result.text, "Namedonpage1.")) &&
                "\\eqref, \\nameref and \\pageref");
         assert((holds(result.text, "??")) && "a label never made reads ??");
@@ -72,8 +72,8 @@ int main() {
                                       "\\begin{itemize}\\item a\\end{itemize}\\section{Later}\\label{later}");
         assert((result.clean && holds(result.text, "Seesection1,Equation(1)andsection2.")) &&
                "each named by cleveref's own names, forward ones included");
-        const Result named = article("\\usepackage{cleveref}\\crefname{section}{sec.}{secs.}",
-                                     "\\section{A}\\label{a}\\cref{a}");
+        const Result named =
+                article("\\usepackage{cleveref}\\crefname{section}{sec.}{secs.}", "\\section{A}\\label{a}\\cref{a}");
         assert((holds(named.text, "sec.1")) && "\\crefname renames a type");
     }
     {
@@ -98,8 +98,9 @@ int main() {
     }
 
     {
-        const Result result = article("\\usepackage{hyperref}",
-                                      "\\section{One}\\label{one}See \\ref{one} and \\href{https://example.org}{a site}.");
+        const Result result =
+                article("\\usepackage{hyperref}",
+                        "\\section{One}\\label{one}See \\ref{one} and \\href{https://example.org}{a site}.");
         assert((result.clean && holds(result.text, "See1andasite.")) && "a reference and an address, set as text");
         assert((holds(result.pdf, "/Subtype /Link") && holds(result.pdf, "/URI (https://example.org)") &&
                 holds(result.pdf, "/Dest [")) &&

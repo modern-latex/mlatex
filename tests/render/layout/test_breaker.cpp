@@ -31,7 +31,8 @@ static memory::Slice<layout::Node *> words(memory::Arena &arena, const int count
         nodes.push_back(word);
     }
     const memory::Slice<layout::Node *> slice = arena.allocate<layout::Node *>(nodes.size());
-    for (std::size_t index = 0; index < nodes.size(); ++index) slice[index] = nodes[index];
+    for (std::size_t index = 0; index < nodes.size(); ++index)
+        slice[index] = nodes[index];
     return slice;
 }
 
@@ -51,7 +52,7 @@ int main() {
         assert((lines[lines.size() - 1]->box().order == layout::Node::Order::Fil) &&
                "the last ends in \\parfillskip, so its words keep their natural spacing");
         bool clean = true;
-        for (const layout::Node *line: lines) {
+        for (const layout::Node *line : lines) {
             const layout::Node *first = line->box().list.empty() ? nullptr : line->box().list[0];
             clean = clean && first && first->type != layout::Node::Type::Glue;
         }
@@ -66,7 +67,7 @@ int main() {
         const layout::Breaker breaker(arena, scratch,
                                       {.target = 100.0f, .justification = layout::Node::Justification::Left});
         bool ragged = true;
-        for (const layout::Node *line: breaker.compose(words(arena, 20))) {
+        for (const layout::Node *line : breaker.compose(words(arena, 20))) {
             ragged = ragged && line->box().order == layout::Node::Order::Fil;
         }
         assert((ragged) && "a ragged line's room goes to the fill at its end, its word spaces keeping their width");
@@ -76,7 +77,8 @@ int main() {
         // fit, not the first break it could.
         const memory::Slice<layout::Node *> filled = breaker.compose(words(arena, 6));
         std::size_t first = 0;
-        for (const layout::Node *node: filled[0]->box().list) first += node->type == layout::Node::Type::Box;
+        for (const layout::Node *node : filled[0]->box().list)
+            first += node->type == layout::Node::Type::Box;
         assert((filled.size() == 2 && first == 4) && "a ragged line filled before it breaks");
     }
     {
@@ -98,7 +100,8 @@ int main() {
             nodes.push_back(word);
         }
         const memory::Slice<layout::Node *> slice = arena.allocate<layout::Node *>(nodes.size());
-        for (std::size_t index = 0; index < nodes.size(); ++index) slice[index] = nodes[index];
+        for (std::size_t index = 0; index < nodes.size(); ++index)
+            slice[index] = nodes[index];
         const layout::Breaker breaker(arena, scratch, {.target = 100.0f});
         assert((breaker.compose(slice).size() == 1) && "a line ends at no penalty of ten thousand");
     }

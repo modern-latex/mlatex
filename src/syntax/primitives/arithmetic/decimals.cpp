@@ -4,9 +4,9 @@
 /// Values are whole numbers of millionths; see Decimals::Wide for the one
 /// step that needs more than sixty-four bits to hold, and how it is done.
 #include "syntax/primitives/arithmetic/decimals.hpp"
-#include "syntax/primitives/definitions/variables.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "syntax/argument.hpp"
+#include "syntax/primitives/definitions/variables.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -29,10 +29,7 @@ namespace syntax::primitives::arithmetic {
         const std::uint64_t middle = beta * theta + (low >> 32);
         const std::uint64_t cross = alpha * gamma + (middle & mask);
 
-        return Wide{
-            .high = beta * gamma + (middle >> 32) + (cross >> 32),
-            .low = (cross << 32) | (low & mask)
-        };
+        return Wide{.high = beta * gamma + (middle >> 32) + (cross >> 32), .low = (cross << 32) | (low & mask)};
     }
 
     bool Decimals::divide(const Wide dividend, const std::uint64_t divisor, std::uint64_t &quotient) noexcept {
@@ -72,15 +69,15 @@ namespace syntax::primitives::arithmetic {
         lexicon.intern("\\separators");
     }
 
-    std::optional<std::int64_t> Decimals::evaluate(
-        const std::string_view text, const Variables &variables, std::string &error
-    ) {
+    std::optional<std::int64_t> Decimals::evaluate(const std::string_view text, const Variables &variables,
+                                                   std::string &error) {
         Pass pass{.text = text, .cursor = 0, .variables = variables, .error = error, .level = 0};
         const std::optional<std::int64_t> value = expression(pass);
         if (!value) return std::nullopt;
 
         // Everything has to have been read: `3 4` is not twelve, or three.
-        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+            ++pass.cursor;
         if (pass.cursor < pass.text.size()) {
             error = std::format("unexpected '{}' in '{}'", pass.text.substr(pass.cursor), text);
             return std::nullopt;
@@ -91,7 +88,8 @@ namespace syntax::primitives::arithmetic {
     std::optional<std::int64_t> Decimals::expression(Pass &pass) {
         std::optional<std::int64_t> total = term(pass);
         while (total) {
-            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+                ++pass.cursor;
             if (pass.cursor >= pass.text.size()) break;
 
             const char operation = pass.text[pass.cursor];
@@ -117,7 +115,8 @@ namespace syntax::primitives::arithmetic {
     std::optional<std::int64_t> Decimals::term(Pass &pass) {
         std::optional<std::int64_t> total = unary(pass);
         while (total) {
-            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+                ++pass.cursor;
             if (pass.cursor >= pass.text.size()) break;
 
             const char operation = pass.text[pass.cursor];
@@ -156,7 +155,8 @@ namespace syntax::primitives::arithmetic {
     }
 
     std::optional<std::int64_t> Decimals::unary(Pass &pass) {
-        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+            ++pass.cursor;
         if (pass.cursor < pass.text.size() && (pass.text[pass.cursor] == '-' || pass.text[pass.cursor] == '+')) {
             const bool negative = pass.text[pass.cursor] == '-';
             ++pass.cursor;
@@ -168,7 +168,8 @@ namespace syntax::primitives::arithmetic {
     }
 
     std::optional<std::int64_t> Decimals::primary(Pass &pass) {
-        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+        while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+            ++pass.cursor;
         if (pass.cursor >= pass.text.size()) {
             pass.error = "an operand is missing";
             return std::nullopt;
@@ -187,7 +188,8 @@ namespace syntax::primitives::arithmetic {
             --pass.level;
             if (!inner) return std::nullopt;
 
-            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+            while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+                ++pass.cursor;
             if (pass.cursor >= pass.text.size() || pass.text[pass.cursor] != ')') {
                 pass.error = "a parenthesis is never closed";
                 return std::nullopt;
@@ -199,14 +201,16 @@ namespace syntax::primitives::arithmetic {
         // A name: the variable's value, read as an expression of its own.
         if (naming(lead, true)) {
             const std::size_t opening = pass.cursor;
-            while (pass.cursor < pass.text.size() && naming(pass.text[pass.cursor], false)) ++pass.cursor;
+            while (pass.cursor < pass.text.size() && naming(pass.text[pass.cursor], false))
+                ++pass.cursor;
             const std::string_view name = pass.text.substr(opening, pass.cursor - opening);
 
             // A function of its arguments, as xfp's \fpeval knows them --
             // `sqrt(2)`, `round(x, 2)`, `max(a, b, c)` -- each worked out to
             // the six places every value keeps; and the two constants.
             std::size_t after = pass.cursor;
-            while (after < pass.text.size() && pass.text[after] == ' ') ++after;
+            while (after < pass.text.size() && pass.text[after] == ' ')
+                ++after;
             if (after < pass.text.size() && pass.text[after] == '(') {
                 pass.cursor = after + 1;
                 ++pass.level;
@@ -215,7 +219,8 @@ namespace syntax::primitives::arithmetic {
                     const std::optional<std::int64_t> argument = expression(pass);
                     if (!argument) return std::nullopt;
                     arguments.push_back(*argument);
-                    while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ') ++pass.cursor;
+                    while (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ' ')
+                        ++pass.cursor;
                     if (pass.cursor < pass.text.size() && pass.text[pass.cursor] == ',') {
                         ++pass.cursor;
                         continue;
@@ -232,11 +237,11 @@ namespace syntax::primitives::arithmetic {
                 const std::int64_t first = arguments.front();
                 const long double real = static_cast<long double>(first) / scale;
                 // Places to round to, from a second argument: `round(x, 2)`.
-                const std::int64_t places = arguments.size() > 1
-                                                ? std::clamp<std::int64_t>(arguments[1] / scale, 0, precision)
-                                                : 0;
+                const std::int64_t places =
+                        arguments.size() > 1 ? std::clamp<std::int64_t>(arguments[1] / scale, 0, precision) : 0;
                 std::int64_t step = scale;
-                for (std::int64_t place = 0; place < places; ++place) step /= 10;
+                for (std::int64_t place = 0; place < places; ++place)
+                    step /= 10;
                 if (name == "sqrt") {
                     if (first < 0) {
                         pass.error = "the square root of a negative number";
@@ -265,10 +270,11 @@ namespace syntax::primitives::arithmetic {
                 return std::nullopt;
             }
 
-            Pass nested{
-                .text = *value, .cursor = 0, .variables = pass.variables, .error = pass.error,
-                .level = pass.level + 1
-            };
+            Pass nested{.text = *value,
+                        .cursor = 0,
+                        .variables = pass.variables,
+                        .error = pass.error,
+                        .level = pass.level + 1};
             const std::optional<std::int64_t> read = expression(nested);
             if (read && nested.text.find_first_not_of(' ', nested.cursor) != std::string_view::npos) {
                 pass.error = std::format("'{}' holds '{}', which is not a number", name, *value);
@@ -283,7 +289,7 @@ namespace syntax::primitives::arithmetic {
             std::uint64_t whole = 0;
             std::uint64_t fraction = 0;
             int places = 0;
-            bool seen = false; // any digit at all
+            bool seen = false;     // any digit at all
             bool rounding = false; // the first digit past the sixth place was five or more
 
             while (pass.cursor < pass.text.size() && pass.text[pass.cursor] >= '0' && pass.text[pass.cursor] <= '9') {
@@ -316,7 +322,8 @@ namespace syntax::primitives::arithmetic {
                 return std::nullopt;
             }
 
-            for (; places < precision; ++places) fraction *= 10;
+            for (; places < precision; ++places)
+                fraction *= 10;
             std::uint64_t value = whole * static_cast<std::uint64_t>(scale) + fraction + (rounding ? 1 : 0);
             std::int64_t result = 0;
             if (!sign(value, false, result)) {
@@ -340,7 +347,8 @@ namespace syntax::primitives::arithmetic {
         // The fraction at its full places, leading zeros kept and trailing
         // ones dropped: 0.05 is `05` and then `.05`.
         std::string digits = std::format("{:0{}}", fraction, precision);
-        while (digits.ends_with('0')) digits.pop_back();
+        while (digits.ends_with('0'))
+            digits.pop_back();
         return std::format("{}{}.{}", sign, whole, digits);
     }
 
@@ -352,8 +360,7 @@ namespace syntax::primitives::arithmetic {
             std::string error;
             const std::optional<std::int64_t> value = evaluate(text, context.variables, error);
             if (!value) {
-                tracebacks.emplace_back(Traceback::Type::Primitive, origin,
-                                        std::format("\\calculate: {}", error));
+                tracebacks.emplace_back(Traceback::Type::Primitive, origin, std::format("\\calculate: {}", error));
             }
             mouth.ingest(mouth.arena.copy(write(value.value_or(0))));
         });
@@ -367,13 +374,14 @@ namespace syntax::primitives::arithmetic {
             if (const std::vector<Token> written = mouth.argument(Mouth::Parameter{.optional = true}, 0);
                 !written.empty()) {
                 std::string digits;
-                for (const Token &token: written) digits += token.text;
+                for (const Token &token : written)
+                    digits += token.text;
                 std::string error;
                 if (const std::optional<std::int64_t> read = evaluate(digits, context.variables, error);
                     !read || *read < 0 || *read % scale != 0 || *read / scale > precision) {
-                    tracebacks.emplace_back(Traceback::Type::Argument, origin,
-                                            std::format("\\amount: places must be a whole number from 0 to {}",
-                                                        precision));
+                    tracebacks.emplace_back(
+                            Traceback::Type::Argument, origin,
+                            std::format("\\amount: places must be a whole number from 0 to {}", precision));
                 } else {
                     places = static_cast<int>(*read / scale);
                 }
@@ -390,12 +398,14 @@ namespace syntax::primitives::arithmetic {
             // 2.68; the whole part grouped in threes, and the point between.
             const std::int64_t amount = value.value_or(0);
             std::uint64_t unit = 1;
-            for (int step = places; step < precision; ++step) unit *= 10;
+            for (int step = places; step < precision; ++step)
+                unit *= 10;
             std::uint64_t size = magnitude(amount);
             size = (size + unit / 2) / unit;
 
             std::uint64_t divisor = 1;
-            for (int step = 0; step < places; ++step) divisor *= 10;
+            for (int step = 0; step < places; ++step)
+                divisor *= 10;
             const std::string whole = std::format("{}", size / divisor);
 
             std::string figures = amount < 0 && size != 0 ? "-" : "";

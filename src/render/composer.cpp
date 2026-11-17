@@ -52,7 +52,8 @@ namespace render {
             char *cursor = digits + sizeof(digits);
             if (fraction != 0) {
                 int decimals = 3;
-                for (; fraction % 10 == 0; fraction /= 10) --decimals;
+                for (; fraction % 10 == 0; fraction /= 10)
+                    --decimals;
                 for (; decimals > 0; --decimals, fraction /= 10) {
                     *--cursor = static_cast<char>('0' + fraction % 10);
                 }
@@ -72,8 +73,7 @@ namespace render {
         }
 
         char buffer[32];
-        const auto [stop, failure] =
-                std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::fixed, 3);
+        const auto [stop, failure] = std::to_chars(buffer, buffer + sizeof(buffer), value, std::chars_format::fixed, 3);
         if (failure != std::errc{}) {
             text += '0';
             return;
@@ -81,7 +81,8 @@ namespace render {
 
         std::string_view digits(buffer, static_cast<std::size_t>(stop - buffer));
         if (digits.find('.') != std::string_view::npos) {
-            while (digits.ends_with('0')) digits.remove_suffix(1);
+            while (digits.ends_with('0'))
+                digits.remove_suffix(1);
             if (digits.ends_with('.')) digits.remove_suffix(1);
         }
         text += digits.empty() ? std::string_view("0") : digits;
@@ -111,22 +112,14 @@ namespace render {
         }
     }
 
-    Composer::Composer(
-        memory::Arena &arena,
-        memory::Arena &scratch,
-        const typography::Shaper &shaper,
-        layout::Typesetter &typesetter
-    ) noexcept
+    Composer::Composer(memory::Arena &arena, memory::Arena &scratch, const typography::Shaper &shaper,
+                       layout::Typesetter &typesetter) noexcept
         : typesetter(typesetter), document(arena, scratch, shaper, typesetter), shaper(shaper) {
         content.reserve(64 * 1024);
     }
 
-    std::string_view Composer::draw(
-        const memory::Slice<layout::Node *> nodes,
-        const memory::Slice<const layout::Node *> notes,
-        const float left,
-        float top
-    ) {
+    std::string_view Composer::draw(const memory::Slice<layout::Node *> nodes,
+                                    const memory::Slice<const layout::Node *> notes, const float left, float top) {
         content.clear();
         transcript.clear();
         links.emplace_back();
@@ -147,10 +140,8 @@ namespace render {
         if (const layout::Node::Color &paint = document.furniture.background;
             paint != layout::Node::Color{1.0f, 1.0f, 1.0f}) {
             layout::Node sheet(layout::Node::Type::Rule);
-            sheet.rule({
-                .width = document.configuration.width, .height = document.configuration.height,
-                .color = paint
-            });
+            sheet.rule(
+                    {.width = document.configuration.width, .height = document.configuration.height, .color = paint});
             rule(&sheet, 0.0f, document.configuration.height);
         }
         constexpr float far = std::numeric_limits<float>::infinity();
@@ -160,7 +151,7 @@ namespace render {
         // a column is: down to each node's reference point, draw, then on past
         // whatever hangs below it.
         // Each line of it a line of the transcript too.
-        for (const layout::Node *item: nodes) {
+        for (const layout::Node *item : nodes) {
             if (!item) continue;
             top += height(item);
             node(item, left, top);
@@ -174,14 +165,15 @@ namespace render {
         if (!notes.empty()) {
             const layout::Document::Configuration &page = document.configuration;
             float below = 0.0f;
-            for (const layout::Node *note: notes) below += layout::Line::extent(note) + 2.0f;
+            for (const layout::Node *note : notes)
+                below += layout::Line::extent(note) + 2.0f;
             float place = page.height - page.bottom - below;
 
             layout::Node bar(layout::Node::Type::Rule);
             bar.rule({.width = (page.width - page.left - page.right) * 0.4f, .height = 0.4f});
             rule(&bar, left, place - 2.6f);
 
-            for (const layout::Node *note: notes) {
+            for (const layout::Node *note : notes) {
                 place += height(note);
                 node(note, left, place);
                 place += layout::Line::extent(note) - height(note) + 2.0f;
@@ -203,20 +195,21 @@ namespace render {
             // that one sets its own.
             const auto seek = [this](this const auto &self, const layout::Node *item) -> void {
                 if (!item) return;
-                if (item->type == layout::Node::Type::Directive && item->directive().command == Directive::Command::Mark
-                    &&
-                    item->directive().index < marks.size()) {
+                if (item->type == layout::Node::Type::Directive &&
+                    item->directive().command == Directive::Command::Mark && item->directive().index < marks.size()) {
                     marks[item->directive().index] = item->directive().note;
                 }
                 if (item->type == layout::Node::Type::Box) {
-                    for (const layout::Node *child: item->box().list) self(child);
+                    for (const layout::Node *child : item->box().list)
+                        self(child);
                 }
             };
-            for (const layout::Node *item: nodes) seek(item);
+            for (const layout::Node *item : nodes)
+                seek(item);
 
             // The page's own instructions, in the order they were written.
             Directive::Style own = style;
-            for (const layout::Node *item: nodes) {
+            for (const layout::Node *item : nodes) {
                 if (!item || item->type != layout::Node::Type::Directive) continue;
                 const Directive &order = item->directive();
                 if (order.command != Directive::Command::Page) continue;
@@ -247,44 +240,44 @@ namespace render {
             // A fitted page is only what it holds: standalone's pages are
             // always empty in their head and their foot.
             switch (page.fitted ? Directive::Style::Empty : own) {
-                case Directive::Style::Plain:
-                    if (furniture.face) {
-                        const typography::Font *fonts[] = {furniture.face};
-                        float width = 0.0f;
-                        for (const layout::Node *piece: shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
-                            width += layout::Line::advance(piece);
-                        }
-                        numeral(furniture.face, edge + (span - width) * 0.5f, foot);
+            case Directive::Style::Plain:
+                if (furniture.face) {
+                    const typography::Font *fonts[] = {furniture.face};
+                    float width = 0.0f;
+                    for (const layout::Node *piece : shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
+                        width += layout::Line::advance(piece);
                     }
-                    break;
-                case Directive::Style::Headings:
-                    if (furniture.face) {
-                        const typography::Font *fonts[] = {furniture.face};
-                        float width = 0.0f;
-                        for (const layout::Node *piece: shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
-                            width += layout::Line::advance(piece);
-                        }
-                        numeral(furniture.face, edge + span - width, head);
-                    }
-                    break;
-                case Directive::Style::Fancy: {
-                    for (int place = 0; place < 3; ++place) {
-                        slot(furniture.head[static_cast<std::size_t>(place)], edge, span, place, head);
-                        slot(furniture.foot[static_cast<std::size_t>(place)], edge, span, place, foot);
-                    }
-                    layout::Node bar(layout::Node::Type::Rule);
-                    if (furniture.rule > 0.0f) {
-                        bar.rule({.width = span, .height = furniture.rule, .depth = 0.0f});
-                        rule(&bar, edge, head + 4.0f);
-                    }
-                    if (furniture.line > 0.0f) {
-                        bar.rule({.width = span, .height = furniture.line, .depth = 0.0f});
-                        rule(&bar, edge, foot - 12.0f);
-                    }
-                    break;
+                    numeral(furniture.face, edge + (span - width) * 0.5f, foot);
                 }
-                default:
-                    break;
+                break;
+            case Directive::Style::Headings:
+                if (furniture.face) {
+                    const typography::Font *fonts[] = {furniture.face};
+                    float width = 0.0f;
+                    for (const layout::Node *piece : shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
+                        width += layout::Line::advance(piece);
+                    }
+                    numeral(furniture.face, edge + span - width, head);
+                }
+                break;
+            case Directive::Style::Fancy: {
+                for (int place = 0; place < 3; ++place) {
+                    slot(furniture.head[static_cast<std::size_t>(place)], edge, span, place, head);
+                    slot(furniture.foot[static_cast<std::size_t>(place)], edge, span, place, foot);
+                }
+                layout::Node bar(layout::Node::Type::Rule);
+                if (furniture.rule > 0.0f) {
+                    bar.rule({.width = span, .height = furniture.rule, .depth = 0.0f});
+                    rule(&bar, edge, head + 4.0f);
+                }
+                if (furniture.line > 0.0f) {
+                    bar.rule({.width = span, .height = furniture.line, .depth = 0.0f});
+                    rule(&bar, edge, foot - 12.0f);
+                }
+                break;
+            }
+            default:
+                break;
             }
 
             ++count;
@@ -292,7 +285,7 @@ namespace render {
 
         // A link still open runs on over the page's end: what it covered here
         // is this page's, and it carries on on the next.
-        for (Link &link: opened) {
+        for (Link &link : opened) {
             if (link.areas.empty()) continue;
             links.back().push_back(link);
             link.areas.clear();
@@ -305,14 +298,13 @@ namespace render {
 
     void Composer::cover(const float left, const float top, const float right, const float bottom) {
         if (opened.empty()) return;
-        std::vector<std::array<float, 4> > &areas = opened.back().areas;
+        std::vector<std::array<float, 4>> &areas = opened.back().areas;
         // On the line of the last area when the two overlap from top to
         // bottom; the start of another line's otherwise.
         if (!areas.empty() && top < areas.back()[3] && bottom > areas.back()[1]) {
-            std::array < float, 4 > &area = areas.back();
-            area = {
-                std::min(area[0], left), std::min(area[1], top), std::max(area[2], right), std::max(area[3], bottom)
-            };
+            std::array<float, 4> &area = areas.back();
+            area = {std::min(area[0], left), std::min(area[1], top), std::max(area[2], right),
+                    std::max(area[3], bottom)};
             return;
         }
         areas.push_back({left, top, right, bottom});
@@ -324,27 +316,27 @@ namespace render {
         if (!page.empty() && page.back().origin.line == origin.line && page.back().origin.file == origin.file &&
             top < page.back().area[3] && bottom > page.back().area[1]) {
             std::array<float, 4> &area = page.back().area;
-            area = {
-                std::min(area[0], left), std::min(area[1], top), std::max(area[2], right), std::max(area[3], bottom)
-            };
+            area = {std::min(area[0], left), std::min(area[1], top), std::max(area[2], right),
+                    std::max(area[3], bottom)};
             return;
         }
         page.push_back({.origin = origin, .area = {left, top, right, bottom}});
     }
 
     void Composer::reach(const float left, const float top, const float right, const float bottom) noexcept {
-        extent = {
-            std::min(extent[0], left), std::min(extent[1], top), std::max(extent[2], right),
-            std::max(extent[3], bottom)
-        };
+        extent = {std::min(extent[0], left), std::min(extent[1], top), std::max(extent[2], right),
+                  std::max(extent[3], bottom)};
     }
 
     std::string Composer::folio() const {
         using Numbering = layout::Node::Directive::Numbering;
         switch (numbering) {
-            case Numbering::Roman: return primitives::referencing::Numerals::roman(count, capital);
-            case Numbering::Alphabetic: return primitives::referencing::Numerals::alphabetic(count, capital);
-            default: return primitives::referencing::Numerals::arabic(count);
+        case Numbering::Roman:
+            return primitives::referencing::Numerals::roman(count, capital);
+        case Numbering::Alphabetic:
+            return primitives::referencing::Numerals::alphabetic(count, capital);
+        default:
+            return primitives::referencing::Numerals::arabic(count);
         }
     }
 
@@ -354,7 +346,7 @@ namespace render {
         const std::string text = folio();
         const memory::Slice<layout::Node *> shaped = shaper.shape(memory::Slice{fonts, 1uz}, text, {});
         const float start = position;
-        for (const layout::Node *item: shaped) {
+        for (const layout::Node *item : shaped) {
             node(item, position, baseline);
             position += layout::Line::advance(item);
         }
@@ -368,12 +360,12 @@ namespace render {
         // How wide it is, the number included, so the centre and the right
         // can be placed before anything is drawn.
         float width = 0.0f;
-        for (const layout::Node *item: nodes) {
+        for (const layout::Node *item : nodes) {
             if (item && item->type == layout::Node::Type::Directive &&
                 item->directive().command == layout::Node::Directive::Command::Number) {
                 const typography::Font *fonts[] = {item->directive().font};
                 if (fonts[0]) {
-                    for (const layout::Node *piece: shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
+                    for (const layout::Node *piece : shaper.shape(memory::Slice{fonts, 1uz}, folio(), {})) {
                         width += layout::Line::advance(piece);
                     }
                 }
@@ -381,15 +373,15 @@ namespace render {
             }
             if (item && item->type == layout::Node::Type::Directive &&
                 item->directive().command == layout::Node::Directive::Command::Marked) {
-                if (item->directive().index < marks.size()) width += layout::Line::advance(
-                                                                marks[item->directive().index]);
+                if (item->directive().index < marks.size())
+                    width += layout::Line::advance(marks[item->directive().index]);
                 continue;
             }
             width += layout::Line::advance(item);
         }
 
         float position = left + (place == 1 ? (span - width) * 0.5f : place == 2 ? span - width : 0.0f);
-        for (const layout::Node *item: nodes) {
+        for (const layout::Node *item : nodes) {
             if (!item) continue;
             if (item->type == layout::Node::Type::Directive &&
                 item->directive().command == layout::Node::Directive::Command::Number) {
@@ -409,13 +401,18 @@ namespace render {
     float Composer::height(const layout::Node *item) noexcept {
         if (!item) return 0.0f;
         switch (item->type) {
-            case layout::Node::Type::Box: return item->box().height;
-            case layout::Node::Type::Glyph: return item->glyph().height;
-            case layout::Node::Type::Rule: return item->rule().height;
-            case layout::Node::Type::Bitmap: return item->bitmap().height;
-            // A kern or a glue between two lines is pure space: it has a
-            // reference point at its top and nothing standing above it.
-            default: return 0.0f;
+        case layout::Node::Type::Box:
+            return item->box().height;
+        case layout::Node::Type::Glyph:
+            return item->glyph().height;
+        case layout::Node::Type::Rule:
+            return item->rule().height;
+        case layout::Node::Type::Bitmap:
+            return item->bitmap().height;
+        // A kern or a glue between two lines is pure space: it has a
+        // reference point at its top and nothing standing above it.
+        default:
+            return 0.0f;
         }
     }
 
@@ -423,381 +420,378 @@ namespace render {
         if (!item) return;
 
         switch (item->type) {
-            case layout::Node::Type::Box: {
-                // A Command::Source in the box says where what follows it in
-                // the box was written, and no further: what comes after the
-                // box was written where the box's own surroundings say.
-                const memory::Location kept = origin;
+        case layout::Node::Type::Box: {
+            // A Command::Source in the box says where what follows it in
+            // the box was written, and no further: what comes after the
+            // box was written where the box's own surroundings say.
+            const memory::Location kept = origin;
 
-                // The box's own displacement is applied here, once, so that
-                // inside() only ever deals with its contents. An anchored
-                // box ignores the pen entirely and places itself where it
-                // was told to, from the page's own corner.
-                if (item->box().anchored) {
-                    const layout::Node::Point &corner = item->box().anchor;
-                    inside(item, corner.across, corner.down);
-                } else if (const layout::Node::Transform *map = item->box().transform) {
-                    // Drawn through its map, in a graphics state of its own
-                    // the page leaves again after: what the contents set --
-                    // a color, an opacity -- is undone with it, and the colors
-                    // this side remembers are the ones in force again.
-                    flush();
-                    const layout::Node::Color fill = filling;
-                    const layout::Node::Color stroke = stroking;
-                    const float faded = opacity;
-                    content += "q ";
-                    const auto &[horizontal, vertical, offset] = *map;
-                    for (const float value: {horizontal.across, horizontal.down, vertical.across, vertical.down}) {
-                        number(content, value == 0.0f ? 0.0f : value); // no "-0" for a cosine of a right angle
-                        content += ' ';
-                    }
-                    const float across = position + item->box().offset + offset;
-                    const float down = baseline + item->box().shift;
-                    number(content, across);
-                    content += ' ';
-                    number(content, down);
-                    content += " cm\n";
-
-                    // What the contents draw is measured in the map's own
-                    // space, not the page's: the box's four corners, carried
-                    // through the map, are what it covers instead.
-                    // So is where the source it holds was drawn: one spot
-                    // over all of it, for the line its first came from.
-                    const std::array<float, 4> before = extent;
-                    const std::size_t made = spots.back().size();
-                    inside(item, 0.0f, 0.0f);
-                    extent = {
-                        std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
-                        std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()
-                    };
-                    const layout::Node::Box &shape = item->box();
-                    for (const float side: {0.0f, shape.width}) {
-                        for (const float edge: {-shape.height, shape.depth}) {
-                            const float right = horizontal.across * side + vertical.across * edge + across;
-                            const float under = horizontal.down * side + vertical.down * edge + down;
-                            reach(right, under, right, under);
-                        }
-                    }
-                    if (spots.back().size() > made) {
-                        origin = spots.back()[made].origin;
-                        spots.back().resize(made);
-                        spot(extent[0], extent[1], extent[2], extent[3]);
-                    }
-                    reach(before[0], before[1], before[2], before[3]);
-                    flush();
-                    content += "Q\n";
-                    filling = fill;
-                    stroking = stroke;
-                    opacity = faded;
-                } else {
-                    inside(item, position + item->box().offset, baseline + item->box().shift);
-                }
-                origin = kept;
-                break;
-            }
-            case layout::Node::Type::Glyph: {
-                // One glyph onto the open run, opening a new run if need be.
-                const layout::Node::Glyph &mark = item->glyph();
-                if (mark.code == 0) return;
-                // A glyph wholly clear -- a beamer overlay's, unseen on this
-                // slide -- keeps its place and is neither drawn nor read.
-                if (mark.color.alpha <= 0.0f) return;
-
-                // The open run's own font is nearly always the next glyph's too, and
-                // its slot is already known. Otherwise the slot is the face's, not the
-                // font's: every size of a family reads the same file, and the file is
-                // what a resource names. The size is set per run, which is why a
-                // second size costs nothing here.
-                std::size_t slot = index;
-                if (!running || mark.font != running) {
-                    const typography::Face *face = mark.font ? mark.font->face() : nullptr;
-                    if (!face || face->data().empty()) return;
-                    slot = 0;
-                    while (slot < faces.size() && !(faces[slot].font && faces[slot].font->face() == face)) ++slot;
-                    if (slot == faces.size()) faces.push_back(Entry{.font = mark.font});
-                }
-
-                const float left = position + mark.offset;
-                const float height = baseline + mark.shift;
-
-                // A run holds one face at one size on one baseline in one color.
-                // Anything else needs a run of its own, because those four are what a
-                // run states up front and never restates.
-                if (!running || mark.font != running || height != line || mark.color != filling) {
-                    flush();
-                    fill(mark.color);
-
-                    running = mark.font;
-                    index = slot;
-                    pen = left;
-                    line = height;
-
-                    // The page was flipped so that everything measures downwards; the
-                    // text matrix flips back, or the letters would be drawn upside
-                    // down in the right places.
-                    content += "BT /F";
-                    number(content, index);
-                    content += ' ';
-                    number(content, running->size());
-                    content += " Tf 1 0 0 -1 ";
-                    number(content, pen);
-                    content += ' ';
-                    number(content, line);
-                    content += " Tm [<";
-                } else if (left != pen) {
-                    // The pen is not where the last glyph left it: a kern, or a space
-                    // that was stretched to set the line. The difference goes in as a
-                    // displacement, which is subtracted from the pen and is therefore
-                    // negated -- and it is applied to the model as well, so both sides
-                    // stay in step to the last thousandth.
-                    const float grain = running->size() / 1000.0f;
-                    const auto step = static_cast<int>(std::lround((pen - left) / grain));
-
-                    content += "> ";
-                    number(content, step);
-                    content += " <";
-                    pen -= static_cast<float>(step) * grain;
-                }
-
-                // Identity encoding: two bytes of the number this glyph is embedded
-                // under, straight through.
-                //
-                // The number is found by glyph rather than searched for: a face states
-                // how many glyphs it holds, so the table is sized once and every lookup
-                // after that is a load. Zero means "not drawn yet", which is why the
-                // numbers handed out start at one -- and one is also where a font's
-                // own numbering has to start, since zero is its missing-glyph slot. A
-                // page of text draws a few dozen distinct glyphs from a face, so the
-                // lists start with room for that rather than growing into it.
-                Entry &entry = faces[slot];
-                if (entry.numbers.empty()) {
-                    entry.numbers.assign(entry.font->face()->count() + 1, 0);
-                    entry.glyphs.reserve(128);
-                    entry.points.reserve(128);
-                    entry.letters.reserve(128);
-                    entry.widths.reserve(128);
-                }
-                std::uint32_t code = 0;
-                if (mark.code < entry.numbers.size()) {
-                    if (entry.numbers[mark.code] == 0) {
-                        entry.glyphs.push_back(mark.code);
-                        entry.points.push_back(mark.point);
-                        entry.letters.push_back(mark.letters);
-                        entry.widths.push_back(width(*entry.font, mark.code));
-                        entry.numbers[mark.code] = static_cast<std::uint32_t>(entry.glyphs.size());
-                    }
-                    code = entry.numbers[mark.code];
-                }
-
-                static constexpr char digits[] = "0123456789ABCDEF";
-                const char written[] = {
-                    digits[(code >> 12) & 0xF], digits[(code >> 8) & 0xF],
-                    digits[(code >> 4) & 0xF], digits[code & 0xF]
-                };
-                content.append(written, sizeof(written));
-                reach(left, height - mark.height, left + mark.width, height + mark.depth);
-                if (!opened.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
-                spot(left, height - mark.height, left + mark.width, height + mark.depth);
-
-                // What the glyph stands for, onto the page's transcript: a
-                // ligature's letters, or its own character in UTF-8.
-                if (!mark.letters.empty()) {
-                    transcript += mark.letters;
-                } else if (const std::uint32_t point = mark.point; point < 0x80) {
-                    transcript += static_cast<char>(point);
-                } else if (point < 0x800) {
-                    transcript += static_cast<char>(0xC0 | (point >> 6));
-                    transcript += static_cast<char>(0x80 | (point & 0x3F));
-                } else if (point < 0x10000) {
-                    transcript += static_cast<char>(0xE0 | (point >> 12));
-                    transcript += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
-                    transcript += static_cast<char>(0x80 | (point & 0x3F));
-                } else {
-                    transcript += static_cast<char>(0xF0 | (point >> 18));
-                    transcript += static_cast<char>(0x80 | ((point >> 12) & 0x3F));
-                    transcript += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
-                    transcript += static_cast<char>(0x80 | (point & 0x3F));
-                }
-
-                // The reader advances the pen by the width it was given for this
-                // glyph, which is the rounded one, so the model has to advance by
-                // exactly that and not by the width the font would report. A glyph
-                // with a number had its width taken when it got one.
-                const float advance = code != 0 ? entry.widths[code - 1] : width(*entry.font, mark.code);
-                pen += advance * running->size() / 1000.0f;
-                break;
-            }
-            case layout::Node::Type::Rule:
-                rule(item, position, baseline);
-                break;
-            case layout::Node::Type::Path: {
-                // A stroked line between two points.
-                // A stroke is painted straight onto the page too, like a rule.
+            // The box's own displacement is applied here, once, so that
+            // inside() only ever deals with its contents. An anchored
+            // box ignores the pen entirely and places itself where it
+            // was told to, from the page's own corner.
+            if (item->box().anchored) {
+                const layout::Node::Point &corner = item->box().anchor;
+                inside(item, corner.across, corner.down);
+            } else if (const layout::Node::Transform *map = item->box().transform) {
+                // Drawn through its map, in a graphics state of its own
+                // the page leaves again after: what the contents set --
+                // a color, an opacity -- is undone with it, and the colors
+                // this side remembers are the ones in force again.
                 flush();
+                const layout::Node::Color fill = filling;
+                const layout::Node::Color stroke = stroking;
+                const float faded = opacity;
+                content += "q ";
+                const auto &[horizontal, vertical, offset] = *map;
+                for (const float value : {horizontal.across, horizontal.down, vertical.across, vertical.down}) {
+                    number(content, value == 0.0f ? 0.0f : value); // no "-0" for a cosine of a right angle
+                    content += ' ';
+                }
+                const float across = position + item->box().offset + offset;
+                const float down = baseline + item->box().shift;
+                number(content, across);
+                content += ' ';
+                number(content, down);
+                content += " cm\n";
 
-                const layout::Node::Path &segment = item->path();
-
-                // A region: its corners joined, closed and filled, in its
-                // color as a rule is.
-                if (!segment.area.empty()) {
-                    fill(segment.color);
-                    for (std::size_t corner = 0; corner < segment.area.size(); ++corner) {
-                        const float x = position + segment.area[corner].across;
-                        const float y = baseline + segment.area[corner].down;
-                        number(content, x);
-                        content += ' ';
-                        number(content, y);
-                        content += corner == 0 ? " m\n" : " l\n";
-                        reach(x, y, x, y);
+                // What the contents draw is measured in the map's own
+                // space, not the page's: the box's four corners, carried
+                // through the map, are what it covers instead.
+                // So is where the source it holds was drawn: one spot
+                // over all of it, for the line its first came from.
+                const std::array<float, 4> before = extent;
+                const std::size_t made = spots.back().size();
+                inside(item, 0.0f, 0.0f);
+                extent = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+                          std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+                const layout::Node::Box &shape = item->box();
+                for (const float side : {0.0f, shape.width}) {
+                    for (const float edge : {-shape.height, shape.depth}) {
+                        const float right = horizontal.across * side + vertical.across * edge + across;
+                        const float under = horizontal.down * side + vertical.down * edge + down;
+                        reach(right, under, right, under);
                     }
-                    content += "h f\n";
-                    break;
                 }
-                if (segment.width <= 0.0f) return;
-
-                // The stroke color, when it differs from the one already set.
-                translucent(segment.color.alpha);
-                if (segment.color != stroking) {
-                    stroking = segment.color;
-                    number(content, segment.color.red);
-                    content += ' ';
-                    number(content, segment.color.green);
-                    content += ' ';
-                    number(content, segment.color.blue);
-                    content += " RG\n";
+                if (spots.back().size() > made) {
+                    origin = spots.back()[made].origin;
+                    spots.back().resize(made);
+                    spot(extent[0], extent[1], extent[2], extent[3]);
                 }
+                reach(before[0], before[1], before[2], before[3]);
+                flush();
+                content += "Q\n";
+                filling = fill;
+                stroking = stroke;
+                opacity = faded;
+            } else {
+                inside(item, position + item->box().offset, baseline + item->box().shift);
+            }
+            origin = kept;
+            break;
+        }
+        case layout::Node::Type::Glyph: {
+            // One glyph onto the open run, opening a new run if need be.
+            const layout::Node::Glyph &mark = item->glyph();
+            if (mark.code == 0) return;
+            // A glyph wholly clear -- a beamer overlay's, unseen on this
+            // slide -- keeps its place and is neither drawn nor read.
+            if (mark.color.alpha <= 0.0f) return;
 
-                number(content, segment.width);
-                content += " w\n";
-                content += segment.dashed ? "[3 3] 0 d\n" : "[] 0 d\n";
+            // The open run's own font is nearly always the next glyph's too, and
+            // its slot is already known. Otherwise the slot is the face's, not the
+            // font's: every size of a family reads the same file, and the file is
+            // what a resource names. The size is set per run, which is why a
+            // second size costs nothing here.
+            std::size_t slot = index;
+            if (!running || mark.font != running) {
+                const typography::Face *face = mark.font ? mark.font->face() : nullptr;
+                if (!face || face->data().empty()) return;
+                slot = 0;
+                while (slot < faces.size() && !(faces[slot].font && faces[slot].font->face() == face))
+                    ++slot;
+                if (slot == faces.size()) faces.push_back(Entry{.font = mark.font});
+            }
 
-                number(content, position + segment.start.across);
+            const float left = position + mark.offset;
+            const float height = baseline + mark.shift;
+
+            // A run holds one face at one size on one baseline in one color.
+            // Anything else needs a run of its own, because those four are what a
+            // run states up front and never restates.
+            if (!running || mark.font != running || height != line || mark.color != filling) {
+                flush();
+                fill(mark.color);
+
+                running = mark.font;
+                index = slot;
+                pen = left;
+                line = height;
+
+                // The page was flipped so that everything measures downwards; the
+                // text matrix flips back, or the letters would be drawn upside
+                // down in the right places.
+                content += "BT /F";
+                number(content, index);
                 content += ' ';
-                number(content, baseline + segment.start.down);
-                content += " m\n";
-                number(content, position + segment.end.across);
+                number(content, running->size());
+                content += " Tf 1 0 0 -1 ";
+                number(content, pen);
                 content += ' ';
-                number(content, baseline + segment.end.down);
-                content += " l S\n";
+                number(content, line);
+                content += " Tm [<";
+            } else if (left != pen) {
+                // The pen is not where the last glyph left it: a kern, or a space
+                // that was stretched to set the line. The difference goes in as a
+                // displacement, which is subtracted from the pen and is therefore
+                // negated -- and it is applied to the model as well, so both sides
+                // stay in step to the last thousandth.
+                const float grain = running->size() / 1000.0f;
+                const auto step = static_cast<int>(std::lround((pen - left) / grain));
 
-                // Half the stroke's width either side of the line it follows.
-                const float half = segment.width * 0.5f;
-                reach(position + std::min(segment.start.across, segment.end.across) - half,
-                      baseline + std::min(segment.start.down, segment.end.down) - half,
-                      position + std::max(segment.start.across, segment.end.across) + half,
-                      baseline + std::max(segment.start.down, segment.end.down) + half);
+                content += "> ";
+                number(content, step);
+                content += " <";
+                pen -= static_cast<float>(step) * grain;
+            }
+
+            // Identity encoding: two bytes of the number this glyph is embedded
+            // under, straight through.
+            //
+            // The number is found by glyph rather than searched for: a face states
+            // how many glyphs it holds, so the table is sized once and every lookup
+            // after that is a load. Zero means "not drawn yet", which is why the
+            // numbers handed out start at one -- and one is also where a font's
+            // own numbering has to start, since zero is its missing-glyph slot. A
+            // page of text draws a few dozen distinct glyphs from a face, so the
+            // lists start with room for that rather than growing into it.
+            Entry &entry = faces[slot];
+            if (entry.numbers.empty()) {
+                entry.numbers.assign(entry.font->face()->count() + 1, 0);
+                entry.glyphs.reserve(128);
+                entry.points.reserve(128);
+                entry.letters.reserve(128);
+                entry.widths.reserve(128);
+            }
+            std::uint32_t code = 0;
+            if (mark.code < entry.numbers.size()) {
+                if (entry.numbers[mark.code] == 0) {
+                    entry.glyphs.push_back(mark.code);
+                    entry.points.push_back(mark.point);
+                    entry.letters.push_back(mark.letters);
+                    entry.widths.push_back(width(*entry.font, mark.code));
+                    entry.numbers[mark.code] = static_cast<std::uint32_t>(entry.glyphs.size());
+                }
+                code = entry.numbers[mark.code];
+            }
+
+            static constexpr char digits[] = "0123456789ABCDEF";
+            const char written[] = {digits[(code >> 12) & 0xF], digits[(code >> 8) & 0xF], digits[(code >> 4) & 0xF],
+                                    digits[code & 0xF]};
+            content.append(written, sizeof(written));
+            reach(left, height - mark.height, left + mark.width, height + mark.depth);
+            if (!opened.empty()) cover(left, height - mark.height, left + mark.width, height + mark.depth);
+            spot(left, height - mark.height, left + mark.width, height + mark.depth);
+
+            // What the glyph stands for, onto the page's transcript: a
+            // ligature's letters, or its own character in UTF-8.
+            if (!mark.letters.empty()) {
+                transcript += mark.letters;
+            } else if (const std::uint32_t point = mark.point; point < 0x80) {
+                transcript += static_cast<char>(point);
+            } else if (point < 0x800) {
+                transcript += static_cast<char>(0xC0 | (point >> 6));
+                transcript += static_cast<char>(0x80 | (point & 0x3F));
+            } else if (point < 0x10000) {
+                transcript += static_cast<char>(0xE0 | (point >> 12));
+                transcript += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
+                transcript += static_cast<char>(0x80 | (point & 0x3F));
+            } else {
+                transcript += static_cast<char>(0xF0 | (point >> 18));
+                transcript += static_cast<char>(0x80 | ((point >> 12) & 0x3F));
+                transcript += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
+                transcript += static_cast<char>(0x80 | (point & 0x3F));
+            }
+
+            // The reader advances the pen by the width it was given for this
+            // glyph, which is the rounded one, so the model has to advance by
+            // exactly that and not by the width the font would report. A glyph
+            // with a number had its width taken when it got one.
+            const float advance = code != 0 ? entry.widths[code - 1] : width(*entry.font, mark.code);
+            pen += advance * running->size() / 1000.0f;
+            break;
+        }
+        case layout::Node::Type::Rule:
+            rule(item, position, baseline);
+            break;
+        case layout::Node::Type::Path: {
+            // A stroked line between two points.
+            // A stroke is painted straight onto the page too, like a rule.
+            flush();
+
+            const layout::Node::Path &segment = item->path();
+
+            // A region: its corners joined, closed and filled, in its
+            // color as a rule is.
+            if (!segment.area.empty()) {
+                fill(segment.color);
+                for (std::size_t corner = 0; corner < segment.area.size(); ++corner) {
+                    const float x = position + segment.area[corner].across;
+                    const float y = baseline + segment.area[corner].down;
+                    number(content, x);
+                    content += ' ';
+                    number(content, y);
+                    content += corner == 0 ? " m\n" : " l\n";
+                    reach(x, y, x, y);
+                }
+                content += "h f\n";
                 break;
             }
-            case layout::Node::Type::Bitmap: {
-                // An image, scaled to its drawn size.
-                // An image is painted straight onto the page too, like a rule.
-                flush();
+            if (segment.width <= 0.0f) return;
 
-                const layout::Node::Bitmap &bitmap = item->bitmap();
-                if (bitmap.width <= 0.0f || bitmap.height <= 0.0f) return;
-                if (!bitmap.drawing && !bitmap.source) return;
-                reach(position, baseline - bitmap.height, position + bitmap.width, baseline);
-                spot(position, baseline - bitmap.height, position + bitmap.width, baseline);
+            // The stroke color, when it differs from the one already set.
+            translucent(segment.color.alpha);
+            if (segment.color != stroking) {
+                stroking = segment.color;
+                number(content, segment.color.red);
+                content += ' ';
+                number(content, segment.color.green);
+                content += ' ';
+                number(content, segment.color.blue);
+                content += " RG\n";
+            }
 
-                // A page of another PDF: its form, clipped to the drawn box
-                // and scaled so the window onto its page fills it. The form's
-                // y runs up and the page's down, so its scale is negated and
-                // its window's bottom-left put at the box's bottom-left.
-                if (const graphics::Drawing *drawn = bitmap.drawing) {
-                    std::size_t slot = 0;
-                    while (slot < drawings.size() && drawings[slot] != drawn) ++slot;
-                    if (slot == drawings.size()) drawings.push_back(drawn);
+            number(content, segment.width);
+            content += " w\n";
+            content += segment.dashed ? "[3 3] 0 d\n" : "[] 0 d\n";
 
-                    const std::array<float, 4> &window = bitmap.window;
-                    const float across = bitmap.width / std::max(window[2] - window[0], 0.001f);
-                    const float down = bitmap.height / std::max(window[3] - window[1], 0.001f);
-                    content += "q\n";
-                    number(content, position);
-                    content += ' ';
-                    number(content, baseline - bitmap.height);
-                    content += ' ';
-                    number(content, bitmap.width);
-                    content += ' ';
-                    number(content, bitmap.height);
-                    content += " re W n\n";
-                    number(content, across);
-                    content += " 0 0 ";
-                    number(content, -down);
-                    content += ' ';
-                    number(content, position - window[0] * across);
-                    content += ' ';
-                    number(content, baseline + window[1] * down);
-                    content += " cm\n/Fm";
-                    number(content, slot);
-                    content += " Do\nQ\n";
-                    break;
-                }
-                if (!bitmap.source) return;
+            number(content, position + segment.start.across);
+            content += ' ';
+            number(content, baseline + segment.start.down);
+            content += " m\n";
+            number(content, position + segment.end.across);
+            content += ' ';
+            number(content, baseline + segment.end.down);
+            content += " l S\n";
 
-                // The image's resource index, recorded on first sight. A document
-                // draws few enough of them that a linear search costs nothing a hash
-                // table would not spend just as much building.
+            // Half the stroke's width either side of the line it follows.
+            const float half = segment.width * 0.5f;
+            reach(position + std::min(segment.start.across, segment.end.across) - half,
+                  baseline + std::min(segment.start.down, segment.end.down) - half,
+                  position + std::max(segment.start.across, segment.end.across) + half,
+                  baseline + std::max(segment.start.down, segment.end.down) + half);
+            break;
+        }
+        case layout::Node::Type::Bitmap: {
+            // An image, scaled to its drawn size.
+            // An image is painted straight onto the page too, like a rule.
+            flush();
+
+            const layout::Node::Bitmap &bitmap = item->bitmap();
+            if (bitmap.width <= 0.0f || bitmap.height <= 0.0f) return;
+            if (!bitmap.drawing && !bitmap.source) return;
+            reach(position, baseline - bitmap.height, position + bitmap.width, baseline);
+            spot(position, baseline - bitmap.height, position + bitmap.width, baseline);
+
+            // A page of another PDF: its form, clipped to the drawn box
+            // and scaled so the window onto its page fills it. The form's
+            // y runs up and the page's down, so its scale is negated and
+            // its window's bottom-left put at the box's bottom-left.
+            if (const graphics::Drawing *drawn = bitmap.drawing) {
                 std::size_t slot = 0;
-                while (slot < pictures.size() && pictures[slot] != bitmap.source) ++slot;
-                if (slot == pictures.size()) pictures.push_back(bitmap.source);
+                while (slot < drawings.size() && drawings[slot] != drawn)
+                    ++slot;
+                if (slot == drawings.size()) drawings.push_back(drawn);
 
-                // The image XObject's unit square runs bottom to top; the content
-                // stream around it runs top to bottom, page-flipped once already.
-                // Negating the height and translating to the baseline is what turns
-                // one into the other without a second flip of everything drawn
-                // after it.
+                const std::array<float, 4> &window = bitmap.window;
+                const float across = bitmap.width / std::max(window[2] - window[0], 0.001f);
+                const float down = bitmap.height / std::max(window[3] - window[1], 0.001f);
                 content += "q\n";
-                number(content, bitmap.width);
-                content += " 0 0 ";
-                number(content, -bitmap.height);
-                content += ' ';
                 number(content, position);
                 content += ' ';
-                number(content, baseline);
-                content += " cm\n/Im";
+                number(content, baseline - bitmap.height);
+                content += ' ';
+                number(content, bitmap.width);
+                content += ' ';
+                number(content, bitmap.height);
+                content += " re W n\n";
+                number(content, across);
+                content += " 0 0 ";
+                number(content, -down);
+                content += ' ';
+                number(content, position - window[0] * across);
+                content += ' ';
+                number(content, baseline + window[1] * down);
+                content += " cm\n/Fm";
                 number(content, slot);
                 content += " Do\nQ\n";
                 break;
             }
-            case layout::Node::Type::Directive:
-                // A page number set in the text: known now, as its page is
-                // drawn -- and an anchor's page, for the same reason.
-                if (item->directive().command == layout::Node::Directive::Command::Number) {
-                    numeral(item->directive().font, position, baseline);
-                } else if (item->directive().command == layout::Node::Directive::Command::Marked) {
-                    // A head's or a foot's mark: the page's, set where it was marked.
-                    if (item->directive().index < marks.size())
-                        node(marks[item->directive().index], position, baseline);
-                } else if (item->directive().command == layout::Node::Directive::Command::Anchor) {
-                    const std::size_t slot = item->directive().index;
-                    if (slot >= anchors.size()) anchors.resize(slot + 1);
-                    anchors[slot] = folio();
-                    if (slot >= places.size()) places.resize(slot + 1);
-                    places[slot] = {.page = texts.size(), .down = baseline};
-                } else if (item->directive().command == layout::Node::Directive::Command::Source) {
-                    origin = {.line = static_cast<std::uint32_t>(item->directive().index), .file = item->directive().file};
-                } else if (item->directive().command == layout::Node::Directive::Command::Link) {
-                    opened.push_back({
-                        .target = item->directive().target, .anchor = item->directive().index,
-                        .border = item->directive().border
-                    });
-                } else if (item->directive().command == layout::Node::Directive::Command::Unlink && !opened.empty()) {
-                    if (!opened.back().areas.empty()) links.back().push_back(std::move(opened.back()));
-                    opened.pop_back();
-                } else if (const layout::Node *aside = item->directive().note;
-                    aside && item->directive().command == layout::Node::Directive::Command::Aside) {
-                    // A margin note: in the right margin, clear of the column
-                    // by \marginparsep, its first line level with the line it
-                    // was written in.
-                    const layout::Document::Configuration &page = document.configuration;
-                    const layout::Node::Box &shape = aside->box();
-                    const layout::Node *first = shape.list.empty() ? nullptr : shape.list[0];
-                    const float top = first && first->type == layout::Node::Type::Box ? first->box().height : 0.0f;
-                    node(aside, page.width - page.right + item->directive().width, baseline - top);
-                }
-                break;
-            default:
-                break; // glue, kerns and penalties move the pen but draw nothing
+            if (!bitmap.source) return;
+
+            // The image's resource index, recorded on first sight. A document
+            // draws few enough of them that a linear search costs nothing a hash
+            // table would not spend just as much building.
+            std::size_t slot = 0;
+            while (slot < pictures.size() && pictures[slot] != bitmap.source)
+                ++slot;
+            if (slot == pictures.size()) pictures.push_back(bitmap.source);
+
+            // The image XObject's unit square runs bottom to top; the content
+            // stream around it runs top to bottom, page-flipped once already.
+            // Negating the height and translating to the baseline is what turns
+            // one into the other without a second flip of everything drawn
+            // after it.
+            content += "q\n";
+            number(content, bitmap.width);
+            content += " 0 0 ";
+            number(content, -bitmap.height);
+            content += ' ';
+            number(content, position);
+            content += ' ';
+            number(content, baseline);
+            content += " cm\n/Im";
+            number(content, slot);
+            content += " Do\nQ\n";
+            break;
+        }
+        case layout::Node::Type::Directive:
+            // A page number set in the text: known now, as its page is
+            // drawn -- and an anchor's page, for the same reason.
+            if (item->directive().command == layout::Node::Directive::Command::Number) {
+                numeral(item->directive().font, position, baseline);
+            } else if (item->directive().command == layout::Node::Directive::Command::Marked) {
+                // A head's or a foot's mark: the page's, set where it was marked.
+                if (item->directive().index < marks.size()) node(marks[item->directive().index], position, baseline);
+            } else if (item->directive().command == layout::Node::Directive::Command::Anchor) {
+                const std::size_t slot = item->directive().index;
+                if (slot >= anchors.size()) anchors.resize(slot + 1);
+                anchors[slot] = folio();
+                if (slot >= places.size()) places.resize(slot + 1);
+                places[slot] = {.page = texts.size(), .down = baseline};
+            } else if (item->directive().command == layout::Node::Directive::Command::Source) {
+                origin = {.line = static_cast<std::uint32_t>(item->directive().index), .file = item->directive().file};
+            } else if (item->directive().command == layout::Node::Directive::Command::Link) {
+                opened.push_back({.target = item->directive().target,
+                                  .anchor = item->directive().index,
+                                  .border = item->directive().border});
+            } else if (item->directive().command == layout::Node::Directive::Command::Unlink && !opened.empty()) {
+                if (!opened.back().areas.empty()) links.back().push_back(std::move(opened.back()));
+                opened.pop_back();
+            } else if (const layout::Node *aside = item->directive().note;
+                       aside && item->directive().command == layout::Node::Directive::Command::Aside) {
+                // A margin note: in the right margin, clear of the column
+                // by \marginparsep, its first line level with the line it
+                // was written in.
+                const layout::Document::Configuration &page = document.configuration;
+                const layout::Node::Box &shape = aside->box();
+                const layout::Node *first = shape.list.empty() ? nullptr : shape.list[0];
+                const float top = first && first->type == layout::Node::Type::Box ? first->box().height : 0.0f;
+                node(aside, page.width - page.right + item->directive().width, baseline - top);
+            }
+            break;
+        default:
+            break; // glue, kerns and penalties move the pen but draw nothing
         }
     }
 
@@ -808,12 +802,13 @@ namespace render {
         // box's own reference point, so none of them advances the pen the
         // way an ordinary line or column otherwise would.
         if (shape.absolute) {
-            for (const layout::Node *child: shape.list) node(child, position, baseline);
+            for (const layout::Node *child : shape.list)
+                node(child, position, baseline);
             return;
         }
 
         if (shape.alignment == layout::Node::Alignment::Horizontal) {
-            for (const layout::Node *child: shape.list) {
+            for (const layout::Node *child : shape.list) {
                 if (!child) continue;
                 node(child, position, baseline);
 
@@ -843,7 +838,7 @@ namespace render {
                         } else if (const float step = layout::Line::advance(leader); step > 0.0f) {
                             const double first = std::ceil(position / step) * step;
                             const double end = position + span + 0.01f;
-                            for (std::size_t repetition = 0; ; ++repetition) {
+                            for (std::size_t repetition = 0;; ++repetition) {
                                 const double at = first + static_cast<double>(repetition) * step;
                                 if (!(at + step <= end)) break;
                                 node(leader, static_cast<float>(at), baseline);
@@ -866,7 +861,7 @@ namespace render {
 
         // A column: down to each child's reference point, draw it, then on
         // past whatever hangs below it.
-        for (const layout::Node *child: shape.list) {
+        for (const layout::Node *child : shape.list) {
             if (!child) continue;
 
             baseline += height(child);
@@ -877,7 +872,8 @@ namespace render {
             }
 
             if (child->type == layout::Node::Type::Glue) {
-                if (const layout::Node::Glue &glue = child->glue(); shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
+                if (const layout::Node::Glue &glue = child->glue();
+                    shape.sign == layout::Node::Sign::Stretching && glue.expand == shape.order) {
                     baseline += glue.stretch * shape.ratio;
                 } else if (shape.sign == layout::Node::Sign::Shrinking && glue.limit == shape.order) {
                     baseline -= glue.shrink * shape.ratio;
@@ -937,7 +933,8 @@ namespace render {
 
         // Its resource index, recorded on first sight.
         std::size_t slot = 0;
-        while (slot < opacities.size() && opacities[slot] != value) ++slot;
+        while (slot < opacities.size() && opacities[slot] != value)
+            ++slot;
         if (slot == opacities.size()) opacities.push_back(value);
 
         content += "/GS";

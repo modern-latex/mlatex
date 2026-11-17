@@ -14,8 +14,8 @@
 #include "render/composer.hpp"
 #include "render/graphics/image.hpp"
 
-#include <harfbuzz/hb.h>
 #include <harfbuzz/hb-ot.h>
+#include <harfbuzz/hb.h>
 
 #include <charconv>
 #include <cmath>
@@ -33,12 +33,12 @@ namespace render {
     /// @complexity O(1).
     [[nodiscard]] static Matrix compose(const Matrix &first, const Matrix &second) noexcept {
         return {
-            first[0] * second[0] + first[1] * second[2],
-            first[0] * second[1] + first[1] * second[3],
-            first[2] * second[0] + first[3] * second[2],
-            first[2] * second[1] + first[3] * second[3],
-            first[4] * second[0] + first[5] * second[2] + second[4],
-            first[4] * second[1] + first[5] * second[3] + second[5],
+                first[0] * second[0] + first[1] * second[2],
+                first[0] * second[1] + first[1] * second[3],
+                first[2] * second[0] + first[3] * second[2],
+                first[2] * second[1] + first[3] * second[3],
+                first[4] * second[0] + first[5] * second[2] + second[4],
+                first[4] * second[1] + first[5] * second[3] + second[5],
         };
     }
 
@@ -52,8 +52,7 @@ namespace render {
         const long part = tenths % 10;
         if (tenths < 0 && whole == 0) text += '-';
         char buffer[24];
-        if (const auto [stop, failure] = std::to_chars(buffer, buffer + sizeof buffer, whole);
-            failure == std::errc{}) {
+        if (const auto [stop, failure] = std::to_chars(buffer, buffer + sizeof buffer, whole); failure == std::errc{}) {
             text.append(buffer, stop);
         }
         if (part != 0) {
@@ -68,47 +67,58 @@ namespace render {
     [[nodiscard]] static hb_draw_funcs_t *pen() {
         static hb_draw_funcs_t *const made = [] {
             hb_draw_funcs_t *funcs = hb_draw_funcs_create();
-            hb_draw_funcs_set_move_to_func(funcs, [](hb_draw_funcs_t *, void *data, hb_draw_state_t *,
-                                                     const float x, const float y, void *) {
-                auto &text = *static_cast<std::string *>(data);
-                text += 'M';
-                coordinate(text, x);
-                text += ' ';
-                coordinate(text, y);
-            }, nullptr, nullptr);
-            hb_draw_funcs_set_line_to_func(funcs, [](hb_draw_funcs_t *, void *data, hb_draw_state_t *,
-                                                     const float x, const float y, void *) {
-                auto &text = *static_cast<std::string *>(data);
-                text += 'L';
-                coordinate(text, x);
-                text += ' ';
-                coordinate(text, y);
-            }, nullptr, nullptr);
-            hb_draw_funcs_set_quadratic_to_func(funcs, [](hb_draw_funcs_t *, void *data, hb_draw_state_t *,
-                                                          const float across, const float up, const float x,
-                                                          const float y, void *) {
-                auto &text = *static_cast<std::string *>(data);
-                text += 'Q';
-                for (const float value: {across, up, x}) {
-                    coordinate(text, value);
-                    text += ' ';
-                }
-                coordinate(text, y);
-            }, nullptr, nullptr);
-            hb_draw_funcs_set_cubic_to_func(funcs, [](hb_draw_funcs_t *, void *data, hb_draw_state_t *,
-                                                      const float first, const float rise, const float second,
-                                                      const float lift, const float x, const float y, void *) {
-                auto &text = *static_cast<std::string *>(data);
-                text += 'C';
-                for (const float value: {first, rise, second, lift, x}) {
-                    coordinate(text, value);
-                    text += ' ';
-                }
-                coordinate(text, y);
-            }, nullptr, nullptr);
-            hb_draw_funcs_set_close_path_func(funcs, [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, void *) {
-                *static_cast<std::string *>(data) += 'Z';
-            }, nullptr, nullptr);
+            hb_draw_funcs_set_move_to_func(
+                    funcs,
+                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, const float x, const float y, void *) {
+                        auto &text = *static_cast<std::string *>(data);
+                        text += 'M';
+                        coordinate(text, x);
+                        text += ' ';
+                        coordinate(text, y);
+                    },
+                    nullptr, nullptr);
+            hb_draw_funcs_set_line_to_func(
+                    funcs,
+                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, const float x, const float y, void *) {
+                        auto &text = *static_cast<std::string *>(data);
+                        text += 'L';
+                        coordinate(text, x);
+                        text += ' ';
+                        coordinate(text, y);
+                    },
+                    nullptr, nullptr);
+            hb_draw_funcs_set_quadratic_to_func(
+                    funcs,
+                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, const float across, const float up,
+                       const float x, const float y, void *) {
+                        auto &text = *static_cast<std::string *>(data);
+                        text += 'Q';
+                        for (const float value : {across, up, x}) {
+                            coordinate(text, value);
+                            text += ' ';
+                        }
+                        coordinate(text, y);
+                    },
+                    nullptr, nullptr);
+            hb_draw_funcs_set_cubic_to_func(
+                    funcs,
+                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, const float first, const float rise,
+                       const float second, const float lift, const float x, const float y, void *) {
+                        auto &text = *static_cast<std::string *>(data);
+                        text += 'C';
+                        for (const float value : {first, rise, second, lift, x}) {
+                            coordinate(text, value);
+                            text += ' ';
+                        }
+                        coordinate(text, y);
+                    },
+                    nullptr, nullptr);
+            hb_draw_funcs_set_close_path_func(
+                    funcs,
+                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *, void *) {
+                        *static_cast<std::string *>(data) += 'Z';
+                    },
+                    nullptr, nullptr);
             hb_draw_funcs_make_immutable(funcs);
             return funcs;
         }();
@@ -124,10 +134,8 @@ namespace render {
         // What a fitted page's PDF box holds -- what it put ink on and its
         // border -- or the whole sheet, as the PDF writer has it.
         if (page.fitted && extent[0] <= extent[2]) {
-            sheet.box = {
-                extent[0] - page.border, extent[1] - page.border,
-                extent[2] - extent[0] + 2.0f * page.border, extent[3] - extent[1] + 2.0f * page.border
-            };
+            sheet.box = {extent[0] - page.border, extent[1] - page.border, extent[2] - extent[0] + 2.0f * page.border,
+                         extent[3] - extent[1] + 2.0f * page.border};
         } else {
             sheet.box = {0.0f, 0.0f, page.width, page.height};
         }
@@ -138,7 +146,7 @@ namespace render {
         // the same at every size the pages set it in.
         faces.clear();
         faces.reserve(composer.faces.size());
-        for (const Composer::Entry &entry: composer.faces) {
+        for (const Composer::Entry &entry : composer.faces) {
             Typeface &face = faces.emplace_back();
             face.widths = entry.widths;
             face.outlines.resize(entry.glyphs.size());
@@ -164,7 +172,7 @@ namespace render {
         // them: a canvas is handed pixels.
         pictures.clear();
         pictures.reserve(composer.pictures.size());
-        for (const graphics::Image *image: composer.pictures) {
+        for (const graphics::Image *image : composer.pictures) {
             Picture &picture = pictures.emplace_back();
             if (!image) continue;
             picture.pixels = image->raster();
@@ -179,16 +187,16 @@ namespace render {
         // Each link's areas, its anchor read as the place it was drawn.
         links.clear();
         links.reserve(composer.links.size());
-        for (const std::vector<Composer::Link> &drawn: composer.links) {
+        for (const std::vector<Composer::Link> &drawn : composer.links) {
             std::vector<Link> &page = links.emplace_back();
-            for (const Composer::Link &link: drawn) {
+            for (const Composer::Link &link : drawn) {
                 Link made{.target = std::string(link.target)};
                 if (made.target.empty()) {
                     if (link.anchor >= composer.places.size()) continue;
                     made.page = composer.places[link.anchor].page;
                     made.down = composer.places[link.anchor].down;
                 }
-                for (const std::array<float, 4> &area: link.areas) {
+                for (const std::array<float, 4> &area : link.areas) {
                     made.area = area;
                     page.push_back(made);
                 }
@@ -206,12 +214,12 @@ namespace render {
 
         /// What paints as it is set, kept and given back by `q` and `Q`.
         struct State {
-            Matrix matrix{}; ///< The map in force.
-            std::array<float, 3> filling{}; ///< The fill color.
+            Matrix matrix{};                 ///< The map in force.
+            std::array<float, 3> filling{};  ///< The fill color.
             std::array<float, 3> stroking{}; ///< The stroke color.
-            float opacity{1.0f}; ///< The opacity.
-            float width{1.0f}; ///< A stroke's width.
-            bool dashed{false}; ///< Whether a stroke is dashed.
+            float opacity{1.0f};             ///< The opacity.
+            float width{1.0f};               ///< A stroke's width.
+            bool dashed{false};              ///< Whether a stroke is dashed.
         };
 
         // The description runs up from the bottom of the whole sheet, as a
@@ -225,7 +233,7 @@ namespace render {
         // this with it. Nothing is known at first.
         State told{.opacity = -1.0f, .width = -1.0f};
         told.filling = told.stroking = {-1.0f, -1.0f, -1.0f};
-        std::vector<std::pair<State, State> > kept;
+        std::vector<std::pair<State, State>> kept;
 
         const auto tell = [&](const bool stroked) {
             if (told.opacity != state.opacity) target.alpha(told.opacity = state.opacity);
@@ -309,13 +317,15 @@ namespace render {
             }
             if (letter == '/') {
                 const std::size_t start = ++at;
-                while (at < content.size() && !delimiter(content[at])) ++at;
+                while (at < content.size() && !delimiter(content[at]))
+                    ++at;
                 operands.push_back({.type = Operand::Type::Name, .text = content.substr(start, at - start)});
                 continue;
             }
             if (letter == '<') {
                 const std::size_t start = ++at;
-                while (at < content.size() && content[at] != '>') ++at;
+                while (at < content.size() && content[at] != '>')
+                    ++at;
                 operands.push_back({.type = Operand::Type::Hex, .text = content.substr(start, at - start)});
                 ++at;
                 continue;
@@ -353,11 +363,12 @@ namespace render {
 
             // An operator: what the operands before it are for.
             const std::size_t start = at;
-            while (at < content.size() && !delimiter(content[at])) ++at;
+            while (at < content.size() && !delimiter(content[at]))
+                ++at;
 
             if (const std::string_view word = content.substr(start, at - start); word == "cm") {
-                state.matrix = compose({number(5), number(4), number(3), number(2), number(1), number(0)},
-                                       state.matrix);
+                state.matrix =
+                        compose({number(5), number(4), number(3), number(2), number(1), number(0)}, state.matrix);
             } else if (word == "q") {
                 kept.emplace_back(state, told);
                 target.save();
@@ -424,7 +435,7 @@ namespace render {
                 const Typeface *face = font < faces.size() ? &faces[font] : nullptr;
                 const float unit = face && face->units > 0.0f ? size / face->units : 0.0f;
                 bool colored = false;
-                for (const Operand &item: operands) {
+                for (const Operand &item : operands) {
                     if (item.type == Operand::Type::Number) {
                         run -= item.number / 1000.0f * size;
                         continue;
@@ -439,10 +450,8 @@ namespace render {
                                 tell(false);
                                 colored = true;
                             }
-                            target.place({
-                                unit * text[0], unit * text[1], unit * text[2], unit * text[3],
-                                run * text[0] + text[4], run * text[1] + text[5]
-                            });
+                            target.place({unit * text[0], unit * text[1], unit * text[2], unit * text[3],
+                                          run * text[0] + text[4], run * text[1] + text[5]});
                             target.glyph(font, code, face->outlines[code - 1]);
                         }
                         if (code <= face->widths.size()) run += face->widths[code - 1] / 1000.0f * size;

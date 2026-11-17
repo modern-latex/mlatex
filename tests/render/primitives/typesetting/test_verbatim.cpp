@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -65,15 +65,14 @@ int main() {
         assert((holds(result.text, "f(x_1,$y$)%no")) && "\\verb keeps every character");
         assert((holds(result.text, "g()")) && "\\lstinline too");
         assert((holds(result.text, "a_b=\\c;%kept")) && "a verbatim block keeps its commands and its comment");
-        assert((holds(result.text, "Listing1:Aloop1forxiny:2pass")) &&
-               "a listing captioned above, its lines numbered");
+        assert((holds(result.text, "Listing1:Aloop1forxiny:2pass")) && "a listing captioned above, its lines numbered");
         assert((holds(result.text, "SeeListing1.")) && "and referred to by its label");
         assert((!holds(result.text, "Never") && holds(result.text, "Done.")) && "a comment block sets nothing");
     }
     {
-        const Result result = article("\\usepackage{minted}",
-                                      "\\begin{minted}{python}\ndef f(x): return x % 2\n\\end{minted}"
-                                      "Inline \\mintinline{c}{int *p = &x;} code.");
+        const Result result =
+                article("\\usepackage{minted}", "\\begin{minted}{python}\ndef f(x): return x % 2\n\\end{minted}"
+                                                "Inline \\mintinline{c}{int *p = &x;} code.");
         assert((result.clean && holds(result.text, "deff(x):returnx%2")) &&
                "minted's block, the language read and let go");
         assert((holds(result.text, "Inlineint*p=&x;code.")) && "and \\mintinline");
@@ -85,12 +84,12 @@ int main() {
     }
     {
         const Result result = typeset(
-            "\\begin{filecontents*}[overwrite]{inline.bib}\n"
-            "@book{knuth, author={Donald E. Knuth}, title={The TeXbook}, publisher={Addison-Wesley}, year={1984}}\n"
-            "\\end{filecontents*}\n"
-            "\\documentclass{article}\n\\begin{filecontents}{chapter.tex}\nFrom the chapter.\n\\end{filecontents}\n"
-            "\\begin{document}Before. \\input{chapter} As \\cite{knuth}."
-            "\\bibliographystyle{plain}\\bibliography{inline}\\end{document}");
+                "\\begin{filecontents*}[overwrite]{inline.bib}\n"
+                "@book{knuth, author={Donald E. Knuth}, title={The TeXbook}, publisher={Addison-Wesley}, year={1984}}\n"
+                "\\end{filecontents*}\n"
+                "\\documentclass{article}\n\\begin{filecontents}{chapter.tex}\nFrom the chapter.\n\\end{filecontents}\n"
+                "\\begin{document}Before. \\input{chapter} As \\cite{knuth}."
+                "\\bibliographystyle{plain}\\bibliography{inline}\\end{document}");
         assert((result.clean && holds(result.text, "Before.Fromthechapter.As[1].")) &&
                "a file a document carries is kept, set nowhere, and read where it is named");
         assert((holds(result.text, "DonaldE.Knuth.TheTeXbook.")) && "a .bib among them");

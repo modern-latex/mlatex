@@ -12,7 +12,5 @@
 namespace syntax::modules {
 #include "modules.inc"
 
-    std::optional<std::string_view> get(const std::string_view name) noexcept {
-        return catalog.get(name);
-    }
+    std::optional<std::string_view> get(const std::string_view name) noexcept { return catalog.get(name); }
 }

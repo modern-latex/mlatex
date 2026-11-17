@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -54,11 +54,11 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "See \\cite{lamport, knuth} and \\cite[p.~5]{knuth}; also \\cite{short}."
-                                      "\\begin{thebibliography}{9}"
-                                      "\\bibitem{knuth} Donald Knuth. The TeXbook."
-                                      "\\bibitem{lamport} Leslie Lamport. LaTeX."
-                                      "\\bibitem[Hop51]{short} Eberhard Hopf. Grundgleichungen."
-                                      "\\end{thebibliography}");
+                                          "\\begin{thebibliography}{9}"
+                                          "\\bibitem{knuth} Donald Knuth. The TeXbook."
+                                          "\\bibitem{lamport} Leslie Lamport. LaTeX."
+                                          "\\bibitem[Hop51]{short} Eberhard Hopf. Grundgleichungen."
+                                          "\\end{thebibliography}");
         assert((result.clean) && "citations typeset without a report");
         assert((holds(result.text, "See[2,1]and[1,p.5]")) && "several keys, and a note");
         assert((holds(result.text, "also[Hop51].")) && "an entry's own label");
@@ -71,7 +71,7 @@ int main() {
             "@book{lamport94, author = {Leslie Lamport}, title = {{LaTeX}: A Document Preparation System},\n"
             "  publisher = {Addison-Wesley}, year = 1994}\n"
             "@misc{unused, title = {Never cited}, year = 2000}\n";
-    latex::Host host;
+    mlatex::Host host;
     host.files["refs.bib"] = bib;
     {
         const Result result = typeset("\\documentclass{article}\\begin{document}Programs \\cite{knuth84} and "
@@ -94,10 +94,10 @@ int main() {
         assert((result.clean && holds(result.text, "Nevercited")) && "\\nocite lists an entry without citing it");
     }
     {
-        latex::Host sparse;
+        mlatex::Host sparse;
         sparse.files["sparse.bib"] = "@misc{lovelace, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n"
-                "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX},\n"
-                "  publisher = {Addison-Wesley}, edition = {Second}, year = 1994}\n";
+                                     "@book{lamport94, author = {Leslie Lamport}, title = {LaTeX},\n"
+                                     "  publisher = {Addison-Wesley}, edition = {Second}, year = 1994}\n";
         const Result result = typeset("\\documentclass{article}\\begin{document}\\nocite{*}"
                                       "\\bibliography{sparse}\\end{document}",
                                       sparse);
@@ -109,10 +109,10 @@ int main() {
     {
         // @preamble's text goes ahead of the list, as BibTeX writes it into
         // the .bbl: here a command the entries use.
-        latex::Host preambled;
+        mlatex::Host preambled;
         preambled.files["macros.bib"] = "@preamble{ \"\\providecommand{\\TeXbook}{The \\TeX book}\" }\n"
-                "@book{knuth86, author = {Donald E. Knuth}, title = {\\TeXbook},\n"
-                "  publisher = {Addison-Wesley}, year = 1986}\n";
+                                        "@book{knuth86, author = {Donald E. Knuth}, title = {\\TeXbook},\n"
+                                        "  publisher = {Addison-Wesley}, year = 1986}\n";
         const Result result = typeset("\\documentclass{article}\\begin{document}\\cite{knuth86}."
                                       "\\bibliographystyle{plain}\\bibliography{macros}\\end{document}",
                                       preambled);
@@ -126,8 +126,7 @@ int main() {
                                       "\\bibliography{refs}\\end{document}",
                                       host);
         assert((result.clean) && "natbib reads without a report");
-        assert((holds(result.text, "Knuth(1984)showedit(Lamport,1994).")) &&
-               "\\citet and \\citep by author and year");
+        assert((holds(result.text, "Knuth(1984)showedit(Lamport,1994).")) && "\\citet and \\citep by author and year");
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{biblatex}\\addbibresource{refs.bib}"
@@ -138,10 +137,10 @@ int main() {
                "biblatex's \\addbibresource, \\textcite, \\parencite and \\printbibliography");
     }
     {
-        const Result result = typeset(
-            "\\documentclass{article}\\usepackage[style=ieee]{biblatex}\\addbibresource{refs.bib}"
-            "\\begin{document}\\cite{knuth84}.\\printbibliography[title={Sources}]\\end{document}",
-            host);
+        const Result result =
+                typeset("\\documentclass{article}\\usepackage[style=ieee]{biblatex}\\addbibresource{refs.bib}"
+                        "\\begin{document}\\cite{knuth84}.\\printbibliography[title={Sources}]\\end{document}",
+                        host);
         assert((result.clean && holds(result.text, "[1].") && holds(result.text, "Sources") &&
                 !holds(result.text, "References")) &&
                "biblatex's IEEE style, and \\printbibliography's own title");
@@ -158,8 +157,9 @@ int main() {
         // What BibTeX wrote beside the document, carried in place of the
         // .bib: the \jobname's .bbl, which for a document handed in from
         // memory is document.bbl.
-        latex::Host carried;
-        carried.files["document.bbl"] = "\\begin{thebibliography}{1}\\providecommand{\\natexlab}[1]{#1}\n"
+        mlatex::Host carried;
+        carried.files["document.bbl"] =
+                "\\begin{thebibliography}{1}\\providecommand{\\natexlab}[1]{#1}\n"
                 "\\bibitem[Knuth(1984)]{knuth}Donald~E. Knuth.\n\\newblock \\emph{The TeXbook}.\n"
                 "\\end{thebibliography}\n";
         const Result result = typeset("\\documentclass{article}\\usepackage{natbib}\\begin{document}\\citet{knuth}."
@@ -192,7 +192,7 @@ int main() {
 
     {
         const Result result = typeset("\\documentclass{article}\\begin{document}\\cite{nosuch}"
-            "\\bibliographystyle{plain}\\bibliography{missing}\\end{document}");
+                                      "\\bibliographystyle{plain}\\bibliography{missing}\\end{document}");
         assert((!result.clean && holds(result.errors, "missing")) && "a .bib file that is not there is named");
     }
 

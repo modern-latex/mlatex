@@ -2,17 +2,17 @@
 /// @brief Counter primitives: `\\newcounter`, `\\stepcounter`, `\\setcounter`
 ///        and their printed forms.
 #include "render/primitives/referencing/counters.hpp"
+#include "logger.hpp"
 #include "render/primitives/referencing/numerals.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/number.hpp"
-#include "logger.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <charconv>
-#include <optional>
 #include <format>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -24,8 +24,7 @@ namespace render::primitives::referencing {
     /// @param mouth     Expander to read from.
     /// @param registers Bank a register reference may resolve against.
     /// @return The integer, or nothing when the argument does not read as one.
-    static std::optional<std::int32_t> integer(syntax::Mouth &mouth,
-                                               const syntax::semantics::Registers &registers) {
+    static std::optional<std::int32_t> integer(syntax::Mouth &mouth, const syntax::semantics::Registers &registers) {
         const std::string expanded = syntax::Argument::expanded(mouth);
         mouth.ingest(mouth.arena.copy(std::format("{{{}}}", expanded)));
         syntax::Cursor value(mouth.argument({}, 0));
@@ -54,10 +53,10 @@ namespace render::primitives::referencing {
 
         const auto word = [&](const std::string &text) {
             const syntax::Symbol bound = lexicon.intern(text);
-            body.push_back(syntax::Token{
-                .symbol = bound, .category = syntax::Catcodes::Category::Escape, .location = memory::Location{},
-                .text = lexicon.resolve(bound)
-            });
+            body.push_back(syntax::Token{.symbol = bound,
+                                         .category = syntax::Catcodes::Category::Escape,
+                                         .location = memory::Location{},
+                                         .text = lexicon.resolve(bound)});
         };
         const auto character = [&](const char written, const syntax::Catcodes::Category category) {
             const syntax::Symbol bound = lexicon.intern(std::string_view(&written, 1));
@@ -70,7 +69,7 @@ namespace render::primitives::referencing {
         }
         word(std::string(numeral));
         character('{', syntax::Catcodes::Category::Group);
-        for (const char letter: name) {
+        for (const char letter : name) {
             const bool alphabetic = (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z');
             character(letter, alphabetic ? syntax::Catcodes::Category::Letter : syntax::Catcodes::Category::Other);
         }
@@ -106,7 +105,7 @@ namespace render::primitives::referencing {
 
         // Copied: resetting reaches other entries of the same table.
         const std::vector<std::string> children = found->second.children;
-        for (const std::string &child: children) {
+        for (const std::string &child : children) {
             counters[child].value = 0;
             reset(child, depth + 1);
         }
@@ -127,9 +126,7 @@ namespace render::primitives::referencing {
         return found == counters.end() ? 0 : found->second.value;
     }
 
-    bool Counters::contains(const std::string_view name) const {
-        return counters.contains(name);
-    }
+    bool Counters::contains(const std::string_view name) const { return counters.contains(name); }
 
     std::string Counters::print(syntax::Mouth &mouth, const std::string_view name) {
         mouth.ingest(mouth.arena.copy(std::format("{{\\the{}}}", name)));
@@ -143,13 +140,12 @@ namespace render::primitives::referencing {
 
             // `[parent]`: the counter it is numbered within.
             std::string parent;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 parent += token.text;
             }
 
             if (name.empty()) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "\\newcounter needs a name");
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, "\\newcounter needs a name");
                 return;
             }
             if (counters.contains(name)) {
@@ -204,8 +200,7 @@ namespace render::primitives::referencing {
             const auto scanned = integer(mouth, context.registers);
             if (!exists) return;
             if (!scanned) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "\\setcounter needs a number");
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, "\\setcounter needs a number");
                 return;
             }
             set(name, *scanned);
@@ -218,8 +213,7 @@ namespace render::primitives::referencing {
             const auto scanned = integer(mouth, context.registers);
             if (!exists) return;
             if (!scanned) {
-                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin,
-                                        "\\addtocounter needs a number");
+                tracebacks.emplace_back(syntax::Traceback::Type::Argument, origin, "\\addtocounter needs a number");
                 return;
             }
             set(name, value(name) + *scanned);
@@ -253,15 +247,17 @@ namespace render::primitives::referencing {
         // characters, as LaTeX's do, so a number can be read where a
         // number is expected: `\ifnum\value{page}>1`.
         enum class Form { Arabic, Roman, Capitals, Letter, Uppercase, Symbol, Value };
-        static constexpr std::array<std::pair<std::string_view, Form>, 7> forms{
-            {
-                {"\\arabic", Form::Arabic}, {"\\roman", Form::Roman}, {"\\Roman", Form::Capitals},
-                {"\\alph", Form::Letter}, {"\\Alph", Form::Uppercase}, {"\\fnsymbol", Form::Symbol},
+        static constexpr std::array<std::pair<std::string_view, Form>, 7> forms{{
+                {"\\arabic", Form::Arabic},
+                {"\\roman", Form::Roman},
+                {"\\Roman", Form::Capitals},
+                {"\\alph", Form::Letter},
+                {"\\Alph", Form::Uppercase},
+                {"\\fnsymbol", Form::Symbol},
                 {"\\value", Form::Value},
-            }
-        };
+        }};
 
-        for (const auto &[name, form]: forms) {
+        for (const auto &[name, form] : forms) {
             parser.mouth.bind(name, [this, form](syntax::Mouth &mouth) {
                 const memory::Location origin = mouth.lookahead().location;
                 const std::string key = syntax::Argument::text(mouth);
@@ -277,29 +273,41 @@ namespace render::primitives::referencing {
                 const int count = found->second.value;
                 std::string text;
                 switch (form) {
-                    case Form::Arabic:
-                    case Form::Value: text = Numerals::arabic(count);
-                        break;
-                    case Form::Roman: text = Numerals::roman(count, false);
-                        break;
-                    case Form::Capitals: text = Numerals::roman(count, true);
-                        break;
-                    case Form::Letter: text = Numerals::alphabetic(count, false);
-                        break;
-                    case Form::Uppercase: text = Numerals::alphabetic(count, true);
-                        break;
-                    case Form::Symbol: {
-                        // A footnote's asterisk, dagger and the rest, doubled
-                        // once they run out, and digits past the last of them.
-                        static constexpr std::array<std::string_view, 9> marks{
-                            "*", "\xE2\x80\xA0", "\xE2\x80\xA1", "\xC2\xA7", "\xC2\xB6", "\xE2\x80\x96",
-                            "**", "\xE2\x80\xA0\xE2\x80\xA0", "\xE2\x80\xA1\xE2\x80\xA1",
-                        };
-                        text = count >= 1 && static_cast<std::size_t>(count) <= marks.size()
+                case Form::Arabic:
+                case Form::Value:
+                    text = Numerals::arabic(count);
+                    break;
+                case Form::Roman:
+                    text = Numerals::roman(count, false);
+                    break;
+                case Form::Capitals:
+                    text = Numerals::roman(count, true);
+                    break;
+                case Form::Letter:
+                    text = Numerals::alphabetic(count, false);
+                    break;
+                case Form::Uppercase:
+                    text = Numerals::alphabetic(count, true);
+                    break;
+                case Form::Symbol: {
+                    // A footnote's asterisk, dagger and the rest, doubled
+                    // once they run out, and digits past the last of them.
+                    static constexpr std::array<std::string_view, 9> marks{
+                            "*",
+                            "\xE2\x80\xA0",
+                            "\xE2\x80\xA1",
+                            "\xC2\xA7",
+                            "\xC2\xB6",
+                            "\xE2\x80\x96",
+                            "**",
+                            "\xE2\x80\xA0\xE2\x80\xA0",
+                            "\xE2\x80\xA1\xE2\x80\xA1",
+                    };
+                    text = count >= 1 && static_cast<std::size_t>(count) <= marks.size()
                                    ? std::string(marks[static_cast<std::size_t>(count) - 1])
                                    : Numerals::arabic(count);
-                        break;
-                    }
+                    break;
+                }
                 }
                 if (!text.empty()) mouth.ingest(mouth.arena.copy(text));
             });
@@ -325,22 +333,21 @@ namespace render::primitives::referencing {
             if (style == "Number" || style == "Ordinal") {
                 text[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(text[0])));
             } else if (style == "NUMBER" || style == "ORDINAL") {
-                std::ranges::transform(text, text.begin(),
-                                       [](const char letter) {
-                                           return static_cast<char>(std::toupper(static_cast<unsigned char>(letter)));
-                                       });
+                std::ranges::transform(text, text.begin(), [](const char letter) {
+                    return static_cast<char>(std::toupper(static_cast<unsigned char>(letter)));
+                });
             }
             mouth.ingest(mouth.arena.copy(text));
         });
 
         // LaTeX's own counters, which the other modules step: equations,
         // floats and footnotes, each printed in Arabic numerals.
-        for (const std::string_view name: {"equation", "figure", "table", "algorithm", "footnote"}) {
+        for (const std::string_view name : {"equation", "figure", "table", "algorithm", "footnote"}) {
             define(parser.mouth, name);
         }
         // How deep the headings are numbered and listed, three levels as the
         // article class has it: a section, a subsection, a subsubsection.
-        for (const std::string_view name: {"secnumdepth", "tocdepth"}) {
+        for (const std::string_view name : {"secnumdepth", "tocdepth"}) {
             define(parser.mouth, name);
             set(name, 3);
         }
@@ -348,7 +355,7 @@ namespace render::primitives::referencing {
         // subcaption's, lettered within the float they stand in and printed
         // as the letter alone: a reference puts the float's number before
         // it, and the caption parentheses round it.
-        for (const auto &[name, parent]: {std::pair{"subfigure", "figure"}, std::pair{"subtable", "table"}}) {
+        for (const auto &[name, parent] : {std::pair{"subfigure", "figure"}, std::pair{"subtable", "table"}}) {
             define(parser.mouth, name, parent, "\\alph");
             spell(parser.mouth, name, {}, "\\alph");
         }

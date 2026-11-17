@@ -19,40 +19,50 @@ namespace render::layout {
     float Line::advance(const Node *node) noexcept {
         if (!node) return 0.0f;
         switch (node->type) {
-            case Node::Type::Box: return node->box().width;
-            case Node::Type::Glyph: return node->glyph().width;
-            case Node::Type::Rule: return node->rule().width;
-            case Node::Type::Bitmap: return node->bitmap().width;
-            case Node::Type::Kern: return node->kern().width;
-            case Node::Type::Glue: return node->glue().width;
-            // A page number is only known once the page is, so it takes the
-            // room it was given when it was read.
-            case Node::Type::Directive:
-                return node->directive().command == Node::Directive::Command::Number ? node->directive().width : 0.0f;
-            default: return 0.0f; // penalties and marks take no room
+        case Node::Type::Box:
+            return node->box().width;
+        case Node::Type::Glyph:
+            return node->glyph().width;
+        case Node::Type::Rule:
+            return node->rule().width;
+        case Node::Type::Bitmap:
+            return node->bitmap().width;
+        case Node::Type::Kern:
+            return node->kern().width;
+        case Node::Type::Glue:
+            return node->glue().width;
+        // A page number is only known once the page is, so it takes the
+        // room it was given when it was read.
+        case Node::Type::Directive:
+            return node->directive().command == Node::Directive::Command::Number ? node->directive().width : 0.0f;
+        default:
+            return 0.0f; // penalties and marks take no room
         }
     }
 
     float Line::extent(const Node *node) noexcept {
         if (!node) return 0.0f;
         switch (node->type) {
-            case Node::Type::Box: return node->box().height + node->box().depth;
-            case Node::Type::Glyph: return node->glyph().height + node->glyph().depth;
-            case Node::Type::Rule: return node->rule().height + node->rule().depth;
-            case Node::Type::Bitmap: return node->bitmap().height; // depth is always zero
-            // A kern or a glue between two lines is vertical space, and its
-            // one measurement is its width whichever way it is being read.
-            case Node::Type::Kern: return node->kern().width;
-            case Node::Type::Glue: return node->glue().width;
-            default: return 0.0f;
+        case Node::Type::Box:
+            return node->box().height + node->box().depth;
+        case Node::Type::Glyph:
+            return node->glyph().height + node->glyph().depth;
+        case Node::Type::Rule:
+            return node->rule().height + node->rule().depth;
+        case Node::Type::Bitmap:
+            return node->bitmap().height; // depth is always zero
+        // A kern or a glue between two lines is vertical space, and its
+        // one measurement is its width whichever way it is being read.
+        case Node::Type::Kern:
+            return node->kern().width;
+        case Node::Type::Glue:
+            return node->glue().width;
+        default:
+            return 0.0f;
         }
     }
 
-    Node *Line::horizontal(
-        memory::Arena &arena,
-        const memory::Slice<Node *> nodes,
-        const float target
-    ) noexcept {
+    Node *Line::horizontal(memory::Arena &arena, const memory::Slice<Node *> nodes, const float target) noexcept {
         auto *box = arena.compose<Node>(Node::Type::Box);
 
         float natural = 0.0f;
@@ -62,42 +72,42 @@ namespace render::layout {
         // One accumulator per order of infinity. A finite stretch loses to any
         // infinite one, and each order of infinity to the next, which is how
         // `\\hfil` yields to `\\hfill` in the same line.
-        std::array < float, 4 > stretch{};
-        std::array < float, 4 > shrink{};
+        std::array<float, 4> stretch{};
+        std::array<float, 4> shrink{};
 
-        for (const Node *node: nodes) {
+        for (const Node *node : nodes) {
             if (!node) continue;
 
             natural += advance(node);
 
             switch (node->type) {
-                case Node::Type::Box: {
-                    // A shifted box carries its ink with it: pushed down the
-                    // page, it needs less room above the line and more below.
-                    const auto &inner = node->box();
-                    height = std::max(height, inner.height - inner.shift);
-                    depth = std::max(depth, inner.depth + inner.shift);
-                    break;
-                }
-                case Node::Type::Glyph:
-                    height = std::max(height, node->glyph().height);
-                    depth = std::max(depth, node->glyph().depth);
-                    break;
-                case Node::Type::Rule:
-                    height = std::max(height, node->rule().height);
-                    depth = std::max(depth, node->rule().depth);
-                    break;
-                case Node::Type::Bitmap:
-                    height = std::max(height, node->bitmap().height);
-                    break;
-                case Node::Type::Glue: {
-                    const auto &glue = node->glue();
-                    stretch[static_cast<std::size_t>(glue.expand)] += glue.stretch;
-                    shrink[static_cast<std::size_t>(glue.limit)] += glue.shrink;
-                    break;
-                }
-                default:
-                    break;
+            case Node::Type::Box: {
+                // A shifted box carries its ink with it: pushed down the
+                // page, it needs less room above the line and more below.
+                const auto &inner = node->box();
+                height = std::max(height, inner.height - inner.shift);
+                depth = std::max(depth, inner.depth + inner.shift);
+                break;
+            }
+            case Node::Type::Glyph:
+                height = std::max(height, node->glyph().height);
+                depth = std::max(depth, node->glyph().depth);
+                break;
+            case Node::Type::Rule:
+                height = std::max(height, node->rule().height);
+                depth = std::max(depth, node->rule().depth);
+                break;
+            case Node::Type::Bitmap:
+                height = std::max(height, node->bitmap().height);
+                break;
+            case Node::Type::Glue: {
+                const auto &glue = node->glue();
+                stretch[static_cast<std::size_t>(glue.expand)] += glue.stretch;
+                shrink[static_cast<std::size_t>(glue.limit)] += glue.shrink;
+                break;
+            }
+            default:
+                break;
             }
         }
 
@@ -131,31 +141,24 @@ namespace render::layout {
             }
         }
 
-        box->box({
-            .width = target > 0.0f ? target : natural,
-            .height = height,
-            .depth = depth,
-            .ratio = ratio,
-            .sign = sign,
-            .order = static_cast<Node::Order>(order),
-            .alignment = Node::Alignment::Horizontal,
-            .list = nodes
-        });
+        box->box({.width = target > 0.0f ? target : natural,
+                  .height = height,
+                  .depth = depth,
+                  .ratio = ratio,
+                  .sign = sign,
+                  .order = static_cast<Node::Order>(order),
+                  .alignment = Node::Alignment::Horizontal,
+                  .list = nodes});
         return box;
     }
 
-    Node *Line::vertical(
-        memory::Arena &arena,
-        const memory::Slice<Node *> nodes,
-        const float skip,
-        const Anchor anchor
-    ) noexcept {
+    Node *Line::vertical(memory::Arena &arena, const memory::Slice<Node *> nodes, const float skip,
+                         const Anchor anchor) noexcept {
         auto *box = arena.compose<Node>(Node::Type::Box);
 
         // Room for one leading glue between each pair, when leading is asked for.
         const std::size_t count = nodes.size();
-        const memory::Slice<Node *> column =
-                arena.allocate<Node *>(skip > 0.0f && count > 1 ? count * 2 - 1 : count);
+        const memory::Slice<Node *> column = arena.allocate<Node *>(skip > 0.0f && count > 1 ? count * 2 - 1 : count);
 
         float width = 0.0f;
         float height = 0.0f;
@@ -195,13 +198,11 @@ namespace render::layout {
         // so the whole run hangs below it. That is what makes a column drop
         // into a line without a rule of its own -- the one rule everything
         // follows is "draw at the reference point", and a column's is its top.
-        box->box({
-            .width = width,
-            .height = 0.0f,
-            .depth = height,
-            .alignment = Node::Alignment::Vertical,
-            .list = memory::Slice{column.data, filled}
-        });
+        box->box({.width = width,
+                  .height = 0.0f,
+                  .depth = height,
+                  .alignment = Node::Alignment::Vertical,
+                  .list = memory::Slice{column.data, filled}});
         return box;
     }
 
@@ -231,7 +232,7 @@ namespace render::layout {
             if (node->type == Node::Type::Glyph) return sense(node->glyph().point);
             if (node->type != Node::Type::Box) return 0;
             int found = 0;
-            for (const Node *child: node->box().list) {
+            for (const Node *child : node->box().list) {
                 const int way = self(child);
                 if (way == 1 || way == 2) return way;
                 if (way == 3) found = 3;
@@ -245,7 +246,8 @@ namespace render::layout {
         const memory::Slice<Node *> list = line->box().list;
         if (list.count == 0) return;
         bool mixed = reversed;
-        for (std::size_t index = 0; !mixed && index < list.count; ++index) mixed = run(list[index]) == 2;
+        for (std::size_t index = 0; !mixed && index < list.count; ++index)
+            mixed = run(list[index]) == 2;
         if (!mixed) return;
 
         // The line cut into pieces: a word -- the glyphs and the breaks
@@ -260,7 +262,7 @@ namespace render::layout {
         // the algorithm puts it -- the left, at the end of a sentence read
         // right to left -- not where the face's run left it. A word in two
         // faces with nothing right to left in it, `x²`, stays whole.
-        std::vector<std::pair<std::size_t, std::size_t> > pieces;
+        std::vector<std::pair<std::size_t, std::size_t>> pieces;
         for (std::size_t at = 0; at < list.count;) {
             std::size_t end = at + 1;
             const auto inside = [&](const std::size_t index) {
@@ -272,7 +274,8 @@ namespace render::layout {
                 return node && (node->type == Node::Type::Glyph || node->type == Node::Type::Penalty);
             };
             if (inside(at)) {
-                while (end < list.count && inside(end)) ++end;
+                while (end < list.count && inside(end))
+                    ++end;
             }
 
             std::size_t from = at;
@@ -303,7 +306,7 @@ namespace render::layout {
             at = end;
         }
         std::vector<int> ways;
-        for (const auto &[from, end]: pieces) {
+        for (const auto &[from, end] : pieces) {
             int way = 0;
             for (std::size_t step = from; step < end; ++step) {
                 const int found = run(list[step]);
@@ -332,25 +335,31 @@ namespace render::layout {
             if (ways[index] == 2) strong[index] = 2;
             if (ways[index] == 3) strong[index] = last == 2 ? 2 : 1;
 
-            if (ways[index] == 2) levels[index] = 1;
-            else if (ways[index] == 1) levels[index] = reversed ? 2 : 0;
-            else if (ways[index] == 3) levels[index] = reversed || last == 2 ? 2 : 0;
+            if (ways[index] == 2)
+                levels[index] = 1;
+            else if (ways[index] == 1)
+                levels[index] = reversed ? 2 : 0;
+            else if (ways[index] == 3)
+                levels[index] = reversed || last == 2 ? 2 : 0;
         }
         for (std::size_t index = 0; index < pieces.size(); ++index) {
             if (strong[index] != 0) continue;
             std::size_t end = index;
-            while (end < pieces.size() && strong[end] == 0) ++end;
+            while (end < pieces.size() && strong[end] == 0)
+                ++end;
             const int before = index > 0 ? strong[index - 1] : (reversed ? 2 : 1);
             const int after = end < pieces.size() ? strong[end] : (reversed ? 2 : 1);
             const int level = before != after ? base : before == 2 ? 1 : reversed ? 2 : 0;
-            for (std::size_t step = index; step < end; ++step) levels[step] = level;
+            for (std::size_t step = index; step < end; ++step)
+                levels[step] = level;
             index = end - 1;
         }
 
         // Reversed from the highest level down to the lowest odd one:
         // every run of pieces at that level or above, turned round.
         std::vector<std::size_t> order(pieces.size());
-        for (std::size_t index = 0; index < order.size(); ++index) order[index] = index;
+        for (std::size_t index = 0; index < order.size(); ++index)
+            order[index] = index;
         const int highest = *std::ranges::max_element(levels);
         for (int level = highest; level >= 1; --level) {
             for (std::size_t index = 0; index < order.size();) {
@@ -359,7 +368,8 @@ namespace render::layout {
                     continue;
                 }
                 std::size_t end = index;
-                while (end < order.size() && levels[order[end]] >= level) ++end;
+                while (end < order.size() && levels[order[end]] >= level)
+                    ++end;
                 std::reverse(order.begin() + static_cast<std::ptrdiff_t>(index),
                              order.begin() + static_cast<std::ptrdiff_t>(end));
                 index = end;
@@ -375,14 +385,13 @@ namespace render::layout {
         constexpr std::u32string_view pairs = U"()[]{}<>«»‹›";
         const memory::Slice<Node *> drawn = arena.allocate<Node *>(list.count);
         std::size_t filled = 0;
-        for (const std::size_t index: order) {
+        for (const std::size_t index : order) {
             for (std::size_t step = pieces[index].first; step < pieces[index].second; ++step) {
                 Node *node = list[step];
                 const bool turned = ways[index] == 0 && levels[index] % 2 == 1 && node &&
                                     node->type == Node::Type::Glyph && node->glyph().font;
-                const std::size_t found = turned
-                                              ? pairs.find(static_cast<char32_t>(node->glyph().point))
-                                              : std::u32string_view::npos;
+                const std::size_t found =
+                        turned ? pairs.find(static_cast<char32_t>(node->glyph().point)) : std::u32string_view::npos;
                 const std::uint32_t code =
                         found != std::u32string_view::npos ? node->glyph().font->index(pairs[found ^ 1]) : 0;
                 if (code != 0) {

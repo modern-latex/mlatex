@@ -1,18 +1,18 @@
 #pragma once
 
+#include "memory/arena.hpp"
+#include "memory/slice.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/node.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/arena.hpp"
-#include "memory/slice.hpp"
 
 #include <cstddef> // NOLINT
 #include <cstdint>
 #include <functional>
-#include <string_view>
-#include <span>
 #include <memory>
+#include <span>
+#include <string_view>
 #include <vector>
 
 namespace syntax {
@@ -44,7 +44,7 @@ namespace syntax {
     class Parser {
     public:
         /// Implementation of a bound control sequence: whatever node it stands for.
-        using Handler = std::function<Node * (Parser &)>;
+        using Handler = std::function<Node *(Parser &)>;
 
         /// @brief Binds a parser to an expander and an allocator.
         /// @param mouth Where tokens come from; must outlive the parser.
@@ -117,16 +117,16 @@ namespace syntax {
         ///        letters the parser reads one after the other.
         const std::uint64_t *changes{nullptr};
 
-        Mouth &mouth; ///< The expander tokens come from.
+        Mouth &mouth;         ///< The expander tokens come from.
         memory::Arena &arena; ///< The allocator nodes are composed in.
 
     private:
         /// Handler per symbol, each in an allocation of its own so the table can
         /// grow while one runs without moving it; null means none.
-        std::vector<std::unique_ptr<const Handler> > handlers{};
+        std::vector<std::unique_ptr<const Handler>> handlers{};
         std::vector<Traceback> tracebacks{}; ///< Errors recorded so far.
-        Symbol paragraph = none; ///< `\\par`, the one name the parser knows by itself.
-        Symbol assign = none; ///< `\\@set`, which a register's name standing alone is read through.
-        std::size_t nesting = 0; ///< How many parse() calls are in progress.
+        Symbol paragraph = none;             ///< `\\par`, the one name the parser knows by itself.
+        Symbol assign = none;                ///< `\\@set`, which a register's name standing alone is read through.
+        std::size_t nesting = 0;             ///< How many parse() calls are in progress.
     };
 }

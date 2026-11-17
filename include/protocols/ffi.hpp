@@ -4,7 +4,7 @@
 /// @brief The engine as a C library, for a program that makes documents.
 ///
 /// The library exports one function, engine(), and it returns a struct of
-/// every other: latex::Session's own operations, under latex::Session's own
+/// every other: mlatex::Session's own operations, under mlatex::Session's own
 /// names -- compose a session, set a value, define a command, provide a file,
 /// typeset a document, dispose of the session. A C program calls them through
 /// the struct the way a C++ one calls them on the class:
@@ -17,7 +17,7 @@
 ///     engine()->write(output, text, (size_t)length);
 /// }
 ///
-/// const Latex* table = engine();
+/// const Mlatex* table = engine();
 /// Session* session = table->compose(NULL);             // assets found beside the library
 /// table->set(session, "customer", "Acme Ltd.");
 /// table->define(session, "balance", 1, balance, &ledger);
@@ -86,34 +86,34 @@ namespace protocols {
     extern "C" {
 #endif
 
-    /// @brief One latex::Session: where the engine's assets are, and the
+    /// @brief One mlatex::Session: where the engine's assets are, and the
     ///        values, commands and files every document it makes is handed.
-    ///        Opaque; made by Latex::compose and ended by Latex::dispose.
+    ///        Opaque; made by Mlatex::compose and ended by Mlatex::dispose.
     typedef struct Session Session;
 
     /// @brief Where a command writes what it stands for. Opaque; handed to a
-    ///        Handler for the length of one call and written with Latex::write.
+    ///        Handler for the length of one call and written with Mlatex::write.
     typedef struct Output Output;
 
     /// @brief A command the calling program implements.
     ///
-    /// @param data      What was given to Latex::define, handed back unchanged.
+    /// @param data      What was given to Mlatex::define, handed back unchanged.
     /// @param arguments The arguments the document wrote, each expanded to its
     ///                  text, UTF-8 and zero-terminated; valid for this call.
     /// @param count     How many there are: the arity it was defined with.
     /// @param output    Where to write what the command stands for; writing
     ///                  nothing makes it stand for nothing.
-    typedef void (*Handler)(void *data, const char *const*arguments, size_t count, Output *output);
+    typedef void (*Handler)(void *data, const char *const *arguments, size_t count, Output *output);
 
-    /// @brief Every operation the library offers: latex::Session's own, under
+    /// @brief Every operation the library offers: mlatex::Session's own, under
     ///        its own names.
-    typedef struct Latex {
+    typedef struct Mlatex {
         /// @brief Makes a session.
         /// @param assets The engine's assets directory, UTF-8; or NULL to find it
         ///               the way the command line does, walking up from wherever
         ///               this library itself was loaded from.
         /// @return The session, or NULL when no assets directory could be found.
-        Session * (*compose)(const char *assets);
+        Session *(*compose)(const char *assets);
 
         /// @brief Ends a session. NULL is ignored.
         /// @param session The session; not to be used again.
@@ -183,7 +183,7 @@ namespace protocols {
         ///                 when no PDF could be made at all.
         /// @param size     Receives how many bytes the PDF is; 0 when there is none.
         /// @return 1 when the document compiled with nothing left broken; 0
-        ///         otherwise, with the reasons in Latex::error. A PDF may still
+        ///         otherwise, with the reasons in Mlatex::error. A PDF may still
         ///         have been made when some part of the document was in error.
         int (*typeset)(Session *session, const char *document, size_t length, const unsigned char **pdf, size_t *size);
 
@@ -191,7 +191,7 @@ namespace protocols {
         /// @return Every error, one per line, UTF-8 and owned by the session;
         ///         empty when there were none. Valid until the session is next
         ///         used. Never NULL.
-        const char * (*error)(const Session *session);
+        const char *(*error)(const Session *session);
 
         /// @brief Keeps the session's documents off the network, or lets them
         ///        on again: offline, `\\httpget`, `\\httppost` and a picture
@@ -204,7 +204,7 @@ namespace protocols {
 
         /// @brief Makes a PDF of a piece of LaTeX alone -- a formula, a
         ///        table, a picture -- on a page cropped to it, for a program
-        ///        to show among its own: latex::Session::snippet.
+        ///        to show among its own: mlatex::Session::snippet.
         ///
         /// The piece is set as a `standalone` document with amsmath and
         /// amssymb loaded, and is handed everything a document is. Like
@@ -221,20 +221,20 @@ namespace protocols {
         /// @param text    The LaTeX, UTF-8, with no preamble; need not be
         ///                zero-terminated.
         /// @param length  How many bytes of it there are.
-        /// @param pdf     Receives the PDF's bytes, as Latex::typeset hands them.
+        /// @param pdf     Receives the PDF's bytes, as Mlatex::typeset hands them.
         /// @param size    Receives how many bytes the PDF is; 0 when there is none.
         /// @return 1 when it compiled with nothing left broken; 0 otherwise,
-        ///         with the reasons in Latex::error.
+        ///         with the reasons in Mlatex::error.
         int (*snippet)(Session *session, const char *text, size_t length, const unsigned char **pdf, size_t *size);
-    } Latex;
+    } Mlatex;
 
     /// @brief The library's operations. The one function it exports.
     ///
     /// Named for what it hands out rather than for the library: with C linkage
-    /// its name is global, and `latex` is the C++ engine's namespace.
+    /// its name is global, and `mlatex` is the C++ engine's namespace.
     ///
     /// @return The same struct on every call; never NULL.
-    VISIBLE const Latex *engine(void);
+    VISIBLE const Mlatex *engine(void);
 
 #if defined(__cplusplus)
     }

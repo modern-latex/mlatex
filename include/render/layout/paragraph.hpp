@@ -51,8 +51,8 @@ namespace render::layout {
         /// @param left          How far in from the column's left edge every line starts.
         /// @param right         How far in from the column's right edge every line ends.
         /// @param reversed      Whether it reads right to left.
-        Paragraph(memory::Arena &arena, memory::Slice<Node *> material,
-                  Node::Justification setting, float left, float right = 0.0f, bool reversed = false) noexcept;
+        Paragraph(memory::Arena &arena, memory::Slice<Node *> material, Node::Justification setting, float left,
+                  float right = 0.0f, bool reversed = false) noexcept;
 
         /// @brief Breaks the paragraph into lines.
         ///
@@ -76,13 +76,13 @@ namespace render::layout {
         static constexpr float minimum = 0.1f;
 
     private:
-        memory::Arena &arena; ///< Allocator for the lines.
-        memory::Slice<Node *> content{}; ///< What the paragraph is made of.
+        memory::Arena &arena;                                         ///< Allocator for the lines.
+        memory::Slice<Node *> content{};                              ///< What the paragraph is made of.
         Node::Justification justification{Node::Justification::Full}; ///< How its lines sit.
-        float margin{0.0f}; ///< Indent of every line from the column's left edge.
-        float gutter{0.0f}; ///< Indent of every line from the column's right edge.
+        float margin{0.0f};   ///< Indent of every line from the column's left edge.
+        float gutter{0.0f};   ///< Indent of every line from the column's right edge.
         bool reversed{false}; ///< Whether it reads right to left.
-        float column{0.0f}; ///< Width it was last broken to.
-        Node *tree{nullptr}; ///< Vertical box of the lines.
+        float column{0.0f};   ///< Width it was last broken to.
+        Node *tree{nullptr};  ///< Vertical box of the lines.
     };
 }

@@ -31,7 +31,8 @@ int main() {
     assert((lexicon.resolve(kept) == "\\transient") && "a name outlives the text it was interned from");
 
     // Many names, each its own.
-    for (int index = 0; index < 1000; ++index) lexicon.intern("\\name" + std::to_string(index));
+    for (int index = 0; index < 1000; ++index)
+        lexicon.intern("\\name" + std::to_string(index));
     assert((lexicon.resolve(lexicon.intern("\\name500")) == "\\name500") && "a thousand names stay apart");
 
     return 0;

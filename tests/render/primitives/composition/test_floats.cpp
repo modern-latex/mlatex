@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -24,13 +24,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -65,15 +65,15 @@ static std::string filler(const int paragraphs) {
 int main() {
     {
         const Result result = article("", "\\begin{figure}[h]\\centering\\rule{2cm}{1cm}\\caption{A square.}"
-                                      "\\label{f}\\end{figure}\\begin{table}[h]\\caption{A table.}\\end{table}"
-                                      "See \\ref{f}.");
+                                          "\\label{f}\\end{figure}\\begin{table}[h]\\caption{A table.}\\end{table}"
+                                          "See \\ref{f}.");
         assert((result.clean && holds(result.text, "Figure1:Asquare.") && holds(result.text, "Table1:Atable.")) &&
                "figures and tables are captioned and numbered apart");
         assert((holds(result.text, "See1.")) && "and referred to by their labels");
     }
     {
         const Result result = article("", filler(15) + "\\begin{figure}[htbp]\\centering\\rule{100pt}{300pt}"
-                                          "\\caption{Held back.}\\end{figure}\n\nCarried on beneath.");
+                                                       "\\caption{Held back.}\\end{figure}\n\nCarried on beneath.");
         assert((result.clean && result.pages.size() == 2) && "a float that does not fit makes a second page");
         if (result.pages.size() == 2) {
             assert((holds(result.pages[0], "Carriedonbeneath.") && !holds(result.pages[0], "Figure1")) &&
@@ -83,22 +83,22 @@ int main() {
     }
     {
         const Result result = article("", filler(15) + "\\begin{figure}[H]\\centering\\rule{100pt}{300pt}"
-                                          "\\caption{Kept.}\\end{figure}\n\nAfter it.");
+                                                       "\\caption{Kept.}\\end{figure}\n\nAfter it.");
         assert((result.clean && result.pages.size() == 2 && !holds(result.pages[0], "Afterit.") &&
                 holds(result.pages[1], "Figure1:Kept.Afterit.")) &&
                "[H] is set where written, on the next page, the text after it after it");
     }
     {
-        const Result result = article(
-            "\\usepackage{subcaption}",
-            "\\begin{figure}[h]\\centering"
-            "\\begin{subfigure}[b]{0.4\\textwidth}\\centering\\rule{2cm}{1cm}\\caption{Left}\\label{fig:a}"
-            "\\end{subfigure}"
-            "\\hfill"
-            "\\begin{subfigure}[b]{0.4\\textwidth}\\centering\\rule{2cm}{1cm}\\caption{Right}\\label{fig:b}"
-            "\\end{subfigure}"
-            "\\caption{Both}\\label{fig:both}\\end{figure}"
-            "See \\ref{fig:a}, \\ref{fig:b} and \\ref{fig:both}.");
+        const Result result =
+                article("\\usepackage{subcaption}",
+                        "\\begin{figure}[h]\\centering"
+                        "\\begin{subfigure}[b]{0.4\\textwidth}\\centering\\rule{2cm}{1cm}\\caption{Left}\\label{fig:a}"
+                        "\\end{subfigure}"
+                        "\\hfill"
+                        "\\begin{subfigure}[b]{0.4\\textwidth}\\centering\\rule{2cm}{1cm}\\caption{Right}\\label{fig:b}"
+                        "\\end{subfigure}"
+                        "\\caption{Both}\\label{fig:both}\\end{figure}"
+                        "See \\ref{fig:a}, \\ref{fig:b} and \\ref{fig:both}.");
         assert((result.clean && holds(result.text, "(a)Left(b)RightFigure1:Both")) &&
                "subfigures lettered, the figure after");
         assert((holds(result.text, "See1a,1band1.")) &&

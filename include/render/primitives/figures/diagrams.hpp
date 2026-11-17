@@ -68,21 +68,21 @@ namespace render::primitives::figures {
         /// @brief One arrow: the cells it joins, counted from 1, how it is
         ///        drawn, and its labels, each a TikZ node on it.
         struct Arrow {
-            std::size_t row{0}; ///< The row it leaves.
-            std::size_t column{0}; ///< The column it leaves.
-            std::size_t down{0}; ///< The row it reaches.
-            std::size_t across{0}; ///< The column it reaches.
-            std::string style{}; ///< The `\\draw` options.
+            std::size_t row{0};                ///< The row it leaves.
+            std::size_t column{0};             ///< The column it leaves.
+            std::size_t down{0};               ///< The row it reaches.
+            std::size_t across{0};             ///< The column it reaches.
+            std::string style{};               ///< The `\\draw` options.
             std::vector<std::string> labels{}; ///< `node[...] {...}`, each.
         };
 
         /// @brief A grid of objects, formulas each, and the arrows between them.
         struct Diagram {
-            std::vector<std::vector<std::string> > cells{}; ///< Row by row; an empty one holds nothing.
-            std::vector<Arrow> arrows{}; ///< In the order written.
-            std::string columns{"2.4em"}; ///< Between two columns' edges.
-            std::string rows{"1.8em"}; ///< Between two rows' edges.
-            std::string nodes{}; ///< Options every object's node takes.
+            std::vector<std::vector<std::string>> cells{}; ///< Row by row; an empty one holds nothing.
+            std::vector<Arrow> arrows{};                   ///< In the order written.
+            std::string columns{"2.4em"};                  ///< Between two columns' edges.
+            std::string rows{"1.8em"};                     ///< Between two rows' edges.
+            std::string nodes{};                           ///< Options every object's node takes.
         };
 
         /// @brief The TikZ picture a diagram is.
@@ -106,15 +106,15 @@ namespace render::primitives::figures {
         /// @param separator What stands between two cells: `&`, or what
         ///                  `ampersand replacement` names.
         /// @complexity O(n) in the text.
-        [[nodiscard]] static std::vector<std::vector<std::string> > grid(std::string_view text,
-                                                                         std::string_view separator);
+        [[nodiscard]] static std::vector<std::vector<std::string>> grid(std::string_view text,
+                                                                        std::string_view separator);
 
         /// @brief One node of a tree: its label and its children.
         struct Branch {
-            std::string label{}; ///< Its text.
+            std::string label{};            ///< Its text.
             std::vector<Branch> children{}; ///< Left to right.
-            float width{0.0f}; ///< How wide its subtree stands, in points.
-            float center{0.0f}; ///< Its centre across, in points.
+            float width{0.0f};              ///< How wide its subtree stands, in points.
+            float center{0.0f};             ///< Its centre across, in points.
         };
 
         /// @brief Reads one bracketed node of a tree and everything under it:

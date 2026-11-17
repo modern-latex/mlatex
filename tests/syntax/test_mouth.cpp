@@ -10,7 +10,8 @@
 /// @brief Every token's text the expander hands out, until it runs dry.
 static std::string drain(syntax::Mouth &mouth) {
     std::string text;
-    for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand()) text += token.text;
+    for (syntax::Token token = mouth.expand(); !token.empty(); token = mouth.expand())
+        text += token.text;
     return text;
 }
 
@@ -59,7 +60,8 @@ int main() {
         syntax::Mouth::Macro twice;
         twice.parameters.resize(1);
         mouth.ingest("#1#1");
-        for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read()) twice.body.push_back(token);
+        for (syntax::Token token = mouth.read(); !token.empty(); token = mouth.read())
+            twice.body.push_back(token);
         mouth.define(lexicon.intern("\\twice"), std::move(twice), false);
 
         mouth.ingest("\\twice{ab}c");
@@ -82,8 +84,7 @@ int main() {
         const std::string held = "kept";
         mouth.bind("\\grow", [&seen, &lexicon, held](syntax::Mouth &inner) {
             for (int index = 0; index < 4096; ++index) {
-                inner.bind(lexicon.intern("\\grown" + std::to_string(index)), [](syntax::Mouth &) {
-                });
+                inner.bind(lexicon.intern("\\grown" + std::to_string(index)), [](syntax::Mouth &) {});
             }
             seen = held;
         });

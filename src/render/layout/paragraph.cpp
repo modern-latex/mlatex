@@ -12,22 +12,14 @@
 #include <algorithm>
 
 namespace render::layout {
-    Paragraph::Paragraph(
-        memory::Arena &arena,
-        const memory::Slice<Node *> material,
-        const Node::Justification setting,
-        const float left,
-        const float right,
-        const bool reversed
-    ) noexcept
-        : arena(arena), content(material), justification(setting), margin(left),
-          gutter(right), reversed(reversed) {
-    }
+    Paragraph::Paragraph(memory::Arena &arena, const memory::Slice<Node *> material, const Node::Justification setting,
+                         const float left, const float right, const bool reversed) noexcept
+        : arena(arena), content(material), justification(setting), margin(left), gutter(right), reversed(reversed) {}
 
     void Paragraph::layout(memory::Arena &scratch, const float width, const float leading) noexcept {
         // Lines already broken to this column stay broken. A column of a
         // different width needs new ones even though the content is the same.
-        if (tree &&column == width) return;
+        if (tree && column == width) return;
         column = width;
 
         if (content.empty() || width - margin - gutter <= 0.0f) {
@@ -35,11 +27,10 @@ namespace render::layout {
             return;
         }
 
-        const Breaker breaker(arena, scratch, Breaker::Configuration{
-                                  .target = width - margin - gutter,
-                                  .penalty = 10.0f,
-                                  .justification = justification
-                              });
+        const Breaker breaker(arena, scratch,
+                              Breaker::Configuration{.target = width - margin - gutter,
+                                                     .penalty = 10.0f,
+                                                     .justification = justification});
 
         const memory::Slice<Node *> lines = breaker.compose(content);
         if (lines.empty()) {
@@ -49,7 +40,8 @@ namespace render::layout {
 
         // Put in the order they are drawn, wherever there is anything that
         // reads right to left: see the class notes.
-        for (Node *line: lines) Line::reorder(arena, line, reversed);
+        for (Node *line : lines)
+            Line::reorder(arena, line, reversed);
 
         // One glue between each pair of lines, sized so the baselines end up
         // the asked-for distance apart. A line deep enough to eat that
@@ -64,10 +56,7 @@ namespace render::layout {
 
             if (filled > 0) {
                 auto *glue = arena.compose<Node>(Node::Type::Glue);
-                glue->glue({
-                    .width = std::max(leading - depth - line->box().height,
-                                      leading * minimum)
-                });
+                glue->glue({.width = std::max(leading - depth - line->box().height, leading * minimum)});
                 rows[filled++] = glue;
             }
 

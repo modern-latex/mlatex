@@ -261,7 +261,7 @@ jobs:
           python-version: "3.13"
 
       # The C library as the Python package mlatex: the installed copy's
-      # latex_ffi -- with vcpkg's DLLs beside it on Windows -- and its assets,
+      # mlatex_ffi -- with vcpkg's DLLs beside it on Windows -- and its assets,
       # in the package's folder, where the library finds them. ctypes loads
       # it, so one wheel serves every Python on the system. Its version is
       # VERSION's, as everything's is. A wheel that fails is left out rather
@@ -275,7 +275,7 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp stage/bin/*.dll bindings/python/mlatex
           else
-            cp stage/lib/liblatex_ffi.* bindings/python/mlatex
+            cp stage/lib/libm.* bindings/python/mlatex
           fi
           cp -R stage/assets bindings/python/mlatex
           cp LICENSE LICENSING.md THIRD-PARTY-NOTICES.md bindings/python

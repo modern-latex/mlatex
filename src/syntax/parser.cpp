@@ -15,8 +15,7 @@
 #include <vector>
 
 namespace syntax {
-    Parser::Parser(Mouth &mouth, memory::Arena &arena)
-        : mouth(mouth), arena(arena) {
+    Parser::Parser(Mouth &mouth, memory::Arena &arena) : mouth(mouth), arena(arena) {
         paragraph = mouth.lexicon.intern("\\par");
         assign = mouth.lexicon.intern("\\@set");
         mouth.reader.means = [this](const Symbol symbol) {
@@ -34,9 +33,7 @@ namespace syntax {
         Logger::log(Logger::Type::Parser, Logger::Level::Informative, "Parser subsystem initialized");
     }
 
-    Parser::~Parser() {
-        mouth.reader = {};
-    }
+    Parser::~Parser() { mouth.reader = {}; }
 
     memory::Slice<Node *> Parser::parse(const char closing) {
         Symbol matched = none;
@@ -45,8 +42,8 @@ namespace syntax {
 
     memory::Slice<Node *> Parser::parse(const char closing, const std::span<const Symbol> stops, Symbol &matched) {
         matched = none;
-        Logger::log(Logger::Type::Parser, Logger::Level::Informative,
-                    "Starting AST syntax parsing pass (depth {})...", nesting);
+        Logger::log(Logger::Type::Parser, Logger::Level::Informative, "Starting AST syntax parsing pass (depth {})...",
+                    nesting);
 
         nesting++;
         struct Guard {
@@ -81,8 +78,7 @@ namespace syntax {
 
             if (mouth.error) {
                 flush();
-                Logger::log(Logger::Type::Parser, Logger::Level::Error,
-                            "Parsing abandoned: expansion aborted");
+                Logger::log(Logger::Type::Parser, Logger::Level::Error, "Parsing abandoned: expansion aborted");
                 break;
             }
 
@@ -94,8 +90,7 @@ namespace syntax {
 
             if (token.empty()) {
                 flush();
-                Logger::log(Logger::Type::Parser, Logger::Level::Debug,
-                            "Parser reached end of expansion stream");
+                Logger::log(Logger::Type::Parser, Logger::Level::Debug, "Parser reached end of expansion stream");
                 break;
             }
 
@@ -111,8 +106,8 @@ namespace syntax {
             if (token.symbol < handlers.size() && handlers[token.symbol] &&
                 token.category != Catcodes::Category::Other && token.category != Catcodes::Category::Letter) {
                 flush();
-                Logger::log(Logger::Type::Parser, Logger::Level::Debug,
-                            "Dispatching custom node handler for '{}'", token.text);
+                Logger::log(Logger::Type::Parser, Logger::Level::Debug, "Dispatching custom node handler for '{}'",
+                            token.text);
                 if (Node *node = (*handlers[token.symbol])(*this)) {
                     // A block standing on its own ends the paragraph it
                     // interrupts; text a command set starts one, in the face
@@ -136,10 +131,10 @@ namespace syntax {
                 flush();
                 mouth.vertical = true;
                 Logger::log(Logger::Type::Parser, Logger::Level::Debug,
-                            "Constructed Paragraph node at line {} column {}",
-                            token.location.line, token.location.column);
-                nodes.push_back(arena.compose<Node>(
-                    Node::Type::Paragraph, std::string_view{}, token.location, memory::Slice<Node *>{}));
+                            "Constructed Paragraph node at line {} column {}", token.location.line,
+                            token.location.column);
+                nodes.push_back(arena.compose<Node>(Node::Type::Paragraph, std::string_view{}, token.location,
+                                                    memory::Slice<Node *>{}));
                 continue;
             }
 
@@ -184,8 +179,8 @@ namespace syntax {
                 // it, as TeX reads one: `\parskip=6pt`, `\count0 5`.
                 if (registers.target(token.symbol) || registers.bank(token.symbol)) {
                     const std::array<Token, 2> assignment{
-                        Token{assign, Catcodes::Category::Escape, token.location, mouth.lexicon.resolve(assign)},
-                        token,
+                            Token{assign, Catcodes::Category::Escape, token.location, mouth.lexicon.resolve(assign)},
+                            token,
                     };
                     mouth.stream().inject(std::span{assignment});
                     continue;
@@ -196,11 +191,9 @@ namespace syntax {
                 if (token.symbol == none) continue;
 
                 if (tracebacks.size() < tolerance) {
-                    const std::string message =
-                            "Undefined control sequence " + std::string(token.text);
+                    const std::string message = "Undefined control sequence " + std::string(token.text);
 
-                    Logger::log(Logger::Type::Parser, Logger::Level::Error,
-                                "Parsing error at line {} column {}: {}",
+                    Logger::log(Logger::Type::Parser, Logger::Level::Error, "Parsing error at line {} column {}: {}",
                                 token.location.line, token.location.column, message);
 
                     tracebacks.emplace_back(Traceback::Type::Macro, token.location, message);
@@ -245,8 +238,7 @@ namespace syntax {
         }
 
         if (!terminated) {
-            const std::string message =
-                    std::string("Unclosed group: expected '") + closing + "' before end of input";
+            const std::string message = std::string("Unclosed group: expected '") + closing + "' before end of input";
             Logger::log(Logger::Type::Parser, Logger::Level::Error, "{}", message);
             tracebacks.emplace_back(Traceback::Type::Group, position, message);
         }
@@ -271,8 +263,7 @@ namespace syntax {
         if (needed > handlers.size()) {
             handlers.resize(std::max<std::size_t>(needed, handlers.size() * 2));
         }
-        Logger::log(Logger::Type::Parser, Logger::Level::Debug,
-                    "Bound custom AST node handler for symbol {}", symbol);
+        Logger::log(Logger::Type::Parser, Logger::Level::Debug, "Bound custom AST node handler for symbol {}", symbol);
         // Each where it was made, so a table grown while a handler runs --
         // a \let in the argument it reads -- moves only the pointers.
         handlers[symbol] = handler ? std::make_unique<const Handler>(std::move(handler)) : nullptr;

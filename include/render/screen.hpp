@@ -33,7 +33,7 @@ namespace render {
         /// @brief One page: its description, and the part of it a screen shows.
         struct Sheet {
             std::string content{}; ///< Its description, as the composer wrote it.
-            float height{0.0f}; ///< The whole sheet's height, which the description is flipped by.
+            float height{0.0f};    ///< The whole sheet's height, which the description is flipped by.
 
             /// What is shown: left, top, width and height from the sheet's
             /// top left. The whole sheet, or what a fitted page holds and
@@ -43,24 +43,24 @@ namespace render {
 
         /// @brief One face the pages drew from, cut to the glyphs they drew.
         struct Typeface {
-            float units{1000.0f}; ///< Units to the em, which its outlines are in.
+            float units{1000.0f};                ///< Units to the em, which its outlines are in.
             std::vector<std::string> outlines{}; ///< Each glyph's outline as SVG path data, by its number less one.
-            std::vector<float> widths{}; ///< Each glyph's width in thousandths of the em, as the PDF has it.
+            std::vector<float> widths{};         ///< Each glyph's width in thousandths of the em, as the PDF has it.
         };
 
         /// @brief One picture the pages drew, decoded.
         struct Picture {
-            int width{0}; ///< Pixels across.
-            int height{0}; ///< Pixels down.
+            int width{0};                       ///< Pixels across.
+            int height{0};                      ///< Pixels down.
             std::vector<std::uint8_t> pixels{}; ///< Three bytes a pixel, top row first.
         };
 
         /// @brief A link on a page: an area, and where it goes.
         struct Link {
             std::array<float, 4> area{}; ///< Left, top, right and bottom, from the sheet's top left.
-            std::string target{}; ///< The address it goes to; empty when it goes to a place.
-            std::size_t page{0}; ///< The page it goes to, from 0, when it has no address.
-            float down{0.0f}; ///< How far down that page, in points.
+            std::string target{};        ///< The address it goes to; empty when it goes to a place.
+            std::size_t page{0};         ///< The page it goes to, from 0, when it has no address.
+            float down{0.0f};            ///< How far down that page, in points.
         };
 
         /// @brief Where a page is drawn: the operations a canvas's 2D context
@@ -160,15 +160,15 @@ namespace render {
         /// @complexity O(n) in the page's description.
         void draw(Target &target, std::size_t page, float scale) const;
 
-        std::vector<Sheet> sheets{}; ///< Every page, in order.
-        std::vector<Typeface> faces{}; ///< Every face, as a page names it: entry `n` is `/F<n>`.
-        std::vector<float> opacities{}; ///< Every opacity, as a page names it: entry `n` is `/GS<n>`.
-        std::vector<Picture> pictures{}; ///< Every picture, as a page names it: entry `n` is `/Im<n>`.
-        std::vector<std::vector<Link> > links{}; ///< Every link, by page.
+        std::vector<Sheet> sheets{};            ///< Every page, in order.
+        std::vector<Typeface> faces{};          ///< Every face, as a page names it: entry `n` is `/F<n>`.
+        std::vector<float> opacities{};         ///< Every opacity, as a page names it: entry `n` is `/GS<n>`.
+        std::vector<Picture> pictures{};        ///< Every picture, as a page names it: entry `n` is `/Im<n>`.
+        std::vector<std::vector<Link>> links{}; ///< Every link, by page.
         /// Where each line of the source was drawn, by page: what an editor
         /// jumps by, from a click on a page to its line and back. Areas are
         /// measured as the sheet is, from its top left, not #Sheet::box's.
-        std::vector<std::vector<Composer::Spot> > spots{};
+        std::vector<std::vector<Composer::Spot>> spots{};
         /// The name of each file a spot's origin numbers, as
         /// syntax::Mouth::files gives them: the document's own first.
         std::vector<std::string> files{};

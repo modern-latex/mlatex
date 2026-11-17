@@ -13,12 +13,13 @@ int main() {
     assert((!Logger::check(Logger::Type::Parser, Logger::Level::Error)) && "one not asked for does not");
     assert((!Logger::check(Logger::Type::Lexer, Logger::Level::Informative)) && "nor anything below the level");
 
-    char program[] = "latex";
+    char program[] = "mlatex";
     char option[] = "--debug=parser,layout";
     char *arguments[] = {program, option};
     Logger::compose(2, arguments);
     assert((Logger::check(Logger::Type::Parser, Logger::Level::Error) &&
-            Logger::check(Logger::Type::Layout, Logger::Level::Error)) && "--debug= names the subsystems reported");
+            Logger::check(Logger::Type::Layout, Logger::Level::Error)) &&
+           "--debug= names the subsystems reported");
     assert((!Logger::check(Logger::Type::Lexer, Logger::Level::Error)) && "and only those");
     if constexpr (Logger::floor <= Logger::Level::Debug) {
         assert((Logger::check(Logger::Type::Parser, Logger::Level::Debug)) && "at the debug level, in a debug build");

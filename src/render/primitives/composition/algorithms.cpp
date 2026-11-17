@@ -1,10 +1,10 @@
 /// @file
 /// @brief Pseudocode implementation: numbered lines in blocks that step in.
 #include "render/primitives/composition/algorithms.hpp"
-#include "render/primitives/referencing/numerals.hpp"
-#include "render/primitives/typesetting/styles.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
+#include "render/primitives/referencing/numerals.hpp"
+#include "render/primitives/typesetting/styles.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -33,9 +33,8 @@ namespace render::primitives::composition {
         }
         Block &block = blocks.back();
 
-        const float em = context.selection.text()
-                             ? context.selection.text()->size()
-                             : context.document.configuration.size;
+        const float em =
+                context.selection.text() ? context.selection.text()->size() : context.document.configuration.size;
         const bool counted = numbered && block.every > 0;
         if (numbered) ++block.lines;
 
@@ -53,9 +52,9 @@ namespace render::primitives::composition {
             const float small = Styles::measure(context.document.configuration.size, Styles::Size::Footnote);
             if (const typography::Font *font = Styles::resolve(context, Styles::Cut::Normal, small)) {
                 const typography::Font *fonts[] = {font};
-                const memory::Slice<layout::Node *> shaped = context.shaper.shape(
-                    memory::Slice{.data = fonts, .count = 1uz},
-                    arena.copy(std::format("{}:", Numerals::arabic(block.lines))), {});
+                const memory::Slice<layout::Node *> shaped =
+                        context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz},
+                                             arena.copy(std::format("{}:", Numerals::arabic(block.lines))), {});
                 label = layout::Line::horizontal(arena, shaped, 0.0f);
             }
         }
@@ -92,26 +91,25 @@ namespace render::primitives::composition {
     void Algorithms::operator()(syntax::Parser &parser, Context &context) const {
         // `[n]`: every nth line numbered, `[1]` every line, none by default.
         context.environments.watch(
-            "algorithmic",
-            [this](syntax::Mouth &mouth) {
-                std::string every;
-                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                    every += token.text;
-                }
-                Block block{};
-                std::from_chars(every.data(), every.data() + every.size(), block.every);
-                blocks.push_back(block);
-                mouth.ingest("\\par\\vskip 2pt ");
-            },
-            [this](syntax::Mouth &mouth) {
-                if (!blocks.empty()) blocks.pop_back();
-                mouth.ingest(R"(\par\vskip 2pt\leftskip=0pt\noindent )");
-            });
+                "algorithmic",
+                [this](syntax::Mouth &mouth) {
+                    std::string every;
+                    for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                        every += token.text;
+                    }
+                    Block block{};
+                    std::from_chars(every.data(), every.data() + every.size(), block.every);
+                    blocks.push_back(block);
+                    mouth.ingest("\\par\\vskip 2pt ");
+                },
+                [this](syntax::Mouth &mouth) {
+                    if (!blocks.empty()) blocks.pop_back();
+                    mouth.ingest(R"(\par\vskip 2pt\leftskip=0pt\noindent )");
+                });
 
         parser.bind("\\State", [this, &context](const syntax::Parser &reader) { return line(reader, context, true); });
-        parser.bind("\\Statex", [this, &context](const syntax::Parser &reader) {
-            return line(reader, context, false);
-        });
+        parser.bind("\\Statex",
+                    [this, &context](const syntax::Parser &reader) { return line(reader, context, false); });
 
         // A block's opening line is set before its lines step in, and its
         // closing line after they step back out: the package writes these

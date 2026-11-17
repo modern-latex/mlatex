@@ -1,5 +1,5 @@
-#include "latex.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "typography/collection.hpp"
 #include "typography/hyphenator.hpp"
 #include "typography/registry.hpp"
@@ -16,19 +16,17 @@
 // three after, and never breaking a word under five.
 
 /// The engine's assets directory, found from this file.
-static std::filesystem::path assets() {
-    return latex::locate(__FILE__);
-}
+static std::filesystem::path assets() { return mlatex::locate(__FILE__); }
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena}; ///< The indexed tree.
+    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena};         ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
-    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
-    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
+    const render::typography::Font *text{nullptr};            ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr};           ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -44,7 +42,8 @@ struct Fonts {
 static std::string broken(const render::typography::Hyphenator &hyphenator, memory::Arena &scratch,
                           const std::string_view word) {
     const memory::Slice<std::uint32_t> codes = scratch.allocate<std::uint32_t>(word.size());
-    for (std::size_t index = 0; index < word.size(); ++index) codes[index] = static_cast<unsigned char>(word[index]);
+    for (std::size_t index = 0; index < word.size(); ++index)
+        codes[index] = static_cast<unsigned char>(word[index]);
     const memory::Slice<std::uint8_t> marks = hyphenator.execute(scratch, codes);
     std::string text;
     for (std::size_t index = 0; index < word.size(); ++index) {
@@ -73,15 +72,13 @@ int main() {
     // American English, from the file on disk.
     {
         const render::typography::Hyphenator english;
-        const std::size_t loaded =
-                english.compose((assets() / "hyphens" / "hyph-en-us.pat.txt").string());
+        const std::size_t loaded = english.compose((assets() / "hyphens" / "hyph-en-us.pat.txt").string());
         assert((loaded > 4000) && "the English patterns are read");
         assert((broken(english, scratch, "hyphenation") == "hy-phen-ation") && "hyphenation");
         assert((broken(english, scratch, "typesetting") == "type-set-ting") && "typesetting");
         assert((broken(english, scratch, "algorithm") == "al-go-rithm") && "algorithm");
         assert((broken(english, scratch, "cat") == "cat") && "a short word is never broken");
-        assert((english.compose((assets() / "no-such-file").string()) == 0) &&
-               "a file that is not there adds nothing");
+        assert((english.compose((assets() / "no-such-file").string()) == 0) && "a file that is not there adds nothing");
     }
 
     return 0;

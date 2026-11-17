@@ -30,7 +30,7 @@ static std::vector<syntax::Token> lex(syntax::Lexicon &lexicon, const std::strin
 /// @brief The tokens' text, one after another, a bar between each.
 static std::string spell(const std::vector<syntax::Token> &tokens) {
     std::string text;
-    for (const syntax::Token &token: tokens) {
+    for (const syntax::Token &token : tokens) {
         if (!text.empty()) text += '|';
         text += token.text;
     }
@@ -47,8 +47,7 @@ int main() {
         assert((tokens.size() == 10) && "a control word, two braces and seven letters");
         assert((tokens[0].category == Category::Escape && tokens[0].text == "\\documentclass") &&
                "a control word is one escape token");
-        assert((tokens[1].category == Category::Group && tokens[1].text == "{") &&
-               "an opening brace is a group token");
+        assert((tokens[1].category == Category::Group && tokens[1].text == "{") && "an opening brace is a group token");
         assert((tokens[2].category == Category::Letter && tokens[2].text == "a") && "a letter is a letter token");
         assert((tokens[9].text == "}") && "the closing brace ends it");
     }
@@ -74,8 +73,7 @@ int main() {
         assert((tokens.size() == 3) && "an accented letter is one token");
         assert((tokens[0].text == "\xC3\xA9") && "and keeps both its bytes");
         const auto symbol = lex(lexicon, "\\\xE2\x82\xAC");
-        assert((symbol.size() == 1 && symbol[0].text == "\\\xE2\x82\xAC") &&
-               "a control symbol may be past ASCII too");
+        assert((symbol.size() == 1 && symbol[0].text == "\\\xE2\x82\xAC") && "a control symbol may be past ASCII too");
     }
 
     // Where each token came from.
@@ -96,7 +94,11 @@ int main() {
     // A byte no character starts with is reported, and skipped.
     {
         std::size_t errors = 0;
-        const auto tokens = lex(lexicon, std::string_view("a\x7F" "b", 3), &errors);
+        const auto tokens = lex(lexicon,
+                                std::string_view("a\x7F"
+                                                 "b",
+                                                 3),
+                                &errors);
         assert((errors == 1) && "an illegal byte is reported");
         assert((spell(tokens) == "a|b") && "and the text around it still reads");
     }
@@ -121,9 +123,8 @@ int main() {
         assert((block.size() > 12 && block[12].text == "\\end") && "and the block's \\end lexed as usual after it");
 
         const auto listing = lex(lexicon, "\\begin{lstlisting}[language=C]\nint x;\n\\end{lstlisting}");
-        const auto body = std::ranges::find_if(listing, [](const syntax::Token &token) {
-            return token.symbol == syntax::none;
-        });
+        const auto body =
+                std::ranges::find_if(listing, [](const syntax::Token &token) { return token.symbol == syntax::none; });
         assert((body != listing.end() && body->text == "int x;") && "a listing's body after its options");
     }
 

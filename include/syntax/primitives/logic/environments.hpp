@@ -95,8 +95,8 @@ namespace syntax::primitives::logic {
         ///                    package loaded part way through -- as LaTeX's
         ///                    does. Otherwise that code is read once it has closed.
         /// @complexity O(1) amortized.
-        void watch(std::string_view name, Handler entering, Handler leaving,
-                   bool transparent = false, bool persisting = false) const;
+        void watch(std::string_view name, Handler entering, Handler leaving, bool transparent = false,
+                   bool persisting = false) const;
 
         /// @brief Asks to be told when any block opens or closes, whatever
         ///        its name: before a named block's own opening hooks, and
@@ -126,11 +126,11 @@ namespace syntax::primitives::logic {
     private:
         /// @brief What to run when one named block opens or closes.
         struct Hook {
-            Handler entering{}; ///< Run after the block opens.
-            Handler leaving{}; ///< Run before the block closes.
+            Handler entering{};      ///< Run after the block opens.
+            Handler leaving{};       ///< Run before the block closes.
             bool transparent{false}; ///< True: no Environment scope of its own.
-            bool own{false}; ///< The document defined it: its code is its own two macros.
-            bool lingering{false}; ///< Its scope stays open while its closing hooks' code is read.
+            bool own{false};         ///< The document defined it: its code is its own two macros.
+            bool lingering{false};   ///< Its scope stays open while its closing hooks' code is read.
         };
 
         /// @brief Reads a `{name}` argument and interns it.
@@ -139,11 +139,11 @@ namespace syntax::primitives::logic {
         [[nodiscard]] static Symbol title(Mouth &mouth);
 
         mutable std::vector<Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Symbol> open{}; ///< Names of the blocks currently entered.
-        mutable std::vector<Symbol> closing{}; ///< A document's blocks whose end code is being read.
-        mutable std::vector<Symbol> lingering{}; ///< Blocks whose closing hooks' code is being read, still open.
-        mutable std::vector<Hook> hooks{}; ///< Indexed by interned block name.
-        mutable Hook every{}; ///< Told of every block.
-        Lexicon *lexicon{nullptr}; ///< For resolving names back to text.
+        mutable std::vector<Symbol> open{};          ///< Names of the blocks currently entered.
+        mutable std::vector<Symbol> closing{};       ///< A document's blocks whose end code is being read.
+        mutable std::vector<Symbol> lingering{};     ///< Blocks whose closing hooks' code is being read, still open.
+        mutable std::vector<Hook> hooks{};           ///< Indexed by interned block name.
+        mutable Hook every{};                        ///< Told of every block.
+        Lexicon *lexicon{nullptr};                   ///< For resolving names back to text.
     };
 }

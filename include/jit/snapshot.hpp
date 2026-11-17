@@ -84,7 +84,7 @@ namespace jit {
     ///    left out of the journal is a stale `\\ref` after an edit, which
     ///    the comparison test in tests/jit/test_jit.cpp catches.
     /// 8. **Host commands.** run() binds each with a reference into
-    ///    `host.commands` (latex.cpp), and Session::define() may move that
+    ///    `host.commands` (mlatex.cpp), and Session::define() may move that
     ///    vector. A Jit whose Mouth outlives a run binds them from a
     ///    container that never moves -- a std::deque -- and binds again on
     ///    define() and forget().
@@ -98,6 +98,5 @@ namespace jit {
     /// Nothing here differs in the module: a snapshot is plain memory. The
     /// module's memory only grows, so keep fewer checkpoints there -- 16 --
     /// and drop all of them when a document is set from scratch.
-    class Snapshot {
-    };
+    class Snapshot {};
 }

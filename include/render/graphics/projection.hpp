@@ -40,7 +40,7 @@ namespace render::graphics {
 
     private:
         Point2 across{.across = 1.0f, .up = 0.0f}; ///< Where a unit step on x lands.
-        Point2 along{.across = 0.0f, .up = 1.0f}; ///< Where a unit step on y lands.
-        Point2 up{.across = 0.0f, .up = 0.0f}; ///< Where a unit step on z lands.
+        Point2 along{.across = 0.0f, .up = 1.0f};  ///< Where a unit step on y lands.
+        Point2 up{.across = 0.0f, .up = 0.0f};     ///< Where a unit step on z lands.
     };
 }

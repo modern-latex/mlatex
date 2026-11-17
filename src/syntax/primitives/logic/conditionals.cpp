@@ -4,8 +4,8 @@
 /// Every scan here is bounded by Conditionals::limit, so a missing `\\fi` is
 /// reported rather than read to the end of the document.
 #include "syntax/primitives/logic/conditionals.hpp"
-#include "syntax/number.hpp"
 #include "logger.hpp"
+#include "syntax/number.hpp"
 
 #include <algorithm>
 #include <string>
@@ -21,13 +21,13 @@ namespace syntax::primitives::logic {
         integer = lexicon.intern("\\integer");
         length = lexicon.intern("\\length");
         terminate = lexicon.intern("\\endcsname");
-        forms = {
-            lexicon.intern("\\ifstar"), lexicon.intern("\\ifnextchar"), lexicon.intern("\\ifstrequal"),
-            lexicon.intern("\\ifvariable"), lexicon.intern("\\ifpackageloaded"), lexicon.intern("\\@ifstar"),
-            lexicon.intern("\\@ifnextchar"), lexicon.intern("\\@ifstrequal"), lexicon.intern("\\@ifvariable"),
-            lexicon.intern("\\@ifpackageloaded"), lexicon.intern("\\iffile"), lexicon.intern("\\@iffile"),
-            lexicon.intern("\\iftest"), lexicon.intern("\\@iftest")
-        };
+        forms = {lexicon.intern("\\ifstar"),          lexicon.intern("\\ifnextchar"),
+                 lexicon.intern("\\ifstrequal"),      lexicon.intern("\\ifvariable"),
+                 lexicon.intern("\\ifpackageloaded"), lexicon.intern("\\@ifstar"),
+                 lexicon.intern("\\@ifnextchar"),     lexicon.intern("\\@ifstrequal"),
+                 lexicon.intern("\\@ifvariable"),     lexicon.intern("\\@ifpackageloaded"),
+                 lexicon.intern("\\iffile"),          lexicon.intern("\\@iffile"),
+                 lexicon.intern("\\iftest"),          lexicon.intern("\\@iftest")};
     }
 
     bool Conditionals::opens(const Mouth &mouth, const Token &token) const noexcept {
@@ -58,12 +58,13 @@ namespace syntax::primitives::logic {
             // Two macros are the same when their parameters and bodies are,
             // token for token.
             if (primary && secondary) {
-                condition = primary->parameters.size() == secondary->parameters.size() &&
-                            std::ranges::equal(primary->body, secondary->body,
-                                               [](const Token &left, const Token &right) {
-                                                   return left.symbol == right.symbol && left.text == right.text;
-                                               });
-            } else if (primary || secondary) condition = false;
+                condition =
+                        primary->parameters.size() == secondary->parameters.size() &&
+                        std::ranges::equal(primary->body, secondary->body, [](const Token &left, const Token &right) {
+                            return left.symbol == right.symbol && left.text == right.text;
+                        });
+            } else if (primary || secondary)
+                condition = false;
             else {
                 // Two primitives are the same only when they are one; two
                 // names neither defines are alike, both undefined, as TeX has
@@ -71,13 +72,12 @@ namespace syntax::primitives::logic {
                 // category.
                 const bool start = mouth.handler(first.symbol) != nullptr;
                 const bool end = mouth.handler(second.symbol) != nullptr;
-                const bool named = first.category == Catcodes::Category::Escape &&
-                                   second.category == Catcodes::Category::Escape;
+                const bool named =
+                        first.category == Catcodes::Category::Escape && second.category == Catcodes::Category::Escape;
                 condition = start || end
-                                ? start && end && mouth.primitive(first.symbol) == mouth.primitive(second.symbol)
-                                : named
-                                      ? true
-                                      : first.text == second.text && first.category == second.category;
+                                    ? start && end && mouth.primitive(first.symbol) == mouth.primitive(second.symbol)
+                            : named ? true
+                                    : first.text == second.text && first.category == second.category;
             }
             path(mouth, condition);
         });
@@ -112,13 +112,9 @@ namespace syntax::primitives::logic {
             path(mouth, first.symbol == second.symbol || first.text == second.text);
         });
 
-        mouth.bind("\\ifempty", [this, &mouth](Mouth &) {
-            path(mouth, mouth.argument({}, 0).empty());
-        });
+        mouth.bind("\\ifempty", [this, &mouth](Mouth &) { path(mouth, mouth.argument({}, 0).empty()); });
 
-        mouth.bind("\\ifdefined", [this, &mouth](Mouth &) {
-            path(mouth, mouth.known(mouth.read().symbol));
-        });
+        mouth.bind("\\ifdefined", [this, &mouth](Mouth &) { path(mouth, mouth.known(mouth.read().symbol)); });
 
         mouth.bind("\\ifcsname", [this, &mouth](Mouth &) {
             std::string content = "\\";
@@ -144,9 +140,12 @@ namespace syntax::primitives::logic {
             bool condition = false;
 
             if (first && second) {
-                if (relation.is('<')) condition = *first < *second;
-                else if (relation.is('>')) condition = *first > *second;
-                else if (relation.is('=')) condition = *first == *second;
+                if (relation.is('<'))
+                    condition = *first < *second;
+                else if (relation.is('>'))
+                    condition = *first > *second;
+                else if (relation.is('='))
+                    condition = *first == *second;
                 else
                     tracebacks.emplace_back(Traceback::Type::Argument, relation.location,
                                             "\\ifnum needs one of < > = between its operands");
@@ -161,9 +160,12 @@ namespace syntax::primitives::logic {
             bool condition = false;
 
             if (first && second) {
-                if (relation.is('<')) condition = *first < *second;
-                else if (relation.is('>')) condition = *first > *second;
-                else if (relation.is('=')) condition = *first == *second;
+                if (relation.is('<'))
+                    condition = *first < *second;
+                else if (relation.is('>'))
+                    condition = *first > *second;
+                else if (relation.is('='))
+                    condition = *first == *second;
                 else
                     tracebacks.emplace_back(Traceback::Type::Argument, relation.location,
                                             "\\ifdim needs one of < > = between its operands");
@@ -213,8 +215,7 @@ namespace syntax::primitives::logic {
 
         mouth.bind("\\else", [this, &mouth](Mouth &) { drop(mouth); });
         mouth.bind("\\or", [this, &mouth](Mouth &) { drop(mouth); });
-        mouth.bind("\\fi", [](Mouth &) {
-        });
+        mouth.bind("\\fi", [](Mouth &) {});
 
         Logger::log(Logger::Type::Semantics, Logger::Level::Debug, "Bound conditional primitives");
     }

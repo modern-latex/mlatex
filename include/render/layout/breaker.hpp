@@ -52,7 +52,7 @@ namespace render::layout {
             float tolerance{200.0f}; ///< Worst badness on the second, which hyphenates: `\\tolerance`.
             float emergency{30.0f};
             ///< Stretch every line is granted on a last pass, when neither finds
-                                          ///< lines that fit: `\\emergencystretch`, three ems at ten points.
+            ///< lines that fit: `\\emergencystretch`, three ems at ten points.
             float penalty{10.0f}; ///< Added to every break, to prefer fewer lines.
             Node::Justification justification{Node::Justification::Full}; ///< How lines sit in the column.
         };
@@ -72,8 +72,8 @@ namespace render::layout {
         [[nodiscard]] memory::Slice<Node *> compose(memory::Slice<Node *> input) const;
 
     private:
-        memory::Arena &arena; ///< Allocator for the lines.
+        memory::Arena &arena;   ///< Allocator for the lines.
         memory::Arena &scratch; ///< Allocator for the pass's arrays.
-        Configuration rules{}; ///< How lines are judged.
+        Configuration rules{};  ///< How lines are judged.
     };
 }

@@ -34,7 +34,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
 
     std::string text;
     const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -42,7 +42,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter: text) {
+    for (const char letter : text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -52,8 +52,9 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
+    for (const auto &list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault : list)
+            errors += fault.format() + '\n';
     }
     return {folded, errors};
 }

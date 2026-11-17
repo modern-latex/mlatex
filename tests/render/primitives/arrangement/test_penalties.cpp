@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 #include "patch.hpp"
 
 #include <cassert>
@@ -27,13 +27,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -92,8 +92,8 @@ int main() {
     {
         // An address in a narrow box turns over after its slashes, and is
         // never hyphenated -- a typewriter face breaks no word.
-        const Result result = article("\\usepackage{url}",
-                                      "\\parbox{2cm}{\\url{https://example.com/a/very/long/path/to/somewhere}}");
+        const Result result =
+                article("\\usepackage{url}", "\\parbox{2cm}{\\url{https://example.com/a/very/long/path/to/somewhere}}");
         assert((result.clean && holds(result.text, "https://example.com/a/very/long/path/to/somewhere")) &&
                "\\url turns over where url.sty would, with no hyphen of its own");
     }

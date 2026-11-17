@@ -31,7 +31,8 @@ namespace jit {
     //         if (watched->handle == INVALID_HANDLE_VALUE) return;      // main.cpp falls back to polling
     //         watched->overlapped.hEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
     //         // Ask for the first batch; each batch read in get() asks for the next.
-    //         ReadDirectoryChangesW(watched->handle, watched->buffer.data(), static_cast<DWORD>(watched->buffer.size()),
+    //         ReadDirectoryChangesW(watched->handle, watched->buffer.data(),
+    //         static_cast<DWORD>(watched->buffer.size()),
     //                               FALSE, FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME |
     //                                      FILE_NOTIFY_CHANGE_SIZE, nullptr, &watched->overlapped, nullptr);
     //         folders.push_back(std::move(watched));

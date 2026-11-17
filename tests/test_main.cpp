@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -19,8 +19,7 @@
 
 /// Runs the executable on a document with some options; its exit status.
 static int run(const std::filesystem::path &document, const std::string_view options) {
-    std::string command = "\"" BINARY
-    "\" \"" + document.string() + "\" " + std::string(options);
+    std::string command = "\"" BINARY "\" \"" + document.string() + "\" " + std::string(options);
 #if defined(_WIN32)
     // cmd.exe drops the first and last quote of a command that starts with one.
     command = "\"" + command + " > NUL 2>&1\"";
@@ -54,9 +53,8 @@ int main() {
 
     assert((run(temporary / "no-such-document.mtex", "") == 1) && "a document that is not there fails the run");
 
-    const std::filesystem::path broken =
-            write(temporary / "main-broken.mtex",
-                  "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
+    const std::filesystem::path broken = write(
+            temporary / "main-broken.mtex", "\\documentclass{article}\\begin{document}\\nosuchcommand\\end{document}");
     assert((run(broken, "") == 1) && "a document with a mistake fails the run");
 
     // TeX's options, with one dash or two, and the engine's own.
@@ -73,9 +71,9 @@ int main() {
     assert((run(document, "--time -q") == 0 && run(document, "-T") == 0) && "--time");
     assert((run(document, "--log-level warn") == 2) && "the logger's options take their value after =");
     assert((run(document, "--log-level=warn -q") == 0) && "as they are written");
-    const std::filesystem::path fetching = write(
-        temporary / "main-fetching.mtex",
-        "\\documentclass{article}\\begin{document}\\httpget{http://127.0.0.1:1/x}\\end{document}");
+    const std::filesystem::path fetching =
+            write(temporary / "main-fetching.mtex",
+                  "\\documentclass{article}\\begin{document}\\httpget{http://127.0.0.1:1/x}\\end{document}");
     assert((run(document, "--offline -q") == 0 && run(fetching, "--offline -q") == 1) &&
            "--offline sets a document that asks for nothing, and fails one that asks the network");
 
@@ -84,9 +82,8 @@ int main() {
     std::filesystem::remove(pdf);
     assert((run(document, "--target=aot -q") == 0 && std::filesystem::exists(pdf)) && "--target=aot makes the PDF");
     std::filesystem::remove(pdf);
-    assert(
-        (run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) &&
-        "--target=jit is taken, and does nothing yet");
+    assert((run(document, "-t jit") == 0 && !std::filesystem::exists(pdf)) &&
+           "--target=jit is taken, and does nothing yet");
     assert((run(document, "--target=wasm") == 2) &&
            "WebAssembly is a build of the engine, not a way to make a document");
     assert((run(document, "--target=fortran") == 2) && "a target there is none of");
@@ -107,14 +104,14 @@ int main() {
             std::filesystem::exists(folder / "final.pdf")) &&
            "--output-directory and --jobname place and name the PDF");
     assert((run(document, "-q -o \"" + folder.string() + "\" --job-name=again") == 0 &&
-            std::filesystem::exists(folder / "again.pdf")) && "-o and --job-name the same");
+            std::filesystem::exists(folder / "again.pdf")) &&
+           "-o and --job-name the same");
 
     std::filesystem::path bare = document;
     bare.replace_extension();
     assert((run(bare, "-q") == 0) && "a document named without its extension is found as .mtex");
-    const std::filesystem::path entries =
-            write(temporary / "main-entries.bib",
-                  "@misc{one, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n");
+    const std::filesystem::path entries = write(temporary / "main-entries.bib",
+                                                "@misc{one, author = {Ada Lovelace}, title = {Notes}, year = 1843}\n");
     std::filesystem::path listed = entries;
     std::filesystem::remove(listed.replace_extension(".pdf"));
     assert((run(temporary / "main-entries", "-q") == 0 && std::filesystem::exists(listed)) &&
@@ -123,15 +120,16 @@ int main() {
     // What a document inputs, from a folder of its own as well as its own.
     const std::filesystem::path shared = temporary / "main-shared";
     write(shared / "greeting.mtex", "Hello from a shared folder.");
-    const std::filesystem::path inputting = write(
-        temporary / "main-inputting.mtex", "\\documentclass{article}\\begin{document}\\input{greeting}\\end{document}");
+    const std::filesystem::path inputting =
+            write(temporary / "main-inputting.mtex",
+                  "\\documentclass{article}\\begin{document}\\input{greeting}\\end{document}");
     assert((run(inputting, "-q") == 1) && "an input in no folder read is a mistake");
     assert((run(inputting, "-q -I \"" + shared.string() + "\"") == 0) && "-I reads from the folder it names");
     assert((run(inputting, "-q --include-directory=\"" + (temporary / "no-such-folder").string() + "\"") == 2) &&
            "a folder that is not there is the command line's mistake");
 
     // The assets named outright, as an installed program would be told.
-    const std::filesystem::path assets = latex::locate(__FILE__);
+    const std::filesystem::path assets = mlatex::locate(__FILE__);
     assert((run(document, "-q --assets=\"" + assets.string() + "\"") == 0) && "--assets names the engine's assets");
     assert((run(document, "-q --assets=\"" + temporary.string() + "\"") == 2) && "and a folder of no fonts is refused");
 

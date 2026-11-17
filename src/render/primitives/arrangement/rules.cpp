@@ -43,7 +43,8 @@ namespace render::primitives::arrangement {
                 if (const auto scanned = syntax::Number::dimension(mouth, context.registers)) {
                     raise = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale);
                 }
-                while (!mouth.lookahead().empty() && !mouth.lookahead().is(']')) mouth.read();
+                while (!mouth.lookahead().empty() && !mouth.lookahead().is(']'))
+                    mouth.read();
                 mouth.read();
             }
 
@@ -51,7 +52,7 @@ namespace render::primitives::arrangement {
             // read and dropped rather than parsed, because what is inside them
             // is a number and not a document.
             float measured[2]{0.0f, 0.0f};
-            for (float &value: measured) {
+            for (float &value : measured) {
                 syntax::Token open = mouth.read();
                 if (!open.is(syntax::Catcodes::Category::Group, '{') && !open.empty()) {
                     mouth.stream().inject(std::span{&open, 1});
@@ -83,11 +84,9 @@ namespace render::primitives::arrangement {
         const auto keywords = [&context](syntax::Mouth &mouth, layout::Node::Rule &shape) {
             for (bool reading = true; reading;) {
                 reading = false;
-                for (const auto &[word, field]: {
-                         std::pair{"height", &layout::Node::Rule::height},
-                         std::pair{"depth", &layout::Node::Rule::depth},
-                         std::pair{"width", &layout::Node::Rule::width}
-                     }) {
+                for (const auto &[word, field] :
+                     {std::pair{"height", &layout::Node::Rule::height}, std::pair{"depth", &layout::Node::Rule::depth},
+                      std::pair{"width", &layout::Node::Rule::width}}) {
                     if (!syntax::Argument::keyword(mouth, word)) continue;
                     if (const auto scanned = syntax::Number::dimension(mouth, context.registers)) {
                         shape.*field = static_cast<float>(*scanned) / static_cast<float>(syntax::Number::scale);
@@ -116,11 +115,9 @@ namespace render::primitives::arrangement {
             // Descent comes back negative from the font and a depth is a
             // distance, so it is negated here.
             const typography::Font *font = context.selection.text();
-            const typography::Font::Metric line =
-                    font ? font->metrics() : typography::Font::Metric{};
+            const typography::Font::Metric line = font ? font->metrics() : typography::Font::Metric{};
             layout::Node::Rule shape{
-                .width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)
-            };
+                    .width = hairline, .height = line.ascent, .depth = -line.descent, .color = ink(context)};
             keywords(reader.mouth, shape);
 
             auto *node = arena.compose<layout::Node>();
@@ -149,7 +146,8 @@ namespace render::primitives::arrangement {
             stamp(content, context);
 
             std::vector<layout::Node *> gathered;
-            for (const syntax::Node *child: content) compose(gathered, child, context);
+            for (const syntax::Node *child : content)
+                compose(gathered, child, context);
             if (gathered.empty()) return directive(arena, nullptr, origin);
 
             const memory::Slice<layout::Node *> row = arena.allocate<layout::Node *>(gathered.size());

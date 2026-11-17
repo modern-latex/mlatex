@@ -2,8 +2,8 @@
 #include "syntax/cursor.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/mouth.hpp"
-#include "syntax/number.hpp"
 #include "syntax/node.hpp"
+#include "syntax/number.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/primitives/context.hpp"
 #include "syntax/primitives/wrapper.hpp"
@@ -11,9 +11,9 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <optional>
-#include <cstdio>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -42,7 +42,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
 
     std::string text;
     const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -50,7 +50,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter: text) {
+    for (const char letter : text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -60,8 +60,9 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
+    for (const auto &list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault : list)
+            errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
@@ -151,7 +152,6 @@ int main() {
     sets("\\romannumeral 2024", "mmxxiv", "\\romannumeral");
     sets("\\number 007", "7", "\\number drops leading zeros");
     reports("\\set\\integer0 = x", "\\set needs a value", "a register set to nothing is reported");
-
 
     constexpr std::int64_t point = 65536;
 

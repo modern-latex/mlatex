@@ -6,14 +6,14 @@
 /// the number, setting the title -- is the same at every level, so it is
 /// written once.
 #include "render/primitives/composition/sections.hpp"
-#include "render/primitives/typesetting/colors.hpp"
-#include "render/primitives/referencing/counters.hpp"
-#include "render/primitives/referencing/references.hpp"
-#include "render/primitives/typesetting/styles.hpp"
-#include "syntax/argument.hpp"
 #include "layout/line.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
+#include "render/primitives/referencing/counters.hpp"
+#include "render/primitives/referencing/references.hpp"
+#include "render/primitives/typesetting/colors.hpp"
+#include "render/primitives/typesetting/styles.hpp"
+#include "syntax/argument.hpp"
 
 #include "syntax/semantics/scope.hpp"
 
@@ -39,22 +39,21 @@ namespace render::primitives::composition {
     /// The size a heading is set at, by level: LaTeX's `\\huge`, `\\Large`,
     /// `\\large` and `\\normalsize`, which is what its classes give a chapter
     /// and the three section levels beneath it.
-    static constexpr std::array<Styles::Size, Sections::levels> enlargement{
-        Styles::Size::Huge, Styles::Size::Larger, Styles::Size::Large, Styles::Size::Normal
-    };
+    static constexpr std::array<Styles::Size, Sections::levels> enlargement{Styles::Size::Huge, Styles::Size::Larger,
+                                                                            Styles::Size::Large, Styles::Size::Normal};
 
     /// The space LaTeX's article class keeps above and below a heading, by
     /// level, in x-heights of the body: `\\@startsection`'s own numbers.
-    static constexpr std::array<std::pair<float, float>, Sections::levels> spacing{
-        {
-            {11.6f, 9.3f}, {3.5f, 2.3f}, {3.25f, 1.5f}, {3.25f, 1.5f},
-        }
-    };
+    static constexpr std::array<std::pair<float, float>, Sections::levels> spacing{{
+            {11.6f, 9.3f},
+            {3.5f, 2.3f},
+            {3.25f, 1.5f},
+            {3.25f, 1.5f},
+    }};
 
     /// The counter each level steps, and the one `\\part` keeps apart from them.
-    static constexpr std::array<std::string_view, Sections::levels> counted{
-        "chapter", "section", "subsection", "subsubsection"
-    };
+    static constexpr std::array<std::string_view, Sections::levels> counted{"chapter", "section", "subsection",
+                                                                            "subsubsection"};
 
     /// The level a heading the table of contents does not list is given.
     static constexpr std::size_t unlisted = std::numeric_limits<std::size_t>::max();
@@ -70,16 +69,13 @@ namespace render::primitives::composition {
         lexicon.intern("\\appendix");
         lexicon.intern("\\tableofcontents");
         // No document can write these names: a colon ends a control word.
-        marks = {
-            lexicon.intern("\\tableofcontents:list"), lexicon.intern("\\listoffigures:list"),
-            lexicon.intern("\\listoftables:list"), lexicon.intern("\\printindex:list")
-        };
+        marks = {lexicon.intern("\\tableofcontents:list"), lexicon.intern("\\listoffigures:list"),
+                 lexicon.intern("\\listoftables:list"), lexicon.intern("\\printindex:list")};
     }
 
     void Sections::operator()(syntax::Parser &parser, Context &context) const {
-        static constexpr std::array<std::string_view, levels> names{
-            "\\chapter", "\\section", "\\subsection", "\\subsubsection"
-        };
+        static constexpr std::array<std::string_view, levels> names{"\\chapter", "\\section", "\\subsection",
+                                                                    "\\subsubsection"};
 
         // LaTeX's article numbering: a section on its own, each level below
         // within the one above, and a part in capital Roman numerals.
@@ -99,11 +95,10 @@ namespace render::primitives::composition {
         // A chapter's or a part's number stands on a line of its own above the
         // title instead -- `Chapter 1`, in its own face -- as the classes set
         // one, and a chapter starts a new page.
-        const auto heading = [&context](syntax::Parser &reader, const typography::Font *font,
-                                        const std::string &number, const std::pair<float, float> around,
-                                        const memory::Location origin, const std::size_t listed,
-                                        const std::string &brief, const std::string &above = {},
-                                        const typography::Font *lead = nullptr,
+        const auto heading = [&context](syntax::Parser &reader, const typography::Font *font, const std::string &number,
+                                        const std::pair<float, float> around, const memory::Location origin,
+                                        const std::size_t listed, const std::string &brief,
+                                        const std::string &above = {}, const typography::Font *lead = nullptr,
                                         const bool fresh = false, const Look *look = nullptr) -> syntax::Node * {
             syntax::Mouth &mouth = reader.mouth;
             memory::Arena &arena = reader.arena;
@@ -116,9 +111,8 @@ namespace render::primitives::composition {
             const layout::Node::Color *tint = context.selection.color();
             if (look && !look->color.empty()) {
                 const auto [red, green, blue, alpha] = Colors::resolve(look->color, context.variables);
-                tint = arena.compose<layout::Node::Color>(layout::Node::Color{
-                    .red = red, .green = green, .blue = blue, .alpha = alpha
-                });
+                tint = arena.compose<layout::Node::Color>(
+                        layout::Node::Color{.red = red, .green = green, .blue = blue, .alpha = alpha});
             }
             const typography::Font *restore = context.selection.text();
             const layout::Node::Color *painted = context.selection.color();
@@ -135,11 +129,11 @@ namespace render::primitives::composition {
             if (look && look->upper) {
                 const auto capitals = [&arena](this const auto &self,
                                                const memory::Slice<syntax::Node *> children) -> void {
-                    for (syntax::Node *child: children) {
+                    for (syntax::Node *child : children) {
                         if (!child) continue;
                         if (child->type == syntax::Node::Type::Text) {
                             std::string written(child->value);
-                            for (char &letter: written) {
+                            for (char &letter : written) {
                                 if (letter >= 'a' && letter <= 'z') letter = static_cast<char>(letter - 'a' + 'A');
                             }
                             child->value = arena.copy(written);
@@ -154,10 +148,12 @@ namespace render::primitives::composition {
             // What \\nameref calls it: the title's words, as written.
             context.title.clear();
             const auto words = [&context](this const auto &self, const memory::Slice<syntax::Node *> children) -> void {
-                for (const syntax::Node *child: children) {
+                for (const syntax::Node *child : children) {
                     if (!child) continue;
-                    if (child->type == syntax::Node::Type::Text) context.title += child->value;
-                    else if (child->type == syntax::Node::Type::Group) self(child->nodes);
+                    if (child->type == syntax::Node::Type::Text)
+                        context.title += child->value;
+                    else if (child->type == syntax::Node::Type::Group)
+                        self(child->nodes);
                 }
             };
             words(title);
@@ -171,17 +167,15 @@ namespace render::primitives::composition {
                     shown = arena.allocate<syntax::Node *>(1);
                     shown[0] = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(brief), origin);
                 }
-                context.entries.push_back({
-                    .list = "toc", .level = listed, .number = number, .title = shown, .anchor = index
-                });
+                context.entries.push_back(
+                        {.list = "toc", .level = listed, .number = number, .title = shown, .anchor = index});
                 // hyperref's bookmark for it, in the file's outline.
                 if (context.variables.get("links")) {
                     const std::string &called = brief.empty() ? context.title : brief;
-                    context.document.metadata.bookmarks.push_back({
-                        .level = listed,
-                        .title = number.empty() ? called : std::format("{} {}", number, called),
-                        .anchor = index
-                    });
+                    context.document.metadata.bookmarks.push_back(
+                            {.level = listed,
+                             .title = number.empty() ? called : std::format("{} {}", number, called),
+                             .anchor = index});
                 }
             }
 
@@ -192,14 +186,16 @@ namespace render::primitives::composition {
                         context.shaper.shape(memory::Slice{.data = fonts, .count = 1uz}, arena.copy(number), {});
                 nodes.insert(nodes.end(), shaped.begin(), shaped.end());
                 if (tint) {
-                    for (layout::Node *piece: shaped) layout::Typesetter::paint(piece, *tint);
+                    for (layout::Node *piece : shaped)
+                        layout::Typesetter::paint(piece, *tint);
                 }
 
                 auto *quad = arena.compose<layout::Node>(layout::Node::Type::Kern);
                 quad->kern({.width = look && look->sep >= 0.0f ? look->sep : font->size()});
                 nodes.push_back(quad);
             }
-            for (const syntax::Node *child: title) compose(nodes, child, context);
+            for (const syntax::Node *child : title)
+                compose(nodes, child, context);
 
             // Centred or flush right: the line as wide as the column, the
             // room left taken by glue at its edges.
@@ -256,9 +252,9 @@ namespace render::primitives::composition {
                 auto *gap = arena.compose<layout::Node>(layout::Node::Type::Kern);
                 gap->kern({.width = 0.2f * ex});
                 auto *bar = arena.compose<layout::Node>(layout::Node::Type::Rule);
-                bar->rule({
-                    .width = breadth(context), .height = look->rule, .color = tint ? *tint : layout::Node::Color{}
-                });
+                bar->rule({.width = breadth(context),
+                           .height = look->rule,
+                           .color = tint ? *tint : layout::Node::Color{}});
                 parts.push_back(directive(arena, gap, origin, true));
                 parts.push_back(directive(arena, bar, origin, true));
             }
@@ -282,12 +278,13 @@ namespace render::primitives::composition {
             // contents prints.
             if (next.is('[')) {
                 mouth.stream().inject(std::span{&next, 1});
-                for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                     brief += token.text == "~" ? std::string_view{" "} : token.text;
                 }
                 next = mouth.read();
             }
-            while (next.category == syntax::Catcodes::Category::Space) next = mouth.read();
+            while (next.category == syntax::Catcodes::Category::Space)
+                next = mouth.read();
 
             if (!next.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!next.empty()) mouth.stream().inject(std::span{&next, 1});
@@ -302,8 +299,7 @@ namespace render::primitives::composition {
         // redefine, and under a name no document can write -- `\\section:native`
         // -- which \\@startsection reaches it by whatever \\section became.
         for (std::size_t level = 0; level < levels; ++level) {
-            const auto handler = [this, &context, level, heading, opening](
-                syntax::Parser &reader) -> syntax::Node * {
+            const auto handler = [this, &context, level, heading, opening](syntax::Parser &reader) -> syntax::Node * {
                 syntax::Mouth &mouth = reader.mouth;
                 memory::Arena &arena = reader.arena;
                 const memory::Location origin = mouth.lookahead().location;
@@ -345,8 +341,8 @@ namespace render::primitives::composition {
                     context.type = appendix ? std::string("appendix") : std::string(names[level].substr(1));
                 }
 
-                Logger::log(Logger::Type::Layout, Logger::Level::Debug,
-                            "Heading at level {}{}", level + 1, numbered ? "" : ", unnumbered");
+                Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Heading at level {}{}", level + 1,
+                            numbered ? "" : ", unnumbered");
 
                 // Bold, and larger by level, from the family the body is in,
                 // measured against the class's body size so a heading inside
@@ -363,7 +359,7 @@ namespace render::primitives::composition {
                     const float size = Styles::measure(body, look.size);
                     const Selection restore = context.selection;
                     context.selection.text(Styles::resolve(context, Styles::Cut::Normal, size));
-                    for (const Styles::Cut cut: look.cuts) {
+                    for (const Styles::Cut cut : look.cuts) {
                         if (const typography::Font *changed = Styles::resolve(context, cut, size)) {
                             context.selection.text(changed);
                         }
@@ -380,9 +376,8 @@ namespace render::primitives::composition {
                     }
                     const float ex = body * 0.4306f;
                     const std::pair<float, float> around{
-                        look.spacing.first >= 0.0f ? look.spacing.first / ex : spacing[level].first,
-                        look.spacing.second >= 0.0f ? look.spacing.second / ex : spacing[level].second
-                    };
+                            look.spacing.first >= 0.0f ? look.spacing.first / ex : spacing[level].first,
+                            look.spacing.second >= 0.0f ? look.spacing.second / ex : spacing[level].second};
                     if (look.display && !number.empty()) {
                         return heading(reader, face, number, around, origin, listed, brief, number, face, level == 0,
                                        &look);
@@ -432,7 +427,8 @@ namespace render::primitives::composition {
                 const auto enclosed = [&list, &at](const char open, const char close) {
                     std::string written;
                     if (at + 1 >= list.size() || !list[at + 1].is(open)) return written;
-                    for (at += 2; at < list.size() && !list[at].is(close); ++at) written += list[at].text;
+                    for (at += 2; at < list.size() && !list[at].is(close); ++at)
+                        written += list[at].text;
                     return written;
                 };
                 if (word == "\\color" || word == "\\textcolor") {
@@ -445,29 +441,50 @@ namespace render::primitives::composition {
                     patch::decimal(thick.data(), thick.data() + thick.size(), look.rule);
                     continue;
                 }
-                if (word == "\\bfseries" || word == "\\bf") look.cuts.push_back(Styles::Cut::Bold);
-                else if (word == "\\itshape" || word == "\\it" || word == "\\em") look.cuts.push_back(
-                    Styles::Cut::Italic);
-                else if (word == "\\scshape" || word == "\\sc") look.cuts.push_back(Styles::Cut::Caps);
-                else if (word == "\\slshape" || word == "\\sl") look.cuts.push_back(Styles::Cut::Slanted);
-                else if (word == "\\sffamily" || word == "\\sf") look.cuts.push_back(Styles::Cut::Sans);
-                else if (word == "\\ttfamily" || word == "\\tt") look.cuts.push_back(Styles::Cut::Mono);
-                else if (word == "\\mdseries") look.cuts.push_back(Styles::Cut::Medium);
-                else if (word == "\\upshape") look.cuts.push_back(Styles::Cut::Upright);
-                else if (word == "\\normalfont" || word == "\\rmfamily") look.cuts.clear();
-                else if (word == "\\tiny") look.size = Styles::Size::Tiny;
-                else if (word == "\\scriptsize") look.size = Styles::Size::Script;
-                else if (word == "\\footnotesize") look.size = Styles::Size::Footnote;
-                else if (word == "\\small") look.size = Styles::Size::Small;
-                else if (word == "\\normalsize") look.size = Styles::Size::Normal;
-                else if (word == "\\large") look.size = Styles::Size::Large;
-                else if (word == "\\Large") look.size = Styles::Size::Larger;
-                else if (word == "\\LARGE") look.size = Styles::Size::Largest;
-                else if (word == "\\huge") look.size = Styles::Size::Huge;
-                else if (word == "\\Huge") look.size = Styles::Size::Hugest;
-                else if (word == "\\centering" || word == "\\filcenter" || word == "\\center") look.align = 'c';
-                else if (word == "\\raggedleft" || word == "\\filleft") look.align = 'r';
-                else if (word == "\\raggedright" || word == "\\filright") look.align = 'l';
+                if (word == "\\bfseries" || word == "\\bf")
+                    look.cuts.push_back(Styles::Cut::Bold);
+                else if (word == "\\itshape" || word == "\\it" || word == "\\em")
+                    look.cuts.push_back(Styles::Cut::Italic);
+                else if (word == "\\scshape" || word == "\\sc")
+                    look.cuts.push_back(Styles::Cut::Caps);
+                else if (word == "\\slshape" || word == "\\sl")
+                    look.cuts.push_back(Styles::Cut::Slanted);
+                else if (word == "\\sffamily" || word == "\\sf")
+                    look.cuts.push_back(Styles::Cut::Sans);
+                else if (word == "\\ttfamily" || word == "\\tt")
+                    look.cuts.push_back(Styles::Cut::Mono);
+                else if (word == "\\mdseries")
+                    look.cuts.push_back(Styles::Cut::Medium);
+                else if (word == "\\upshape")
+                    look.cuts.push_back(Styles::Cut::Upright);
+                else if (word == "\\normalfont" || word == "\\rmfamily")
+                    look.cuts.clear();
+                else if (word == "\\tiny")
+                    look.size = Styles::Size::Tiny;
+                else if (word == "\\scriptsize")
+                    look.size = Styles::Size::Script;
+                else if (word == "\\footnotesize")
+                    look.size = Styles::Size::Footnote;
+                else if (word == "\\small")
+                    look.size = Styles::Size::Small;
+                else if (word == "\\normalsize")
+                    look.size = Styles::Size::Normal;
+                else if (word == "\\large")
+                    look.size = Styles::Size::Large;
+                else if (word == "\\Large")
+                    look.size = Styles::Size::Larger;
+                else if (word == "\\LARGE")
+                    look.size = Styles::Size::Largest;
+                else if (word == "\\huge")
+                    look.size = Styles::Size::Huge;
+                else if (word == "\\Huge")
+                    look.size = Styles::Size::Hugest;
+                else if (word == "\\centering" || word == "\\filcenter" || word == "\\center")
+                    look.align = 'c';
+                else if (word == "\\raggedleft" || word == "\\filleft")
+                    look.align = 'r';
+                else if (word == "\\raggedright" || word == "\\filright")
+                    look.align = 'l';
                 else if (word == "\\MakeUppercase" || word == "\\uppercase" || word == "\\MakeTextUppercase")
                     look.upper = true;
             }
@@ -491,7 +508,7 @@ namespace render::primitives::composition {
             const std::string shape = syntax::Argument::text(mouth);
             const std::vector<syntax::Token> format = mouth.argument({}, 1);
             std::string label;
-            for (const syntax::Token &token: mouth.argument({}, 1)) {
+            for (const syntax::Token &token : mouth.argument({}, 1)) {
                 label += token.text;
                 if (token.text.size() > 1 && token.text.front() == '\\') label += ' ';
             }
@@ -503,13 +520,10 @@ namespace render::primitives::composition {
             // The standard classes' size for the level, until the format
             // gives its own.
             Look look{.set = true};
-            look.size = *level == 0
-                            ? Styles::Size::Huge
-                            : *level == 1
-                                  ? Styles::Size::Larger
-                                  : *level == 2
-                                        ? Styles::Size::Large
-                                        : Styles::Size::Normal;
+            look.size = *level == 0   ? Styles::Size::Huge
+                        : *level == 1 ? Styles::Size::Larger
+                        : *level == 2 ? Styles::Size::Large
+                                      : Styles::Size::Normal;
             look.display = shape == "display";
             // A label of `*` keeps the number as the counter prints it, as
             // titlesec's starred \\titleformat does.
@@ -544,7 +558,7 @@ namespace render::primitives::composition {
             }
             if (!level || below.starts_with('-')) {
                 std::string written;
-                for (const syntax::Token &token: style) {
+                for (const syntax::Token &token : style) {
                     written += token.text;
                     if (token.text.size() > 1 && token.text.front() == '\\') written += ' ';
                 }
@@ -558,10 +572,9 @@ namespace render::primitives::composition {
                 looks[*level] = std::move(look);
             }
             const syntax::Symbol native = mouth.lexicon.intern(std::format("{}:native", names[*level]));
-            const syntax::Token token{
-                .symbol = native, .category = syntax::Catcodes::Category::Escape,
-                .text = mouth.lexicon.resolve(native)
-            };
+            const syntax::Token token{.symbol = native,
+                                      .category = syntax::Catcodes::Category::Escape,
+                                      .text = mouth.lexicon.resolve(native)};
             mouth.stream().inject(std::span{&token, 1});
         });
 
@@ -612,10 +625,10 @@ namespace render::primitives::composition {
             }
 
             const float body = context.document.configuration.size;
-            const typography::Font *font = Styles::resolve(context, Styles::Cut::Bold,
-                                                           Styles::measure(body, Styles::Size::Huge));
-            const typography::Font *lead = Styles::resolve(context, Styles::Cut::Bold,
-                                                           Styles::measure(body, Styles::Size::Larger));
+            const typography::Font *font =
+                    Styles::resolve(context, Styles::Cut::Bold, Styles::measure(body, Styles::Size::Huge));
+            const typography::Font *lead =
+                    Styles::resolve(context, Styles::Cut::Bold, Styles::measure(body, Styles::Size::Larger));
             return heading(reader, font, label, {4.0f, 3.0f}, origin, unlisted, brief, label, lead);
         });
 
@@ -636,17 +649,16 @@ namespace render::primitives::composition {
         // The classes' acknowledgments: acmart's under an unnumbered heading,
         // revtex's and elsarticle's a paragraph after a little space, and
         // llncs's credits in a smaller size.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> thanks{
-            {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 4> thanks{{
                 {"acks", "\\section*{\\acksname}"},
                 {"acknowledgments", "\\par\\medskip "},
                 {"acknowledgements", "\\par\\medskip "},
                 {"credits", "\\par\\small "},
-            }
-        };
-        for (const auto &[name, head]: thanks) {
-            context.environments.watch(name, [head](syntax::Mouth &mouth) { mouth.ingest(head); },
-                                 [](syntax::Mouth &mouth) { mouth.ingest("\\par "); });
+        }};
+        for (const auto &[name, head] : thanks) {
+            context.environments.watch(
+                    name, [head](syntax::Mouth &mouth) { mouth.ingest(head); },
+                    [](syntax::Mouth &mouth) { mouth.ingest("\\par "); });
         }
 
         // The table of contents and the lists of figures and of tables: each
@@ -654,24 +666,21 @@ namespace render::primitives::composition {
         // known only once every heading and caption has been read and are
         // set there as the document ends. Their pages are the ones the pass
         // before found, which is why they ask for one.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 3> named{
-            {
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 3> named{{
                 {"\\tableofcontents", "\\contentsname"},
                 {"\\listoffigures", "\\listfigurename"},
                 {"\\listoftables", "\\listtablename"},
-            }
-        };
+        }};
         for (std::size_t which = 0; which < named.size(); ++which) {
             parser.bind(named[which].first, [this, &context, which](const syntax::Parser &reader) -> syntax::Node * {
                 syntax::Mouth &mouth = reader.mouth;
                 if (!context.variables.get("contents.bare")) context.paged = true;
-                const syntax::Token mark{
-                    .symbol = marks[which], .category = syntax::Catcodes::Category::Escape,
-                    .text = mouth.lexicon.resolve(marks[which])
-                };
+                const syntax::Token mark{.symbol = marks[which],
+                                         .category = syntax::Catcodes::Category::Escape,
+                                         .text = mouth.lexicon.resolve(marks[which])};
                 mouth.stream().inject(std::span{&mark, 1});
-                mouth.ingest(reader.arena.copy(std::format("\\{}*{{{}}}", chaptered ? "chapter" : "section",
-                                                           named[which].second)));
+                mouth.ingest(reader.arena.copy(
+                        std::format("\\{}*{{{}}}", chaptered ? "chapter" : "section", named[which].second)));
                 return nullptr;
             });
             parser.bind(marks[which], [this, which](const syntax::Parser &reader) -> syntax::Node * {
@@ -690,7 +699,8 @@ namespace render::primitives::composition {
             syntax::Mouth &mouth = reader.mouth;
             const std::string name = syntax::Argument::text(mouth);
             syntax::Token open = mouth.read();
-            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            while (open.category == syntax::Catcodes::Category::Space)
+                open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 return nullptr;
@@ -701,9 +711,11 @@ namespace render::primitives::composition {
 
             std::string words;
             [&words](this const auto &self, const memory::Slice<syntax::Node *> children) -> void {
-                for (const syntax::Node *child: children) {
-                    if (child && child->type == syntax::Node::Type::Text) words += child->value;
-                    else if (child && child->type == syntax::Node::Type::Group) self(child->nodes);
+                for (const syntax::Node *child : children) {
+                    if (child && child->type == syntax::Node::Type::Text)
+                        words += child->value;
+                    else if (child && child->type == syntax::Node::Type::Group)
+                        self(child->nodes);
                 }
             }(said);
 
@@ -742,7 +754,8 @@ namespace render::primitives::composition {
             const std::string list = syntax::Argument::text(mouth);
             const std::string type = syntax::Argument::text(mouth);
             syntax::Token open = mouth.read();
-            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            while (open.category == syntax::Catcodes::Category::Space)
+                open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 return nullptr;
@@ -751,26 +764,24 @@ namespace render::primitives::composition {
             const memory::Slice<syntax::Node *> title = reader.parse('}');
             mouth.pop(syntax::semantics::Scope::Type::Group);
 
-            const std::size_t level = type == "part" || type == "chapter"
-                                          ? 0
-                                          : type == "subsection"
-                                                ? 2
-                                                : type == "subsubsection" || type == "paragraph"
-                                                      ? 3
-                                                      : 1;
+            const std::size_t level = type == "part" || type == "chapter"              ? 0
+                                      : type == "subsection"                           ? 2
+                                      : type == "subsubsection" || type == "paragraph" ? 3
+                                                                                       : 1;
             const std::size_t index = context.anchors++;
             context.entries.push_back({.list = list, .level = level, .number = {}, .title = title, .anchor = index});
             if (list == "toc" && context.variables.get("links")) {
                 std::string words;
                 [&words](this const auto &self, const memory::Slice<syntax::Node *> children) -> void {
-                    for (const syntax::Node *child: children) {
-                        if (child && child->type == syntax::Node::Type::Text) words += child->value;
-                        else if (child && child->type == syntax::Node::Type::Group) self(child->nodes);
+                    for (const syntax::Node *child : children) {
+                        if (child && child->type == syntax::Node::Type::Text)
+                            words += child->value;
+                        else if (child && child->type == syntax::Node::Type::Group)
+                            self(child->nodes);
                     }
                 }(title);
-                context.document.metadata.bookmarks.push_back({
-                    .level = level, .title = std::move(words), .anchor = index
-                });
+                context.document.metadata.bookmarks.push_back(
+                        {.level = level, .title = std::move(words), .anchor = index});
             }
             auto *anchor = arena.compose<layout::Node>(layout::Node::Type::Directive);
             anchor->directive({.command = layout::Node::Directive::Command::Anchor, .index = index});
@@ -788,10 +799,10 @@ namespace render::primitives::composition {
             const memory::Location origin = mouth.lookahead().location;
             static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
             std::string written;
-            for (const syntax::Token &token: mouth.argument({}, 0)) {
+            for (const syntax::Token &token : mouth.argument({}, 0)) {
                 written += token.text;
-                if (token.text.size() > 1 && token.text.front() == '\\' && std::isalpha(
-                        static_cast<unsigned char>(token.text.back()))) {
+                if (token.text.size() > 1 && token.text.front() == '\\' &&
+                    std::isalpha(static_cast<unsigned char>(token.text.back()))) {
                     written += ' ';
                 }
             }
@@ -812,15 +823,17 @@ namespace render::primitives::composition {
                 return found;
             };
             const auto trim = [](std::string_view text) {
-                while (!text.empty() && text.front() == ' ') text.remove_prefix(1);
-                while (!text.empty() && text.back() == ' ') text.remove_suffix(1);
+                while (!text.empty() && text.front() == ' ')
+                    text.remove_prefix(1);
+                while (!text.empty() && text.back() == ' ')
+                    text.remove_suffix(1);
                 return std::string(text);
             };
 
             Term term{.anchor = context.anchors++};
             const std::vector<std::string_view> sides = cut(written, '|');
             if (sides.size() > 1) term.encap = trim(sides[1]);
-            for (const std::string_view level: cut(sides.front(), '!')) {
+            for (const std::string_view level : cut(sides.front(), '!')) {
                 const std::vector<std::string_view> parts = cut(level, '@');
                 term.keys.push_back(trim(parts.front()));
                 mouth.ingest(arena.copy(std::format("{{{}}}", trim(parts.back()))));
@@ -847,10 +860,9 @@ namespace render::primitives::composition {
             if (terms.empty()) return nullptr;
             context.paged = true;
             mouth.ingest("\\onecolumn ");
-            const syntax::Token mark{
-                .symbol = marks[3], .category = syntax::Catcodes::Category::Escape,
-                .text = mouth.lexicon.resolve(marks[3])
-            };
+            const syntax::Token mark{.symbol = marks[3],
+                                     .category = syntax::Catcodes::Category::Escape,
+                                     .text = mouth.lexicon.resolve(marks[3])};
             mouth.stream().inject(std::span{&mark, 1});
             mouth.ingest(R"(\twocolumn[\csname\@bibkind\endcsname*{\indexname}])");
             return nullptr;
@@ -874,9 +886,9 @@ namespace render::primitives::composition {
             const typography::Font *regular = Styles::resolve(context, Styles::Cut::Normal, size);
             const typography::Font *bold = Styles::resolve(context, Styles::Cut::Bold, size);
             if (!regular || !bold) return;
-            const float width = static_cast<float>(context.registers.get(
-                                    syntax::semantics::Registers::Type::Dimension,
-                                    syntax::semantics::Registers::reserved + 1)) / 65536.0f;
+            const float width = static_cast<float>(context.registers.get(syntax::semantics::Registers::Type::Dimension,
+                                                                         syntax::semantics::Registers::reserved + 1)) /
+                                65536.0f;
 
             const auto shaped = [&](const typography::Font *face, const std::string_view written) {
                 const typography::Font *fonts[] = {face};
@@ -900,45 +912,45 @@ namespace render::primitives::composition {
 
             // A dot with four and a half mu either side, as \\@dotsep leaves it.
             std::vector<layout::Node *> dotted{kern(size * 0.25f)};
-            for (layout::Node *piece: shaped(regular, ".")) dotted.push_back(piece);
+            for (layout::Node *piece : shaped(regular, "."))
+                dotted.push_back(piece);
             dotted.push_back(kern(size * 0.25f));
             const layout::Node *dots = boxed(dotted, 0.0f);
 
             // Indent and number column, in ems, by how far below the
             // outermost listed level an entry is: \\l@section and the rest.
-            static constexpr std::array<std::pair<float, float>, levels> shapes{
-                {
-                    {0.0f, 1.5f}, {1.5f, 2.3f}, {3.8f, 3.2f}, {7.0f, 4.1f},
-                }
-            };
+            static constexpr std::array<std::pair<float, float>, levels> shapes{{
+                    {0.0f, 1.5f},
+                    {1.5f, 2.3f},
+                    {3.8f, 3.2f},
+                    {7.0f, 4.1f},
+            }};
 
             // LaTeX's tocdepth: levels below it are left out of the contents.
             const int deepest = context.counters && context.counters->contains("tocdepth")
-                                    ? context.counters->value("tocdepth")
-                                    : 3;
+                                        ? context.counters->value("tocdepth")
+                                        : 3;
             // A class that lists its headings without their pages -- beamer,
             // whose contents are an outline -- says so, and they are set in
             // the normal face with no leaders and no page.
             const bool bare = context.variables.get("contents.bare") != nullptr;
             static constexpr std::array<std::string_view, 3> lists{"toc", "lof", "lot"};
-            for (const auto &[which, place]: places) {
+            for (const auto &[which, place] : places) {
                 if (which >= lists.size()) continue;
                 std::vector<syntax::Node *> parts;
-                for (const auto &[list, level, number, title, anchor]: context.entries) {
+                for (const auto &[list, level, number, title, anchor] : context.entries) {
                     constexpr memory::Location origin{};
                     if (list != lists[which]) continue;
                     const bool contents = which == 0;
                     if (contents && std::cmp_greater(level, deepest)) continue;
-                    const std::size_t depth = contents
-                                                  ? level - (
-                                                        chaptered ? 0 : std::min<std::size_t>(level, 1))
-                                                  : 1;
+                    const std::size_t depth = contents ? level - (chaptered ? 0 : std::min<std::size_t>(level, 1)) : 1;
                     const bool top = contents && depth == 0;
                     const typography::Font *face = top && !bare ? bold : regular;
 
                     std::vector<layout::Node *> line{kern(shapes[depth].first * size)};
                     std::vector<layout::Node *> numeral;
-                    for (layout::Node *piece: shaped(face, number)) numeral.push_back(piece);
+                    for (layout::Node *piece : shaped(face, number))
+                        numeral.push_back(piece);
                     numeral.push_back(fill(nullptr));
                     if (!number.empty()) line.push_back(boxed(numeral, shapes[depth].second * size));
 
@@ -946,7 +958,7 @@ namespace render::primitives::composition {
                     // else it held -- a formula -- as it was.
                     const auto retitle = [&](this const auto &self,
                                              const memory::Slice<syntax::Node *> children) -> void {
-                        for (const syntax::Node *child: children) {
+                        for (const syntax::Node *child : children) {
                             if (!child || child->type == syntax::Node::Type::Directive) continue;
                             if (child->type == syntax::Node::Type::Group) {
                                 self(child->nodes);
@@ -962,10 +974,11 @@ namespace render::primitives::composition {
                     line.push_back(fill(top || bare ? nullptr : dots));
                     if (!bare) {
                         const std::string page = context.folios && anchor < context.folios->size()
-                                                     ? (*context.folios)[anchor]
-                                                     : std::string{};
+                                                         ? (*context.folios)[anchor]
+                                                         : std::string{};
                         std::vector<layout::Node *> folio{fill(nullptr)};
-                        for (layout::Node *piece: shaped(face, page)) folio.push_back(piece);
+                        for (layout::Node *piece : shaped(face, page))
+                            folio.push_back(piece);
                         line.push_back(boxed(folio, 1.55f * size));
                     }
 
@@ -974,7 +987,8 @@ namespace render::primitives::composition {
                     if (const References::Hyperlink link = References::hyperlink(context, {}, anchor, "link");
                         link.open) {
                         if (link.tint) {
-                            for (layout::Node *piece: line) layout::Typesetter::paint(piece, *link.tint);
+                            for (layout::Node *piece : line)
+                                layout::Typesetter::paint(piece, *link.tint);
                         }
                         line.insert(line.begin(), link.open);
                         line.push_back(link.close);
@@ -1001,38 +1015,40 @@ namespace render::primitives::composition {
             // little space between one initial and the next.
             const auto order = [](const std::string_view key) {
                 std::string sorted;
-                for (const char letter: key) {
+                for (const char letter : key) {
                     const auto code = static_cast<unsigned char>(letter);
                     sorted += std::isalpha(code) ? '2' : std::isdigit(code) ? '1' : '0';
                     sorted += static_cast<char>(std::tolower(code));
                 }
                 return sorted;
             };
-            for (const auto &[which, place]: places) {
+            for (const auto &[which, place] : places) {
                 if (which != 3) continue;
                 std::vector<const Term *> sorted;
                 sorted.reserve(terms.size());
-                for (const Term &term: terms) sorted.push_back(&term);
+                for (const Term &term : terms)
+                    sorted.push_back(&term);
                 const auto path = [&order](const Term *term) {
                     std::vector<std::string> keys;
                     keys.reserve(term->keys.size());
-                    for (const std::string &key: term->keys) keys.push_back(order(key));
+                    for (const std::string &key : term->keys)
+                        keys.push_back(order(key));
                     return keys;
                 };
                 std::ranges::stable_sort(sorted, {}, path);
 
                 const typography::Font *italic = Styles::resolve(context, Styles::Cut::Italic, size);
                 const auto folio = [&context](const std::size_t anchor) {
-                    return context.folios && anchor < context.folios->size()
-                               ? (*context.folios)[anchor]
-                               : std::string{};
+                    return context.folios && anchor < context.folios->size() ? (*context.folios)[anchor]
+                                                                             : std::string{};
                 };
                 std::vector<syntax::Node *> parts;
                 std::vector<std::string> printed;
                 for (std::size_t at = 0; at < sorted.size();) {
                     constexpr memory::Location origin{};
                     std::size_t end = at + 1;
-                    while (end < sorted.size() && path(sorted[end]) == path(sorted[at])) ++end;
+                    while (end < sorted.size() && path(sorted[end]) == path(sorted[at]))
+                        ++end;
                     const std::vector<std::string> keys = path(sorted[at]);
 
                     if (!printed.empty() && !keys.empty() && !printed.front().empty() && keys.front().size() > 1 &&
@@ -1045,12 +1061,13 @@ namespace render::primitives::composition {
                         const bool last = level + 1 == keys.size();
                         if (!last && level < printed.size() && printed[level] == keys[level]) continue;
                         std::vector<layout::Node *> line{kern(static_cast<float>(level) * 20.0f)};
-                        for (const syntax::Node *child: sorted[at]->shown[level]) compose(line, child, context);
+                        for (const syntax::Node *child : sorted[at]->shown[level])
+                            compose(line, child, context);
 
                         // Its pages, each in the face its encap asks for, and
                         // what it sends a reader to see.
                         if (last) {
-                            std::vector<std::pair<std::string, const typography::Font *> > pages;
+                            std::vector<std::pair<std::string, const typography::Font *>> pages;
                             std::string see;
                             std::string opened;
                             for (std::size_t index = at; index < end; ++index) {
@@ -1058,9 +1075,8 @@ namespace render::primitives::composition {
                                 const std::string page = folio(sorted[index]->anchor);
                                 if (encap.starts_with("see")) {
                                     const std::size_t brace = encap.find('{');
-                                    std::string target = brace == std::string::npos
-                                                             ? std::string{}
-                                                             : encap.substr(brace + 1);
+                                    std::string target =
+                                            brace == std::string::npos ? std::string{} : encap.substr(brace + 1);
                                     if (target.ends_with('}')) target.pop_back();
                                     see = std::format("{} {}", encap.starts_with("seealso") ? "see also" : "see",
                                                       target);
@@ -1068,24 +1084,23 @@ namespace render::primitives::composition {
                                     opened = page;
                                 } else if (encap == ")" && !opened.empty()) {
                                     // A range, its ends joined by an en dash.
-                                    pages.emplace_back(
-                                        opened == page ? page : std::format("{}\xE2\x80\x93{}", opened, page), regular);
+                                    pages.emplace_back(opened == page ? page
+                                                                      : std::format("{}\xE2\x80\x93{}", opened, page),
+                                                       regular);
                                     opened.clear();
                                 } else if (pages.empty() || pages.back().first != page) {
-                                    pages.emplace_back(page, encap.contains("bf")
-                                                                 ? bold
-                                                                 : encap.contains("it") ||
-                                                                   encap.contains("emph")
-                                                                       ? italic
-                                                                       : regular);
+                                    pages.emplace_back(page, encap.contains("bf") ? bold
+                                                             : encap.contains("it") || encap.contains("emph")
+                                                                     ? italic
+                                                                     : regular);
                                 }
                             }
                             // Three or more pages in a row, one range.
-                            std::vector<std::pair<std::string, const typography::Font *> > joined;
+                            std::vector<std::pair<std::string, const typography::Font *>> joined;
                             const auto whole = [](const std::string &page) {
                                 int value = 0;
-                                const auto [stop, failure] = std::from_chars(
-                                    page.data(), page.data() + page.size(), value);
+                                const auto [stop, failure] =
+                                        std::from_chars(page.data(), page.data() + page.size(), value);
                                 return failure == std::errc{} && stop == page.data() + page.size() ? value : -1;
                             };
                             for (std::size_t index = 0; index < pages.size();) {
@@ -1097,24 +1112,28 @@ namespace render::primitives::composition {
                                 }
                                 if (run - index >= 3 && whole(pages[index].first) >= 0) {
                                     joined.emplace_back(
-                                        std::format("{}\xE2\x80\x93{}", pages[index].first, pages[run - 1].first),
-                                        pages[index].second);
+                                            std::format("{}\xE2\x80\x93{}", pages[index].first, pages[run - 1].first),
+                                            pages[index].second);
                                     index = run;
                                 } else {
                                     joined.push_back(pages[index++]);
                                 }
                             }
-                            for (const auto &[page, face]: joined) {
-                                for (layout::Node *piece: shaped(regular, ", ")) line.push_back(piece);
-                                for (layout::Node *piece: shaped(face ? face : regular, page)) line.push_back(piece);
+                            for (const auto &[page, face] : joined) {
+                                for (layout::Node *piece : shaped(regular, ", "))
+                                    line.push_back(piece);
+                                for (layout::Node *piece : shaped(face ? face : regular, page))
+                                    line.push_back(piece);
                             }
                             if (!see.empty()) {
-                                for (layout::Node *piece: shaped(regular, ", ")) line.push_back(piece);
+                                for (layout::Node *piece : shaped(regular, ", "))
+                                    line.push_back(piece);
                                 const std::size_t split = see.find(' ', see.starts_with("see also") ? 4 : 0);
-                                for (layout::Node *piece: shaped(italic ? italic : regular, see.substr(0, split))) {
+                                for (layout::Node *piece : shaped(italic ? italic : regular, see.substr(0, split))) {
                                     line.push_back(piece);
                                 }
-                                for (layout::Node *piece: shaped(regular, see.substr(split))) line.push_back(piece);
+                                for (layout::Node *piece : shaped(regular, see.substr(split)))
+                                    line.push_back(piece);
                             }
                         }
                         parts.push_back(directive(arena, boxed(line, 0.0f), origin, true));

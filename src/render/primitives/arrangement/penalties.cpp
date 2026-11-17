@@ -1,8 +1,8 @@
 /// @file
 /// @brief Penalty primitives: `\\penalty`, `\\nobreak` and the forced breaks.
 #include "render/primitives/arrangement/penalties.hpp"
-#include "syntax/number.hpp"
 #include "logger.hpp"
+#include "syntax/number.hpp"
 
 #include <algorithm>
 #include <array>
@@ -12,9 +12,7 @@
 #include <vector>
 
 namespace render::primitives::arrangement {
-    Penalties::Penalties(syntax::Lexicon &lexicon) noexcept {
-        lexicon.intern("\\penalty");
-    }
+    Penalties::Penalties(syntax::Lexicon &lexicon) noexcept { lexicon.intern("\\penalty"); }
 
     void Penalties::operator()(syntax::Parser &parser, Context &context) const {
         parser.bind("\\penalty", [&context](const syntax::Parser &reader) -> syntax::Node * {
@@ -34,10 +32,10 @@ namespace render::primitives::arrangement {
         // ends a sheet.
         struct Fixed {
             std::string_view name; ///< What the document writes.
-            std::int32_t value; ///< What a break there costs.
-            bool page; ///< True when it ends the page, not the line.
-            bool optional; ///< True for LaTeX's forms, which take `*` and `[...]`.
-            bool sheet; ///< True when it ends the whole sheet, every column on it.
+            std::int32_t value;    ///< What a break there costs.
+            bool page;             ///< True when it ends the page, not the line.
+            bool optional;         ///< True for LaTeX's forms, which take `*` and `[...]`.
+            bool sheet;            ///< True when it ends the whole sheet, every column on it.
         };
 
         // `\\newpage` and `\\clearpage` are LaTeX's names for the same break
@@ -45,8 +43,7 @@ namespace render::primitives::arrangement {
         // column and the second the whole sheet. Bound directly rather than left to `\\alias`, which reaches Mouth's
         // own tables and not this one -- a page break is a Node this module
         // builds, and nothing outside it can copy that.
-        static constexpr std::array<Fixed, 8> fixed{
-            {
+        static constexpr std::array<Fixed, 8> fixed{{
                 {.name = "\\nobreak", .value = absolute, .page = false, .optional = false, .sheet = false},
                 {.name = "\\break", .value = -absolute, .page = false, .optional = false, .sheet = false},
                 {.name = "\\\\", .value = -absolute, .page = false, .optional = true, .sheet = false},
@@ -55,52 +52,52 @@ namespace render::primitives::arrangement {
                 {.name = "\\pagebreak", .value = -absolute, .page = true, .optional = true, .sheet = false},
                 {.name = "\\newpage", .value = -absolute, .page = true, .optional = true, .sheet = false},
                 {.name = "\\clearpage", .value = -absolute, .page = true, .optional = true, .sheet = true},
-            }
-        };
+        }};
 
-        for (const auto &[name, value, page, optional, sheet]: fixed) {
-            parser.bind(
-                name, [&context, name, value, page, optional, sheet](const syntax::Parser &reader) -> syntax::Node * {
-                    syntax::Mouth &mouth = reader.mouth;
-                    memory::Arena &arena = reader.arena;
-                    const memory::Location origin = mouth.lookahead().location;
+        for (const auto &[name, value, page, optional, sheet] : fixed) {
+            parser.bind(name,
+                        [&context, name, value, page, optional, sheet](const syntax::Parser &reader) -> syntax::Node * {
+                            syntax::Mouth &mouth = reader.mouth;
+                            memory::Arena &arena = reader.arena;
+                            const memory::Location origin = mouth.lookahead().location;
 
-                    // LaTeX's optional forms -- `\\*`, `\\[4pt]`, `\\linebreak[3]`
-                    // -- are read: the break is forced either way, and the space
-                    // `\\[4pt]` asks for below its line is a rule of no width
-                    // hanging that far under the line's baseline, past the
-                    // depth of its letters, which the next line keeps clear of.
-                    float below = 0.0f;
-                    if (optional) {
-                        syntax::Token next = mouth.read();
-                        if (next.text == "*") next = mouth.read();
-                        if (next.text == "[") {
-                            std::string written;
-                            for (next = mouth.read(); !next.empty() && next.text != "]"; next = mouth.read()) {
-                                written += next.text;
+                            // LaTeX's optional forms -- `\\*`, `\\[4pt]`, `\\linebreak[3]`
+                            // -- are read: the break is forced either way, and the space
+                            // `\\[4pt]` asks for below its line is a rule of no width
+                            // hanging that far under the line's baseline, past the
+                            // depth of its letters, which the next line keeps clear of.
+                            float below = 0.0f;
+                            if (optional) {
+                                syntax::Token next = mouth.read();
+                                if (next.text == "*") next = mouth.read();
+                                if (next.text == "[") {
+                                    std::string written;
+                                    for (next = mouth.read(); !next.empty() && next.text != "]"; next = mouth.read()) {
+                                        written += next.text;
+                                    }
+                                    if (name == "\\\\" || name == "\\newline") below = measure(written, mouth, context);
+                                } else if (!next.empty()) {
+                                    mouth.stream().inject(std::span{&next, 1});
+                                }
                             }
-                            if (name == "\\\\" || name == "\\newline") below = measure(written, mouth, context);
-                        } else if (!next.empty()) {
-                            mouth.stream().inject(std::span{&next, 1});
-                        }
-                    }
 
-                    auto *node = arena.compose<layout::Node>();
-                    if (page) {
-                        node->pause({.penalty = {.value = value, .flag = sheet}});
-                    } else {
-                        node->penalty({.value = value});
-                    }
-                    if (below <= 0.0f) return directive(arena, node, origin, page);
+                            auto *node = arena.compose<layout::Node>();
+                            if (page) {
+                                node->pause({.penalty = {.value = value, .flag = sheet}});
+                            } else {
+                                node->penalty({.value = value});
+                            }
+                            if (below <= 0.0f) return directive(arena, node, origin, page);
 
-                    const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
-                    auto *hanging = arena.compose<layout::Node>(layout::Node::Type::Rule);
-                    hanging->rule({.depth = below + 0.3f * em});
-                    const memory::Slice<syntax::Node *> parts = arena.allocate<syntax::Node *>(2);
-                    parts[0] = directive(arena, hanging, origin);
-                    parts[1] = directive(arena, node, origin);
-                    return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, parts);
-                });
+                            const float em = context.selection.text() ? context.selection.text()->size() : 10.0f;
+                            auto *hanging = arena.compose<layout::Node>(layout::Node::Type::Rule);
+                            hanging->rule({.depth = below + 0.3f * em});
+                            const memory::Slice<syntax::Node *> parts = arena.allocate<syntax::Node *>(2);
+                            parts[0] = directive(arena, hanging, origin);
+                            parts[1] = directive(arena, node, origin);
+                            return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin,
+                                                               parts);
+                        });
         }
 
         // `\\@breakable{text}`: text a line may end in after any of the
@@ -115,10 +112,10 @@ namespace render::primitives::arrangement {
 
             // The text as written, `\\#` and `\\_` their characters.
             std::string text;
-            for (const syntax::Token &token: mouth.argument({}, 0)) {
+            for (const syntax::Token &token : mouth.argument({}, 0)) {
                 text += token.category == syntax::Catcodes::Category::Escape && token.text.size() == 2
-                            ? token.text.substr(1)
-                            : token.text;
+                                ? token.text.substr(1)
+                                : token.text;
             }
 
             constexpr std::string_view breaks = "./-_?&=#!|;:,+@>])\\'";
@@ -135,7 +132,7 @@ namespace render::primitives::arrangement {
                 begun = at + 1;
             }
             parts.push_back(
-                arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text.substr(begun)), origin));
+                    arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(text.substr(begun)), origin));
 
             const memory::Slice<syntax::Node *> nodes = arena.allocate<syntax::Node *>(parts.size());
             std::ranges::copy(parts, nodes.begin());

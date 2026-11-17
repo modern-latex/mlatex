@@ -2,9 +2,9 @@
 /// @brief Records implementation: csvsimple's CSV files and datatool's
 ///        databases, one table type for both.
 #include "syntax/primitives/bookkeeping/records.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
+#include "syntax/argument.hpp"
 
 #include <algorithm>
 #include <array>
@@ -22,16 +22,23 @@
 namespace syntax::primitives::bookkeeping {
     Records::Records(Lexicon &lexicon) noexcept {
         static constexpr std::array<std::string_view, 20> names{
-            "\\csvautotabular", "\\csvautobooktabular", "\\csvreader", "\\DTLnewdb", "\\DTLnewrow",
-            "\\DTLnewdbentry", "\\DTLloaddb", "\\DTLforeach", "\\DTLdisplaydb", "\\DTLrowcount",
-            "\\DTLcolumncount", "\\DTLgetvalue", "\\DTLfetch", "\\DTLsort", "\\DTLsumcolumn",
-            "\\DTLmeanforcolumn", "\\DTLifdbexists", "\\DTLcleardb", "\\DTLsetseparator", "\\DTLsettabseparator",
+                "\\csvautotabular",  "\\csvautobooktabular",
+                "\\csvreader",       "\\DTLnewdb",
+                "\\DTLnewrow",       "\\DTLnewdbentry",
+                "\\DTLloaddb",       "\\DTLforeach",
+                "\\DTLdisplaydb",    "\\DTLrowcount",
+                "\\DTLcolumncount",  "\\DTLgetvalue",
+                "\\DTLfetch",        "\\DTLsort",
+                "\\DTLsumcolumn",    "\\DTLmeanforcolumn",
+                "\\DTLifdbexists",   "\\DTLcleardb",
+                "\\DTLsetseparator", "\\DTLsettabseparator",
         };
-        for (const std::string_view name: names) lexicon.intern(name);
+        for (const std::string_view name : names)
+            lexicon.intern(name);
     }
 
-    std::vector<std::vector<std::string> > Records::parse(const std::string_view text, const char separator) {
-        std::vector<std::vector<std::string> > rows;
+    std::vector<std::vector<std::string>> Records::parse(const std::string_view text, const char separator) {
+        std::vector<std::vector<std::string>> rows;
         std::vector<std::string> fields;
         std::string field;
         bool quoted = false;
@@ -69,8 +76,8 @@ namespace syntax::primitives::bookkeeping {
             }
         }
         // Each field without the blanks around it, as both packages read one.
-        for (std::vector<std::string> &row: rows) {
-            for (std::string &cell: row) {
+        for (std::vector<std::string> &row : rows) {
+            for (std::string &cell : row) {
                 const std::size_t first = cell.find_first_not_of(" \t");
                 const std::size_t last = cell.find_last_not_of(" \t");
                 cell = first == std::string::npos ? std::string{} : cell.substr(first, last - first + 1);
@@ -85,7 +92,7 @@ namespace syntax::primitives::bookkeeping {
         const auto written = [](const std::span<const Token> tokens) {
             std::string text;
             bool word = false;
-            for (const Token &token: tokens) {
+            for (const Token &token : tokens) {
                 if (word && token.category == Catcodes::Category::Letter) text += ' ';
                 text += token.text;
                 word = token.category == Catcodes::Category::Escape && token.text.size() > 1 &&
@@ -96,7 +103,7 @@ namespace syntax::primitives::bookkeeping {
         // A key list cut at its top-level commas, each piece a key and a
         // value, the value's outer braces taken off: `tabular=lr, no head`.
         const auto pieces = [](const std::string_view list) {
-            std::vector<std::pair<std::string, std::string> > found;
+            std::vector<std::pair<std::string, std::string>> found;
             int depth = 0;
             std::size_t begin = 0;
             for (std::size_t at = 0; at <= list.size(); ++at) {
@@ -107,16 +114,17 @@ namespace syntax::primitives::bookkeeping {
                 std::string_view piece = list.substr(begin, at - begin);
                 begin = at + 1;
                 const auto trim = [](std::string_view text) {
-                    while (!text.empty() && (text.front() == ' ' || text.front() == '\n')) text.remove_prefix(1);
-                    while (!text.empty() && (text.back() == ' ' || text.back() == '\n')) text.remove_suffix(1);
+                    while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
+                        text.remove_prefix(1);
+                    while (!text.empty() && (text.back() == ' ' || text.back() == '\n'))
+                        text.remove_suffix(1);
                     return text;
                 };
                 piece = trim(piece);
                 if (piece.empty()) continue;
                 const std::size_t equals = piece.find('=');
-                std::string_view value = equals == std::string_view::npos
-                                             ? std::string_view{}
-                                             : trim(piece.substr(equals + 1));
+                std::string_view value =
+                        equals == std::string_view::npos ? std::string_view{} : trim(piece.substr(equals + 1));
                 if (value.size() >= 2 && value.front() == '{' && value.back() == '}')
                     value = value.substr(1, value.size() - 2);
                 found.emplace_back(std::string(trim(piece.substr(0, equals))), std::string(value));
@@ -125,8 +133,8 @@ namespace syntax::primitives::bookkeeping {
         };
         // A file's text, from those handed in, written by the document or
         // beside it; none, reported, when it is nowhere.
-        const auto file = [this, &context](const std::string &name, const memory::Location origin)
-            -> std::optional<std::string> {
+        const auto file = [this, &context](const std::string &name,
+                                           const memory::Location origin) -> std::optional<std::string> {
             if (context.files) {
                 if (const auto found = context.files->find(name); found != context.files->end()) return found->second;
             }
@@ -162,7 +170,7 @@ namespace syntax::primitives::bookkeeping {
             }
             text += "\\\\";
             text += rules == "booktabs" ? "\\midrule " : rules == "ruled" ? "\\hline " : "";
-            for (const std::vector<std::string> &row: table.rows) {
+            for (const std::vector<std::string> &row : table.rows) {
                 for (std::size_t column = 0; column < table.keys.size(); ++column) {
                     if (column > 0) text += " & ";
                     if (column < row.size()) text += row[column];
@@ -176,19 +184,20 @@ namespace syntax::primitives::bookkeeping {
         // A CSV file as a table: its first line its names, or columns
         // numbered from 1 when it has none.
         const auto read = [this](const std::string &text, const bool headed) {
-            std::vector<std::vector<std::string> > lines = parse(text, separator);
+            std::vector<std::vector<std::string>> lines = parse(text, separator);
             Table table;
             if (headed && !lines.empty()) {
                 table.keys = std::move(lines.front());
                 lines.erase(lines.begin());
             } else {
                 std::size_t across = 0;
-                for (const auto &line: lines) across = std::max(across, line.size());
+                for (const auto &line : lines)
+                    across = std::max(across, line.size());
                 for (std::size_t column = 1; column <= across; ++column) {
                     table.keys.push_back(std::format("{}", column));
                 }
             }
-            for (std::vector<std::string> &line: lines) {
+            for (std::vector<std::string> &line : lines) {
                 line.resize(table.keys.size());
                 table.rows.push_back(std::move(line));
             }
@@ -200,7 +209,7 @@ namespace syntax::primitives::bookkeeping {
         const auto definitions = [pieces](const Table &table, const std::string_view list,
                                           const std::vector<std::string> &row) {
             std::string text;
-            for (const auto &[left, right]: pieces(list)) {
+            for (const auto &[left, right] : pieces(list)) {
                 const bool named = left.starts_with('\\');
                 const std::string &macro = named ? left : right;
                 const std::string &key = named ? right : left;
@@ -220,37 +229,33 @@ namespace syntax::primitives::bookkeeping {
             return text;
         };
 
-        for (const bool booktabs: {false, true}) {
-            mouth.bind(booktabs ? "\\csvautobooktabular" : "\\csvautotabular",
-                       [this, file, read, tabular, pieces, booktabs](Mouth &mouth) {
-                           const memory::Location origin = mouth.lookahead().location;
-                           std::string options;
-                           for (const Token &token: mouth.argument(Mouth::Parameter{.optional = true}, 0))
-                               options += token.text;
-                           const std::string name = Argument::text(mouth);
-                           const char kept = separator;
-                           for (const auto &[key, value]: pieces(options)) {
-                               if (key == "separator") separator = value == "semicolon"
-                                                                       ? ';'
-                                                                       : value == "tab"
-                                                                             ? '\t'
-                                                                             : value == "pipe"
-                                                                                   ? '|'
-                                                                                   : ',';
-                           }
-                           const std::optional<std::string> text = file(name, origin);
-                           const bool headed = !options.contains("no head");
-                           if (text) mouth.ingest(
-                               mouth.arena.copy(tabular(read(*text, headed), booktabs ? "booktabs" : "ruled")),
-                               memory::Location{});
-                           separator = kept;
-                       });
+        for (const bool booktabs : {false, true}) {
+            mouth.bind(booktabs ? "\\csvautobooktabular" : "\\csvautotabular", [this, file, read, tabular, pieces,
+                                                                                booktabs](Mouth &mouth) {
+                const memory::Location origin = mouth.lookahead().location;
+                std::string options;
+                for (const Token &token : mouth.argument(Mouth::Parameter{.optional = true}, 0))
+                    options += token.text;
+                const std::string name = Argument::text(mouth);
+                const char kept = separator;
+                for (const auto &[key, value] : pieces(options)) {
+                    if (key == "separator")
+                        separator = value == "semicolon" ? ';' : value == "tab" ? '\t' : value == "pipe" ? '|' : ',';
+                }
+                const std::optional<std::string> text = file(name, origin);
+                const bool headed = !options.contains("no head");
+                if (text)
+                    mouth.ingest(mouth.arena.copy(tabular(read(*text, headed), booktabs ? "booktabs" : "ruled")),
+                                 memory::Location{});
+                separator = kept;
+            });
         }
 
         mouth.bind("\\csvreader", [this, file, read, pieces, written, definitions](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
-            for (const Token &token: mouth.argument(Mouth::Parameter{.optional = true}, 0)) options += token.text;
+            for (const Token &token : mouth.argument(Mouth::Parameter{.optional = true}, 0))
+                options += token.text;
             const std::string name = Argument::text(mouth);
             const std::string assignments = written(mouth.argument({}, 0));
             const std::string body = written(mouth.argument({}, 1));
@@ -263,16 +268,11 @@ namespace syntax::primitives::bookkeeping {
             bool columns = false;
             bool centred = false;
             const char kept = separator;
-            for (const auto &[key, value]: pieces(options)) {
+            for (const auto &[key, value] : pieces(options)) {
                 if (key == "head to column names") columns = true;
                 if (key == "no head") headed = false;
-                if (key == "separator") separator = value == "semicolon"
-                                                        ? ';'
-                                                        : value == "tab"
-                                                              ? '\t'
-                                                              : value == "pipe"
-                                                                    ? '|'
-                                                                    : ',';
+                if (key == "separator")
+                    separator = value == "semicolon" ? ';' : value == "tab" ? '\t' : value == "pipe" ? '|' : ',';
                 if (key == "tabular" || key == "centered tabular") {
                     spec = value;
                     after = "\\\\";
@@ -289,9 +289,8 @@ namespace syntax::primitives::bookkeeping {
 
             std::string out = centred ? "\\begin{center}" : "";
             if (!spec.empty()) out += std::format("\\begin{{tabular}}{{{}}}{}", spec, head);
-            static constexpr std::array<std::string_view, 10> numerals{
-                "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"
-            };
+            static constexpr std::array<std::string_view, 10> numerals{"i",  "ii",  "iii",  "iv", "v",
+                                                                       "vi", "vii", "viii", "ix", "x"};
             for (std::size_t index = 0; index < table.rows.size(); ++index) {
                 const std::vector<std::string> &row = table.rows[index];
                 out += std::format(R"(\@shared\@define\thecsvrow{{{}}})", index + 1);
@@ -339,14 +338,16 @@ namespace syntax::primitives::bookkeeping {
             auto column = static_cast<std::size_t>(std::ranges::find(table->keys, key) - table->keys.begin());
             if (column == table->keys.size()) {
                 table->keys.push_back(key);
-                for (std::vector<std::string> &row: table->rows) row.resize(table->keys.size());
+                for (std::vector<std::string> &row : table->rows)
+                    row.resize(table->keys.size());
             }
             table->rows.back()[column] = value;
         });
         mouth.bind("\\DTLloaddb", [this, file, read](Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
             std::string options;
-            for (const Token &token: mouth.argument(Mouth::Parameter{.optional = true}, 0)) options += token.text;
+            for (const Token &token : mouth.argument(Mouth::Parameter{.optional = true}, 0))
+                options += token.text;
             const std::string name = Argument::text(mouth);
             const std::string path = Argument::text(mouth);
             if (const std::optional<std::string> text = file(path, origin)) {
@@ -384,7 +385,7 @@ namespace syntax::primitives::bookkeeping {
                 mouth.ingest(mouth.arena.copy(tabular(*table, "plain")), memory::Location{});
             }
         });
-        for (const bool rows: {true, false}) {
+        for (const bool rows : {true, false}) {
             mouth.bind(rows ? "\\DTLrowcount" : "\\DTLcolumncount", [named, rows](Mouth &mouth) {
                 if (const Table *table = named(mouth, Argument::text(mouth))) {
                     mouth.ingest(mouth.arena.copy(std::format("{}", rows ? table->rows.size() : table->keys.size())),
@@ -411,8 +412,7 @@ namespace syntax::primitives::bookkeeping {
             std::size_t down = 0;
             std::from_chars(row.data(), row.data() + row.size(), down);
             std::from_chars(column.data(), column.data() + column.size(), across);
-            const bool inside = down >= 1 && down <= table->rows.size() && across >= 1 &&
-                                across <= table->keys.size();
+            const bool inside = down >= 1 && down <= table->rows.size() && across >= 1 && across <= table->keys.size();
             const std::string value = inside ? table->rows[down - 1][across - 1] : std::string{};
             mouth.ingest(mouth.arena.copy(std::format("\\@define{}{{{}}}", target.front().text, value)),
                          memory::Location{});
@@ -430,7 +430,7 @@ namespace syntax::primitives::bookkeeping {
             };
             const std::size_t matched = at(key);
             const std::size_t shown = at(other);
-            for (const std::vector<std::string> &row: table->rows) {
+            for (const std::vector<std::string> &row : table->rows) {
                 if (matched < row.size() && shown < row.size() && row[matched] == wanted) {
                     mouth.ingest(mouth.arena.copy(row[shown]), memory::Location{});
                     return;
@@ -444,20 +444,19 @@ namespace syntax::primitives::bookkeeping {
             const std::string criteria = Argument::text(mouth);
             Table *table = named(mouth, Argument::text(mouth));
             if (!table) return;
-            std::vector<std::pair<std::size_t, bool> > order;
-            for (const auto &[key, value]: pieces(criteria)) {
+            std::vector<std::pair<std::size_t, bool>> order;
+            for (const auto &[key, value] : pieces(criteria)) {
                 const auto column = static_cast<std::size_t>(std::ranges::find(table->keys, key) - table->keys.begin());
                 if (column < table->keys.size()) order.emplace_back(column, value == "descending" || value == "desc");
             }
-            const auto before = [&order](const std::vector<std::string> &left,
-                                         const std::vector<std::string> &right) {
-                for (const auto &[column, descending]: order) {
+            const auto before = [&order](const std::vector<std::string> &left, const std::vector<std::string> &right) {
+                for (const auto &[column, descending] : order) {
                     double first = 0.0;
                     double second = 0.0;
-                    const auto one = patch::decimal(left[column].data(),
-                                                    left[column].data() + left[column].size(), first);
-                    const auto two = patch::decimal(right[column].data(),
-                                                    right[column].data() + right[column].size(), second);
+                    const auto one =
+                            patch::decimal(left[column].data(), left[column].data() + left[column].size(), first);
+                    const auto two =
+                            patch::decimal(right[column].data(), right[column].data() + right[column].size(), second);
                     const bool numbers = one.ec == std::errc{} && two.ec == std::errc{};
                     const bool less = numbers ? first < second : left[column] < right[column];
                     if (const bool more = numbers ? first > second : left[column] > right[column]; less || more) {
@@ -469,7 +468,7 @@ namespace syntax::primitives::bookkeeping {
             std::ranges::stable_sort(table->rows, before);
         });
         // A column's total, or its mean, kept in a macro.
-        for (const bool mean: {false, true}) {
+        for (const bool mean : {false, true}) {
             mouth.bind(mean ? "\\DTLmeanforcolumn" : "\\DTLsumcolumn", [named, mean](Mouth &mouth) {
                 const std::string name = Argument::text(mouth);
                 const std::string key = Argument::text(mouth);
@@ -479,11 +478,11 @@ namespace syntax::primitives::bookkeeping {
                 const auto column = static_cast<std::size_t>(std::ranges::find(table->keys, key) - table->keys.begin());
                 double total = 0.0;
                 std::size_t counted = 0;
-                for (const std::vector<std::string> &row: table->rows) {
+                for (const std::vector<std::string> &row : table->rows) {
                     double value = 0.0;
                     if (column < row.size() &&
                         patch::decimal(row[column].data(), row[column].data() + row[column].size(), value).ec ==
-                        std::errc{}) {
+                                std::errc{}) {
                         total += value;
                         ++counted;
                     }

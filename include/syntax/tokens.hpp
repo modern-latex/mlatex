@@ -1,8 +1,8 @@
 #pragma once
 
+#include "memory/location.hpp"
 #include "syntax/catcodes.hpp"
 #include "syntax/lexicon.hpp"
-#include "memory/location.hpp"
 
 #include <string_view>
 #include <type_traits>
@@ -14,10 +14,10 @@ namespace syntax {
     /// is two tokens; scanners read multi-token quantities digit by digit.
     /// Tokens are trivially copyable and copied freely.
     struct Token {
-        Symbol symbol = none; ///< Interned name, or #none.
+        Symbol symbol = none;                                      ///< Interned name, or #none.
         Catcodes::Category category = Catcodes::Category::Invalid; ///< Category when lexed.
-        memory::Location location{}; ///< Source position.
-        std::string_view text{}; ///< Interned text.
+        memory::Location location{};                               ///< Source position.
+        std::string_view text{};                                   ///< Interned text.
 
         /// @brief Reports whether this is the end-of-input token.
         [[nodiscard]] constexpr bool empty() const noexcept { return symbol == none && text.empty(); }
@@ -37,8 +37,8 @@ namespace syntax {
 
         /// Deleted: two tokens with the same text may differ in category and
         /// position. Compare #symbol, or use is().
-        bool operator==(const Token &) const = delete(
-            "compare the symbols, or use is(): two tokens with the same text may differ in category");
+        bool operator==(const Token &) const =
+                delete ("compare the symbols, or use is(): two tokens with the same text may differ in category");
     };
 
     static_assert(std::is_trivially_copyable_v<Token>);

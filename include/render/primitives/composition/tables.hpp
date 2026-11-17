@@ -43,20 +43,20 @@ namespace render::primitives::composition {
     public:
         /// @brief One column of a table's preamble.
         struct Column {
-            char align{'l'}; ///< `l`, `c` or `r`; a paragraph column is `l` with a width.
+            char align{'l'};     ///< `l`, `c` or `r`; a paragraph column is `l` with a width.
             std::string width{}; ///< A paragraph column's width as written, or empty.
             bool stretch{false}; ///< True for tabularx's `X`, which shares the width left over.
-            int before{0}; ///< Vertical rules to its left.
-            int after{0}; ///< Vertical rules to its right.
-            bool opened{true}; ///< False when `@{}` takes away the padding on its left.
-            bool closed{true}; ///< False when `@{}` takes away the padding on its right.
-            std::string head{}; ///< What `>{...}` puts at the start of each of its cells, as written.
+            int before{0};       ///< Vertical rules to its left.
+            int after{0};        ///< Vertical rules to its right.
+            bool opened{true};   ///< False when `@{}` takes away the padding on its left.
+            bool closed{true};   ///< False when `@{}` takes away the padding on its right.
+            std::string head{};  ///< What `>{...}` puts at the start of each of its cells, as written.
         };
 
         /// @brief A column type `\\newcolumntype` made: how many arguments it
         ///        takes, and the preamble it stands for.
         struct Custom {
-            int count{0}; ///< Its arguments, #1 to #9.
+            int count{0};       ///< Its arguments, #1 to #9.
             std::string body{}; ///< The preamble it stands for; empty for none made.
         };
 
@@ -94,21 +94,19 @@ namespace render::primitives::composition {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief A table opened and not yet read: what its `\\begin` said.
         struct Opening {
             std::vector<Column> columns{}; ///< Its preamble.
-            std::string width{}; ///< The width it is stretched to, as written, or empty.
+            std::string width{};           ///< The width it is stretched to, as written, or empty.
             char position{'c'};
             ///< Where its baseline falls: t, c or b, as `[t]` says; for a
-                                             ///< long table, the side it stands at: l, c or r.
+            ///< long table, the side it stands at: l, c or r.
             bool breakable{false};
             ///< True for longtable and its type, which a page may end between
-                                             ///< any two rows of.
+            ///< any two rows of.
         };
 
         /// Most rows one table may have, so a malformed table is reported
@@ -121,10 +119,10 @@ namespace render::primitives::composition {
         static constexpr float gutter = 12.0f;
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Opening> openings{}; ///< Tables opened and not yet read.
-        mutable Customs customs{}; ///< The column types \\newcolumntype made.
+        mutable std::vector<Opening> openings{};             ///< Tables opened and not yet read.
+        mutable Customs customs{};                           ///< The column types \\newcolumntype made.
 
-        syntax::Symbol row{}; ///< `\\cr`, which ends a row.
+        syntax::Symbol row{};    ///< `\\cr`, which ends a row.
         syntax::Symbol column{}; ///< `&`, which ends a cell.
     };
 }

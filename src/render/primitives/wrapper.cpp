@@ -11,9 +11,8 @@
 
 namespace render::primitives {
     Wrapper::Wrapper(syntax::Lexicon &lexicon) noexcept
-        : pages(lexicon), typefaces(lexicon), styles(lexicon), characters(lexicon), groups(lexicon),
-          boxes(lexicon), glue(lexicon),
-          rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
+        : pages(lexicon), typefaces(lexicon), styles(lexicon), characters(lexicon), groups(lexicon), boxes(lexicon),
+          glue(lexicon), rules(lexicon), penalties(lexicon), tables(lexicon), sections(lexicon), paragraphs(lexicon),
           lists(lexicon), equations(lexicon), references(lexicon), citations(lexicon), footnotes(lexicon),
           counters(lexicon), theorems(lexicon), floats(lexicon), algorithms(lexicon), illustrations(lexicon),
           colors(lexicon), requests(lexicon), verbatim(lexicon), plots(lexicon), diagrams(lexicon), languages(lexicon) {
@@ -26,13 +25,11 @@ namespace render::primitives {
 
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
-        bind(parser, context, pages, typefaces, styles, characters, groups, boxes, glue, rules,
-             penalties, tables, sections, paragraphs, lists, equations, references, citations,
-             footnotes, counters, theorems, floats, algorithms, illustrations, colors, requests, verbatim,
-             plots, diagrams, languages);
+        bind(parser, context, pages, typefaces, styles, characters, groups, boxes, glue, rules, penalties, tables,
+             sections, paragraphs, lists, equations, references, citations, footnotes, counters, theorems, floats,
+             algorithms, illustrations, colors, requests, verbatim, plots, diagrams, languages);
 
-        Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                    "Render primitives installed");
+        Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Render primitives installed");
     }
 
     std::vector<syntax::Traceback> Wrapper::traceback() const {
@@ -42,23 +39,21 @@ namespace render::primitives {
         // Colors reports only a color it was asked to define and could not;
         // one it is asked to use and cannot read is just black.
         const std::array<const std::vector<syntax::Traceback> *, 23> parts{
-            &pages.traceback(), &typefaces.traceback(), &styles.traceback(),
-            &boxes.traceback(), &tables.traceback(), &sections.traceback(),
-            &paragraphs.traceback(), &lists.traceback(), &equations.traceback(),
-            &references.traceback(), &citations.traceback(), &footnotes.traceback(),
-            &counters.traceback(), &theorems.traceback(), &floats.traceback(), &algorithms.traceback(),
-            &illustrations.traceback(),
-            &requests.traceback(),
-            &colors.traceback(), &verbatim.traceback(), &plots.traceback(), &diagrams.traceback(),
-            &languages.traceback(),
+                &pages.traceback(),         &typefaces.traceback(),  &styles.traceback(),     &boxes.traceback(),
+                &tables.traceback(),        &sections.traceback(),   &paragraphs.traceback(), &lists.traceback(),
+                &equations.traceback(),     &references.traceback(), &citations.traceback(),  &footnotes.traceback(),
+                &counters.traceback(),      &theorems.traceback(),   &floats.traceback(),     &algorithms.traceback(),
+                &illustrations.traceback(), &requests.traceback(),   &colors.traceback(),     &verbatim.traceback(),
+                &plots.traceback(),         &diagrams.traceback(),   &languages.traceback(),
         };
 
         std::size_t total = 0;
-        for (const auto *list: parts) total += list->size();
+        for (const auto *list : parts)
+            total += list->size();
 
         std::vector<syntax::Traceback> gathered;
         gathered.reserve(total);
-        for (const auto *list: parts) {
+        for (const auto *list : parts) {
             gathered.insert(gathered.end(), list->begin(), list->end());
         }
         return gathered;

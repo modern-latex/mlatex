@@ -14,10 +14,10 @@
 ///   short version is that a global definition is O(1) and never walks the
 ///   undo log.
 #include "syntax/mouth.hpp"
+#include "logger.hpp"
+#include "memory/location.hpp"
 #include "syntax/lexer.hpp"
 #include "syntax/semantics/union.hpp"
-#include "memory/location.hpp"
-#include "logger.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -37,18 +37,16 @@ namespace syntax {
         this->marks.push_back(this->records.size());
         this->types.push_back(type);
         this->state.push();
-        Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
-                    "State push ({}, depth={})", semantics::Scope::name(type), this->marks.size());
+        Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "State push ({}, depth={})",
+                    semantics::Scope::name(type), this->marks.size());
     }
 
     bool Mouth::pop(const semantics::Scope::Type expected) {
-        const memory::Location location = this->cursor.empty()
-                                              ? memory::Location{}
-                                              : this->cursor.lookahead(0).location;
+        const memory::Location location =
+                this->cursor.empty() ? memory::Location{} : this->cursor.lookahead(0).location;
 
         if (this->marks.empty()) {
-            this->tracebacks.emplace_back(Traceback::Type::Scope, location,
-                                          "A group closed that was never opened");
+            this->tracebacks.emplace_back(Traceback::Type::Scope, location, "A group closed that was never opened");
             return false;
         }
 
@@ -56,7 +54,8 @@ namespace syntax {
         // in the order it was put by.
         const std::size_t level = this->marks.size();
         std::size_t first = this->deferred.size();
-        while (first > 0 && this->deferred[first - 1].first == level) --first;
+        while (first > 0 && this->deferred[first - 1].first == level)
+            --first;
         if (first < this->deferred.size()) {
             std::vector<Token> after;
             after.reserve(this->deferred.size() - first);
@@ -70,13 +69,12 @@ namespace syntax {
         const semantics::Scope::Type actual = this->types.back();
         const bool matched = actual == expected;
         if (!matched) {
-            this->tracebacks.emplace_back(
-                actual == semantics::Scope::Type::Environment
-                    ? Traceback::Type::Environment
-                    : Traceback::Type::Group,
-                location,
-                std::format("Scope closed as {} but was opened as {}",
-                            semantics::Scope::name(expected), semantics::Scope::name(actual)));
+            this->tracebacks.emplace_back(actual == semantics::Scope::Type::Environment ? Traceback::Type::Environment
+                                                                                        : Traceback::Type::Group,
+                                          location,
+                                          std::format("Scope closed as {} but was opened as {}",
+                                                      semantics::Scope::name(expected),
+                                                      semantics::Scope::name(actual)));
         }
 
         this->state.pop();
@@ -113,9 +111,8 @@ namespace syntax {
 
         if (this->depth >= this->limit) {
             this->error = true;
-            this->tracebacks.emplace_back(
-                Traceback::Type::Recursion, memory::Location{},
-                std::format("Expansion re-entered more than {} levels deep", this->limit));
+            this->tracebacks.emplace_back(Traceback::Type::Recursion, memory::Location{},
+                                          std::format("Expansion re-entered more than {} levels deep", this->limit));
             this->cursor.dispose();
             return {};
         }
@@ -129,11 +126,10 @@ namespace syntax {
         for (std::size_t spent = 0; !this->cursor.empty(); ++spent) {
             if (spent > this->budget) {
                 this->error = true;
-                this->tracebacks.emplace_back(
-                    Traceback::Type::Recursion, memory::Location{},
-                    std::format("Runaway expansion: {} expansions without producing a token "
-                                "(a macro is almost certainly defined in terms of itself)",
-                                this->budget));
+                this->tracebacks.emplace_back(Traceback::Type::Recursion, memory::Location{},
+                                              std::format("Runaway expansion: {} expansions without producing a token "
+                                                          "(a macro is almost certainly defined in terms of itself)",
+                                                          this->budget));
                 this->cursor.dispose();
                 return {};
             }
@@ -141,8 +137,8 @@ namespace syntax {
             if (this->cursor.size() > this->capacity) {
                 this->error = true;
                 this->tracebacks.emplace_back(
-                    Traceback::Type::Memory, memory::Location{},
-                    std::format("Expansion produced more than {} pending tokens", this->capacity));
+                        Traceback::Type::Memory, memory::Location{},
+                        std::format("Expansion produced more than {} pending tokens", this->capacity));
                 this->cursor.dispose();
                 return {};
             }
@@ -155,9 +151,9 @@ namespace syntax {
             // document's own `\newcommand{\set}` is its \set from there on.
             // Only a name or an active character means anything: a `!` a
             // document made active is a macro, and every other `!` a `!`.
-            const bool defined = token.symbol != none && slot < this->macros.size() && this->macros[slot] &&
-                                 (token.category == Catcodes::Category::Escape ||
-                                  token.category == Catcodes::Category::Active);
+            const bool defined =
+                    token.symbol != none && slot < this->macros.size() && this->macros[slot] &&
+                    (token.category == Catcodes::Category::Escape || token.category == Catcodes::Category::Active);
             if (defined && this->keeping && this->macros[slot]->robust) return this->cursor.advance();
 
             // A primitive: run it, and look again at whatever it left.
@@ -183,20 +179,15 @@ namespace syntax {
                     if (const std::size_t at = token.text.find('@', 2); at != std::string_view::npos) {
                         const Symbol name = this->lexicon.intern(token.text.substr(0, at));
                         if (this->known(name)) {
-                            std::vector<Token> split{
-                                Token{
-                                    name, Catcodes::Category::Escape, token.location,
-                                    this->lexicon.resolve(name)
-                                }
-                            };
+                            std::vector<Token> split{Token{name, Catcodes::Category::Escape, token.location,
+                                                           this->lexicon.resolve(name)}};
                             for (std::size_t index = at; index < token.text.size(); ++index) {
                                 const Symbol letter = this->lexicon.intern(token.text.substr(index, 1));
                                 const bool alphabetic =
                                         std::isalpha(static_cast<unsigned char>(token.text[index])) != 0;
                                 split.push_back(Token{
-                                    letter, alphabetic ? Catcodes::Category::Letter : Catcodes::Category::Other,
-                                    token.location, this->lexicon.resolve(letter)
-                                });
+                                        letter, alphabetic ? Catcodes::Category::Letter : Catcodes::Category::Other,
+                                        token.location, this->lexicon.resolve(letter)});
                             }
                             this->cursor.advance();
                             this->cursor.inject(split);
@@ -244,7 +235,7 @@ namespace syntax {
         // What the definition wrote before its first parameter is matched
         // and passed over; a call that does not match it is reported, and
         // read on as though it had.
-        for (const Token &expected: macro->prefix) {
+        for (const Token &expected : macro->prefix) {
             if (this->cursor.empty() || this->cursor.lookahead(0).text != expected.text) {
                 this->tracebacks.emplace_back(Traceback::Type::Argument, token.location,
                                               std::format("Use of {} does not match its definition", token.text));
@@ -253,16 +244,17 @@ namespace syntax {
             this->cursor.advance();
         }
 
-        std::vector<std::vector<Token> > arguments;
+        std::vector<std::vector<Token>> arguments;
         arguments.reserve(macro->parameters.size());
-        for (const auto &parameter: macro->parameters) {
+        for (const auto &parameter : macro->parameters) {
             arguments.push_back(this->argument(parameter, macro->spanning));
         }
 
         std::vector<Token> output;
         const auto &body = macro->body;
         std::size_t total = body.size();
-        for (const auto &item: arguments) total += item.size();
+        for (const auto &item : arguments)
+            total += item.size();
         output.reserve(total);
 
         for (std::size_t index = 0; index < body.size(); ++index) {
@@ -276,10 +268,8 @@ namespace syntax {
                     continue;
                 }
 
-                if (const auto &values = next.text;
-                    !values.empty() && values[0] >= '1' && values[0] <= '9') {
-                    if (const auto place = static_cast<std::size_t>(values[0] - '1');
-                        place < arguments.size()) {
+                if (const auto &values = next.text; !values.empty() && values[0] >= '1' && values[0] <= '9') {
+                    if (const auto place = static_cast<std::size_t>(values[0] - '1'); place < arguments.size()) {
                         output.insert(output.end(), arguments[place].begin(), arguments[place].end());
                     }
                     index++;
@@ -313,8 +303,8 @@ namespace syntax {
             if (const auto slot = static_cast<std::size_t>(token.symbol);
                 slot < this->macros.size() && this->macros[slot] && this->macros[slot]->isolated) {
                 this->tracebacks.emplace_back(
-                    Traceback::Type::Argument, token.location,
-                    std::format("\\outer macro {} may not appear inside an argument", token.text));
+                        Traceback::Type::Argument, token.location,
+                        std::format("\\outer macro {} may not appear inside an argument", token.text));
                 return true;
             }
             return false;
@@ -338,8 +328,10 @@ namespace syntax {
                 std::size_t scope = 1;
                 while (!this->cursor.empty() && scope > 0) {
                     Token token = this->cursor.advance();
-                    if (token.is('[')) scope++;
-                    else if (token.is(']')) scope--;
+                    if (token.is('['))
+                        scope++;
+                    else if (token.is(']'))
+                        scope--;
                     if (scope > 0) {
                         if (forbidden(token)) break;
                         result.push_back(token);
@@ -362,7 +354,7 @@ namespace syntax {
                 if (scope == 0) {
                     std::size_t offset = 0;
                     bool found = true;
-                    for (const Token &want: parameter.delimiters) {
+                    for (const Token &want : parameter.delimiters) {
                         if (want.category == Catcodes::Category::Space) {
                             while (offset < this->cursor.size() &&
                                    this->cursor.lookahead(offset).category == Catcodes::Category::Space) {
@@ -370,8 +362,7 @@ namespace syntax {
                             }
                             continue;
                         }
-                        if (offset >= this->cursor.size() ||
-                            this->cursor.lookahead(offset).symbol != want.symbol) {
+                        if (offset >= this->cursor.size() || this->cursor.lookahead(offset).symbol != want.symbol) {
                             found = false;
                             break;
                         }
@@ -379,7 +370,8 @@ namespace syntax {
                     }
                     if (found) {
                         matched = true;
-                        for (std::size_t count = 0; count < offset; ++count) this->cursor.advance();
+                        for (std::size_t count = 0; count < offset; ++count)
+                            this->cursor.advance();
                         break;
                     }
                 }
@@ -388,17 +380,19 @@ namespace syntax {
                 if (forbidden(token)) break;
 
                 if (token.category == Catcodes::Category::Group) {
-                    if (token.is('{')) scope++;
-                    else if (token.is('}') && scope > 0) scope--;
+                    if (token.is('{'))
+                        scope++;
+                    else if (token.is('}') && scope > 0)
+                        scope--;
                 }
                 result.push_back(token);
             }
 
             if (!matched) {
-                this->tracebacks.emplace_back(
-                    Traceback::Type::Delimiter,
-                    this->cursor.empty() ? memory::Location{} : this->cursor.lookahead(0).location,
-                    "A delimited argument ran out before its delimiter");
+                this->tracebacks.emplace_back(Traceback::Type::Delimiter,
+                                              this->cursor.empty() ? memory::Location{}
+                                                                   : this->cursor.lookahead(0).location,
+                                              "A delimited argument ran out before its delimiter");
             }
 
             // One layer of braces around the whole argument is TeX's way of
@@ -436,8 +430,10 @@ namespace syntax {
             while (!this->cursor.empty() && scope > 0) {
                 Token element = this->cursor.advance();
                 if (element.category == Catcodes::Category::Group) {
-                    if (element.is('{')) scope++;
-                    else if (element.is('}')) scope--;
+                    if (element.is('{'))
+                        scope++;
+                    else if (element.is('}'))
+                        scope--;
                 }
                 if (scope > 0) {
                     if (forbidden(element)) break;
@@ -478,8 +474,7 @@ namespace syntax {
             }
         }
 
-        this->tracebacks.insert(this->tracebacks.end(),
-                                lexer.traceback().begin(), lexer.traceback().end());
+        this->tracebacks.insert(this->tracebacks.end(), lexer.traceback().begin(), lexer.traceback().end());
         this->cursor.adopt(std::move(tokens));
     }
 
@@ -520,8 +515,8 @@ namespace syntax {
         const auto word = [&](std::string &name, std::size_t &at, std::uint32_t column) {
             const std::uint32_t line = unread[at].location.line;
             while (at + 1 < reach && follows(unread[at + 1], line, column) &&
-                   (unread[at + 1].category == Category::Letter || (
-                        category == Category::Letter && mine(unread[at + 1])))) {
+                   (unread[at + 1].category == Category::Letter ||
+                    (category == Category::Letter && mine(unread[at + 1])))) {
                 name += unread[++at].text;
                 ++column;
             }
@@ -561,40 +556,41 @@ namespace syntax {
             }
 
             switch (category) {
-                case Category::Ignore:
-                    break;
-                case Category::Comment: {
-                    const std::uint32_t line = token.location.line;
-                    while (at + 1 < reach && unread[at + 1].location.line == line) ++at;
-                    break;
+            case Category::Ignore:
+                break;
+            case Category::Comment: {
+                const std::uint32_t line = token.location.line;
+                while (at + 1 < reach && unread[at + 1].location.line == line)
+                    ++at;
+                break;
+            }
+            case Category::Escape: {
+                // `|textbf` a control word, `|{` a control symbol.
+                std::string name = "\\";
+                const Token *after = at + 1 < reach ? &unread[at + 1] : nullptr;
+                if (after && after->category == Category::Letter &&
+                    follows(*after, token.location.line, token.location.column + 1)) {
+                    word(name, at, token.location.column + 1);
+                } else if (after && after->text.size() == 1 && after->category != Category::Escape &&
+                           after->location.line == token.location.line) {
+                    name += unread[++at].text;
                 }
-                case Category::Escape: {
-                    // `|textbf` a control word, `|{` a control symbol.
-                    std::string name = "\\";
-                    const Token *after = at + 1 < reach ? &unread[at + 1] : nullptr;
-                    if (after && after->category == Category::Letter &&
-                        follows(*after, token.location.line, token.location.column + 1)) {
-                        word(name, at, token.location.column + 1);
-                    } else if (after && after->text.size() == 1 && after->category != Category::Escape &&
-                               after->location.line == token.location.line) {
-                        name += unread[++at].text;
-                    }
-                    token.symbol = this->lexicon.intern(name);
-                    token.text = this->lexicon.resolve(token.symbol);
-                    token.category = Category::Escape;
-                    result.push_back(token);
-                    break;
-                }
-                case Category::Space:
-                    token.symbol = this->lexicon.intern(" ");
-                    token.text = this->lexicon.resolve(token.symbol);
-                    token.category = Category::Space;
-                    result.push_back(token);
-                    break;
-                default:
-                    token.category = category;
-                    result.push_back(token);
-                    break;
+                token.symbol = this->lexicon.intern(name);
+                token.text = this->lexicon.resolve(token.symbol);
+                token.category = Category::Escape;
+                result.push_back(token);
+                break;
+            }
+            case Category::Space:
+                token.symbol = this->lexicon.intern(" ");
+                token.text = this->lexicon.resolve(token.symbol);
+                token.category = Category::Space;
+                result.push_back(token);
+                break;
+            default:
+                token.category = category;
+                result.push_back(token);
+                break;
             }
         }
         this->cursor.source(result);
@@ -650,7 +646,7 @@ namespace syntax {
         if (global) {
             this->levels[slot] = 0;
         } else if (const auto level = static_cast<std::uint32_t>(this->marks.size());
-            level != 0 && this->levels[slot] != level) {
+                   level != 0 && this->levels[slot] != level) {
             this->records.push_back(Record{symbol, this->macros[slot], this->levels[slot]});
             this->levels[slot] = level;
         }
@@ -665,7 +661,7 @@ namespace syntax {
         if (global) {
             this->levels[slot] = 0;
         } else if (const auto level = static_cast<std::uint32_t>(this->marks.size());
-            level != 0 && this->levels[slot] != level) {
+                   level != 0 && this->levels[slot] != level) {
             this->records.push_back(Record{symbol, this->macros[slot], this->levels[slot]});
             this->levels[slot] = level;
         }
@@ -673,9 +669,7 @@ namespace syntax {
         this->macros[slot] = nullptr;
     }
 
-    Token Mouth::lookahead(const std::size_t offset) const noexcept {
-        return this->cursor.lookahead(offset);
-    }
+    Token Mouth::lookahead(const std::size_t offset) const noexcept { return this->cursor.lookahead(offset); }
 
     const Mouth::Macro *Mouth::macro(const Symbol symbol) const noexcept {
         const auto slot = static_cast<std::size_t>(symbol);

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/arena.hpp"
 #include "render/graphics/color.hpp"
 #include "render/graphics/point.hpp"
 #include "render/graphics/projection.hpp"
-#include "memory/arena.hpp"
 #include "render/layout/node.hpp"
 
 #include <cstdint>
@@ -34,8 +34,7 @@ namespace render::graphics {
     public:
         /// @param width  The canvas's own width, in points.
         /// @param height The canvas's own height, in points.
-        Canvas(const float width, const float height) noexcept : size{width, height} {
-        }
+        Canvas(const float width, const float height) noexcept : size{width, height} {}
 
         /// @brief Draws a straight line between two points already in 2D.
         /// @param from, to Endpoints, in the canvas's own coordinates.
@@ -53,14 +52,8 @@ namespace render::graphics {
         /// @param width    Stroke width, in points.
         /// @param dashed   False for a solid stroke, true for a dashed one.
         /// @complexity O(1) amortized.
-        void line(
-            const Point3 &from,
-            const Point3 &to,
-            const Projection &view,
-            Color color = black,
-            float width = 1.0f,
-            bool dashed = false
-        );
+        void line(const Point3 &from, const Point3 &to, const Projection &view, Color color = black, float width = 1.0f,
+                  bool dashed = false);
 
         /// @brief Places a box of set material -- a TikZ node's text -- on
         ///        the canvas.
@@ -91,8 +84,8 @@ namespace render::graphics {
         /// @brief How much room a canvas takes where it is set.
         enum class Room : std::uint8_t {
             Declared, ///< Its declared size, whatever is drawn past it: a page overlay, pinned in place.
-            Grown, ///< Its declared size, grown to take in anything drawn past it: a picture in the text.
-            Drawn ///< Exactly what is drawn: a TikZ picture, which declares no size of its own.
+            Grown,    ///< Its declared size, grown to take in anything drawn past it: a picture in the text.
+            Drawn     ///< Exactly what is drawn: a TikZ picture, which declares no size of its own.
         };
 
         /// @brief Composes the box everything drawn so far sits inside.
@@ -120,7 +113,7 @@ namespace render::graphics {
         /// @brief One line, already in the canvas's own 2D space.
         struct Segment {
             Point2 from; ///< One end.
-            Point2 to; ///< The other.
+            Point2 to;   ///< The other.
             Color color; ///< Stroke color.
             float width; ///< Stroke width, in points.
             bool dashed; ///< Dashed rather than solid.
@@ -129,19 +122,19 @@ namespace render::graphics {
         /// @brief One box placed on the canvas: where its bottom left corner
         ///        lands, and the box.
         struct Label {
-            Point2 corner; ///< Bottom left of the box's ink area, in the canvas's coordinates.
+            Point2 corner;     ///< Bottom left of the box's ink area, in the canvas's coordinates.
             layout::Node *box; ///< What is set there.
         };
 
         /// @brief One region filled.
         struct Region {
             std::vector<Point2> corners; ///< Its outline, in order.
-            Color color; ///< Its fill.
+            Color color;                 ///< Its fill.
         };
 
-        Point2 size; ///< The declared size: its width across, its height up.
+        Point2 size;                     ///< The declared size: its width across, its height up.
         std::vector<Segment> segments{}; ///< Every line drawn, in order.
-        std::vector<Label> labels{}; ///< Every box placed, in order.
-        std::vector<Region> regions{}; ///< Every region filled, in order.
+        std::vector<Label> labels{};     ///< Every box placed, in order.
+        std::vector<Region> regions{};   ///< Every region filled, in order.
     };
 }

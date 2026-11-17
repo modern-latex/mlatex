@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -25,13 +25,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -55,7 +55,7 @@ static bool holds(const std::string_view text, const std::string_view part) {
 int main() {
     {
         const Result result = article("", "\\ldots\\ \\textbullet\\ \\S\\ \\dag\\ \\copyright\\ \\textregistered\\ "
-                                      "\\texttrademark\\ \\textdegree\\ \\texteuro\\ \\pounds");
+                                          "\\texttrademark\\ \\textdegree\\ \\texteuro\\ \\pounds");
         assert((result.clean && holds(result.text, "\xE2\x80\xA6\xE2\x80\xA2\xC2\xA7\xE2\x80\xA0\xC2\xA9\xC2\xAE")) &&
                "the text symbols");
     }
@@ -72,9 +72,8 @@ int main() {
     }
     {
         const Result result = article("", "\\TeX\\ and \\LaTeX");
-        assert(
-            (result.clean && holds(result.text, "TEXandLATEX")) &&
-            "the logos, copied as their letters, as pdfLaTeX's are");
+        assert((result.clean && holds(result.text, "TEXandLATEX")) &&
+               "the logos, copied as their letters, as pdfLaTeX's are");
     }
     {
         const Result result = article("", "\\% \\& \\# \\$ \\_ \\{ \\} \\textbackslash");

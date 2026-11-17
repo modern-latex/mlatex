@@ -34,7 +34,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
 
     std::string text;
     const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -42,7 +42,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter: text) {
+    for (const char letter : text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -52,8 +52,9 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
+    for (const auto &list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault : list)
+            errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
@@ -74,8 +75,8 @@ static void reports(const std::string_view document, const std::string_view need
     const auto [text, errors] = expand(document);
     if (errors.find(needle) == std::string::npos) {
         std::fprintf(stderr, "%s\n  document: %.*s\n  expected an error naming: %.*s\n  got: %s\n", what,
-                     static_cast<int>(document.size()), document.data(), static_cast<int>(needle.size()),
-                     needle.data(), errors.c_str());
+                     static_cast<int>(document.size()), document.data(), static_cast<int>(needle.size()), needle.data(),
+                     errors.c_str());
     }
     assert(errors.find(needle) != std::string::npos);
 }
@@ -91,17 +92,16 @@ int main() {
     sets("\\IfEq{1.0}{1}{equal}{unequal} \\IfEq{a}{a}{equal}{unequal}", "equal equal",
          "numbers compared as numbers, the rest as text");
     sets("\\IfInteger{-42}{whole}{not} \\IfInteger{4.2}{whole}{not}", "whole not", "whole numbers");
-    sets("\\IfDecimal{3,5}{number}{not} \\IfDecimal{3.5.1}{number}{not} \\IfDecimal{x}{number}{not}",
-         "number not not", "decimal numbers");
-    sets("\\define\\plan{gold}\\IfSubStr{\\plan}{old}{expanded}{as written}", "expanded",
-         "arguments expanded first");
+    sets("\\IfDecimal{3,5}{number}{not} \\IfDecimal{3.5.1}{number}{not} \\IfDecimal{x}{number}{not}", "number not not",
+         "decimal numbers");
+    sets("\\define\\plan{gold}\\IfSubStr{\\plan}{old}{expanded}{as written}", "expanded", "arguments expanded first");
 
     sets("\\StrLen{hello} \\StrLen{café} \\StrLen{}", "5 4 0", "lengths in characters");
     sets("\\StrLeft{hello}{2} \\StrRight{hello}{2} \\StrLeft{hi}{9}", "he lo hi", "characters off either end");
     sets("\\StrGobbleLeft{hello}{1} \\StrGobbleRight{hello}{2}", "ello hel", "characters let go");
     sets("\\StrMid{hello}{2}{4} \\StrChar{hello}{1} \\StrChar{héllo}{2}", "ell h é", "characters from the middle");
-    sets("\\StrBefore{2026-09-29}{-} \\StrBehind{2026-09-29}{-} \\StrBehind[2]{2026-09-29}{-}",
-         "2026 09-29 29", "before and behind a piece");
+    sets("\\StrBefore{2026-09-29}{-} \\StrBehind{2026-09-29}{-} \\StrBehind[2]{2026-09-29}{-}", "2026 09-29 29",
+         "before and behind a piece");
     sets("\\StrBefore{abc}{x}.", ".", "a piece that is not there leaves nothing");
     sets("\\StrBetween{<a><b>}{<}{>} \\StrBetween[2,1]{<a><b>}{<}{>}", "a b", "between two pieces");
     sets("\\StrSubstitute{a.b.c}{.}{,} \\StrSubstitute[1]{a.b.c}{.}{,}", "a,b,c a,b.c", "pieces replaced");

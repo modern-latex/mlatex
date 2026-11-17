@@ -65,19 +65,17 @@ namespace render::primitives::arrangement {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief A minipage opened and not yet read: how it hangs, and how wide.
         struct Opening {
             char position; ///< `c`, `t` or `b`.
-            float width; ///< In points.
+            float width;   ///< In points.
         };
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable std::vector<Opening> openings{}; ///< Minipages opened, innermost last.
+        mutable std::vector<Opening> openings{};             ///< Minipages opened, innermost last.
         mutable std::array<layout::Node *, syntax::semantics::Registers::slots> stored{}; ///< The box registers.
 
         /// `\\hbox`, `\\vbox`, `\\vtop` and `\\mbox`: what may follow `\\setbox`'s number.
@@ -85,15 +83,15 @@ namespace render::primitives::arrangement {
 
         /// @brief A framed block opened and not yet read: which, and its options.
         struct Frame {
-            std::string type; ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
+            std::string type;    ///< `framed`, `shaded`, `leftbar`, `mdframed` or `tcolorbox`.
             std::string options; ///< As written between its brackets.
-            float width; ///< The column inside, in points.
-            float rule; ///< The frame's thickness; none for a shaded block.
-            float room; ///< Between the frame and the column.
+            float width;         ///< The column inside, in points.
+            float rule;          ///< The frame's thickness; none for a shaded block.
+            float room;          ///< Between the frame and the column.
         };
 
-        mutable std::vector<Frame> frames{}; ///< Framed blocks opened, innermost last.
-        mutable std::string preset{}; ///< tcolorbox's options for every box, as \\tcbset gave them.
+        mutable std::vector<Frame> frames{};             ///< Framed blocks opened, innermost last.
+        mutable std::string preset{};                    ///< tcolorbox's options for every box, as \\tcbset gave them.
         mutable std::unordered_set<std::string> boxed{}; ///< The boxes \\newtcolorbox has named.
 
         /// @brief A beamer columns block open: where its columns hang unless
@@ -101,15 +99,15 @@ namespace render::primitives::arrangement {
         ///        is still open, its scope with it.
         struct Spread {
             char position; ///< `c`, `t` or `b`.
-            bool open; ///< A `\\column` is being read.
+            bool open;     ///< A `\\column` is being read.
         };
 
         mutable std::vector<Spread> spreads{}; ///< Columns blocks opened, innermost last.
 
         syntax::Symbol framing{}; ///< The mark a framed block's opening leaves.
-        syntax::Symbol framed{}; ///< The mark its end leaves.
+        syntax::Symbol framed{};  ///< The mark its end leaves.
 
-        syntax::Symbol start{}; ///< The mark a minipage's opening leaves; no document can write it.
+        syntax::Symbol start{};  ///< The mark a minipage's opening leaves; no document can write it.
         syntax::Symbol finish{}; ///< The mark its end leaves.
     };
 }

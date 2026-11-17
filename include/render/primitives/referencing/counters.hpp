@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <string>
 #include <string_view>
@@ -93,15 +93,13 @@ namespace render::primitives::referencing {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief One named counter.
         struct Counter {
-            int value{0}; ///< What it stands at.
-            std::string parent{}; ///< What it is numbered within, or empty.
+            int value{0};                        ///< What it stands at.
+            std::string parent{};                ///< What it is numbered within, or empty.
             std::vector<std::string> children{}; ///< What is numbered within it.
         };
 
@@ -122,6 +120,6 @@ namespace render::primitives::referencing {
         void reset(const std::string &name, int depth) const;
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable memory::Dictionary<Counter> counters{}; ///< Every counter, by name.
+        mutable memory::Dictionary<Counter> counters{};      ///< Every counter, by name.
     };
 }

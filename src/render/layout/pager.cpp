@@ -46,11 +46,11 @@ namespace render::layout {
             return;
         }
         if (node->type != Node::Type::Box) return;
-        for (const Node *child: node->box().list) collect(child, notes);
+        for (const Node *child : node->box().list)
+            collect(child, notes);
     }
 
-    Pager::Pager(memory::Arena &arena) noexcept : arena(arena) {
-    }
+    Pager::Pager(memory::Arena &arena) noexcept : arena(arena) {}
 
     memory::Slice<Pager::Page> Pager::paginate(const Node *head, const Context &context) const {
         if (!head || head->type != Node::Type::Box) return {};
@@ -78,13 +78,13 @@ namespace render::layout {
 
         /// @brief A float: what it sets, and where it may go.
         struct Float {
-            std::vector<Node *> blocks{}; ///< Its blocks, its own space above and below left off.
-            float span{0.0f}; ///< How tall they stand.
+            std::vector<Node *> blocks{};      ///< Its blocks, its own space above and below left off.
+            float span{0.0f};                  ///< How tall they stand.
             std::vector<const Node *> notes{}; ///< The footnotes it calls.
-            std::uint8_t place{0}; ///< Directive::Place bits.
-            std::size_t type{0}; ///< Its type, which keeps its order among its type.
-            bool across{false}; ///< Across the columns of a page of several.
-            std::size_t written{0}; ///< Where it came among all the floats.
+            std::uint8_t place{0};             ///< Directive::Place bits.
+            std::size_t type{0};               ///< Its type, which keeps its order among its type.
+            bool across{false};                ///< Across the columns of a page of several.
+            std::size_t written{0};            ///< Where it came among all the floats.
         };
 
         // Pages grow as they are made; a float that waits can add one.
@@ -100,7 +100,7 @@ namespace render::layout {
         // them already full and the tallest of those, which a footnote added
         // later must still leave room for, and the one being filled now.
         std::size_t count = std::max<std::size_t>(context.columns, 1);
-        std::vector<std::vector<Node *> > full;
+        std::vector<std::vector<Node *>> full;
         float tallest = 0.0f;
         std::vector<Node *> filling;
         float height = 0.0f;
@@ -112,7 +112,8 @@ namespace render::layout {
         float reserved = 0.0f;
         const auto room = [&context](const std::vector<const Node *> &added, const bool first) {
             float taken = 0.0f;
-            for (const Node *note: added) taken += Line::extent(note) + context.between;
+            for (const Node *note : added)
+                taken += Line::extent(note) + context.between;
             return taken + (first && !added.empty() ? context.separation : 0.0f);
         };
 
@@ -163,15 +164,16 @@ namespace render::layout {
         // after the first is dropped, as at a page's.
         const auto balance = [&](const std::vector<Node *> &blocks) {
             float tall = 0.0f;
-            for (const Node *block: blocks) tall += Line::extent(block);
+            for (const Node *block : blocks)
+                tall += Line::extent(block);
             tall /= static_cast<float>(count);
 
-            std::vector<std::vector<Node *> > set;
+            std::vector<std::vector<Node *>> set;
             while (true) {
                 set.assign(1, {});
                 float filled = 0.0f;
                 float least = std::numeric_limits<float>::infinity();
-                for (Node *block: blocks) {
+                for (Node *block : blocks) {
                     const float span = Line::extent(block);
                     if (!set.back().empty() && filled + span > tall + 0.01f) {
                         least = std::min(least, filled + span - tall);
@@ -202,9 +204,8 @@ namespace render::layout {
             if (!heads.empty() && !filling.empty()) set.push_back(kern(rules.clearance));
             set.insert(set.end(), filling.begin(), filling.end());
             if (!feet.empty() && !set.empty()) {
-                const float free = done
-                                       ? std::max(context.height - used - reserved - crown - height - sole, 0.0f)
-                                       : 0.0f;
+                const float free =
+                        done ? std::max(context.height - used - reserved - crown - height - sole, 0.0f) : 0.0f;
                 set.push_back(kern(rules.clearance + free));
             }
             for (std::size_t index = 0; index < feet.size(); ++index) {
@@ -213,7 +214,8 @@ namespace render::layout {
             }
             filling = std::move(set);
             height = 0.0f;
-            for (const Node *block: filling) height += Line::extent(block);
+            for (const Node *block : filling)
+                height += Line::extent(block);
             heads.clear();
             feet.clear();
             crown = 0.0f;
@@ -232,21 +234,21 @@ namespace render::layout {
                 above.insert(above.end(), filling.begin(), filling.end());
                 used += height;
             } else {
-                std::vector<std::vector<Node *> > set = std::move(full);
+                std::vector<std::vector<Node *>> set = std::move(full);
                 set.push_back(std::move(filling));
                 if (level) {
                     std::vector<Node *> blocks;
-                    for (const std::vector<Node *> &blocked: set) blocks.insert(
-                        blocks.end(), blocked.begin(), blocked.end());
+                    for (const std::vector<Node *> &blocked : set)
+                        blocks.insert(blocks.end(), blocked.begin(), blocked.end());
                     set = balance(blocks);
                 }
 
                 if (std::ranges::any_of(set, [](const std::vector<Node *> &blocked) { return !blocked.empty(); })) {
-                    const float share = (context.width - context.gap * static_cast<float>(count - 1)) /
-                                        static_cast<float>(count);
+                    const float share =
+                            (context.width - context.gap * static_cast<float>(count - 1)) / static_cast<float>(count);
                     const memory::Slice<Node *> row = arena.allocate<Node *>(set.size() * 2);
                     std::size_t placed = 0;
-                    for (std::vector<Node *> &blocked: set) {
+                    for (std::vector<Node *> &blocked : set) {
                         if (placed > 0) {
                             auto *gap = arena.compose<Node>(Node::Type::Kern);
                             gap->kern({.width = context.gap});
@@ -257,7 +259,7 @@ namespace render::layout {
                         shape.width = share;
                         box->box(shape);
                         row[placed++] = box;
-                        for (Node *block: blocked) {
+                        for (Node *block : blocked) {
                             if (block->type == Node::Type::Directive && block->directive().command == Command::Page) {
                                 above.push_back(block);
                             }
@@ -280,8 +282,8 @@ namespace render::layout {
             // changed, an anchor, between two breaks -- is no page, as TeX
             // ships none: its instructions go to the next.
             if (std::ranges::none_of(above, [&](const Node *block) {
-                return block->type != Node::Type::Directive && !space(block);
-            })) {
+                    return block->type != Node::Type::Directive && !space(block);
+                })) {
                 std::erase_if(above, space);
                 used = 0.0f;
                 return;
@@ -292,7 +294,7 @@ namespace render::layout {
                 // the highest order on it, as TeX sets a page's glue.
                 Node::Order order = Node::Order::Normal;
                 float weight = 0.0f;
-                for (const Node *block: above) {
+                for (const Node *block : above) {
                     if (block->type != Node::Type::Glue || block->glue().stretch <= 0.0f) continue;
                     if (block->glue().expand > order) {
                         order = block->glue().expand;
@@ -302,7 +304,7 @@ namespace render::layout {
                 }
                 if (order != Node::Order::Normal && weight > 0.0f) {
                     const float remaining = std::max(context.height - used - reserved, 0.0f);
-                    for (Node *&block: above) {
+                    for (Node *&block : above) {
                         if (block->type != Node::Type::Glue || block->glue().expand != order) continue;
                         Node::Glue grown = block->glue();
                         grown.width += remaining * grown.stretch / weight;
@@ -320,16 +322,15 @@ namespace render::layout {
                 // How short the page fell, cubed as line badness is, so a page
                 // left nearly empty is reported as far worse than a full one.
                 const float slack = std::max(context.height - used - reserved, 0.0f) / context.height;
-                pages.push_back(Page{
-                    .nodes = nodes,
-                    .notes = called,
-                    .height = used,
-                    .index = static_cast<std::int32_t>(pages.size()),
-                    .badness = static_cast<std::int32_t>(std::min(10000.0f, 100.0f * slack * slack * slack))
-                });
+                pages.push_back(
+                        Page{.nodes = nodes,
+                             .notes = called,
+                             .height = used,
+                             .index = static_cast<std::int32_t>(pages.size()),
+                             .badness = static_cast<std::int32_t>(std::min(10000.0f, 100.0f * slack * slack * slack))});
                 Logger::log(Logger::Type::Layout, Logger::Level::Debug,
-                            "Page {} holds {} blocks and {} notes, {} of {} points", pages.size() - 1,
-                            above.size(), notes.size(), used + reserved, context.height);
+                            "Page {} holds {} blocks and {} notes, {} of {} points", pages.size() - 1, above.size(),
+                            notes.size(), used + reserved, context.height);
             }
             above.clear();
             used = 0.0f;
@@ -348,7 +349,8 @@ namespace render::layout {
         // besides, and a part below.
         const auto alone = [&](const std::vector<Float> &set, const float tall) {
             float taken = 0.0f;
-            for (const Float &item: set) taken += item.span;
+            for (const Float &item : set)
+                taken += item.span;
             taken += leaf * static_cast<float>(set.size() - 1);
             const float part = std::max(tall - taken, 0.0f) / (2.0f * static_cast<float>(set.size()));
             std::vector<Node *> nodes;
@@ -373,8 +375,9 @@ namespace render::layout {
                 const Float &item = list[index];
                 if (std::ranges::contains(held, item.type) || before(other, item)) continue;
                 // When forced, set the first float even if it is taller than the page.
-                if (const float added = item.span + (taken.empty() ? 0.0f : leaf); ((forced || item.place & Directive::Alone) && filled + added <= tall) ||
-                                                                                   (forced && taken.empty())) {
+                if (const float added = item.span + (taken.empty() ? 0.0f : leaf);
+                    ((forced || item.place & Directive::Alone) && filled + added <= tall) ||
+                    (forced && taken.empty())) {
                     taken.push_back(index);
                     filled += added;
                 } else {
@@ -394,11 +397,14 @@ namespace render::layout {
                 if (taken.empty() || (!forced && filled < rules.sheet * context.height)) break;
                 if (!above.empty()) seal();
                 std::vector<Float> set;
-                for (const std::size_t index: taken) set.push_back(std::move(spanning[index]));
-                for (const std::size_t index: std::views::reverse(taken)) spanning.erase(
-                    spanning.begin() + static_cast<std::deque<Float>::difference_type>(index));
-                for (Node *node: alone(set, context.height)) above.push_back(node);
-                for (const Float &item: set) call(item);
+                for (const std::size_t index : taken)
+                    set.push_back(std::move(spanning[index]));
+                for (const std::size_t index : std::views::reverse(taken))
+                    spanning.erase(spanning.begin() + static_cast<std::deque<Float>::difference_type>(index));
+                for (Node *node : alone(set, context.height))
+                    above.push_back(node);
+                for (const Float &item : set)
+                    call(item);
                 used = context.height;
                 seal();
             }
@@ -506,20 +512,23 @@ namespace render::layout {
         // On to the next column: beside this one while the page has room
         // for another, or at the head of the next page -- and the column
         // opens with the floats that waited for it.
-        std::function < void(bool) > turn;
+        std::function<void(bool)> turn;
         const std::function<void(bool)> settle = [&](const bool forced) {
             // A column of floats alone, when those waiting fill enough of it
             // -- \\floatpagefraction -- or the break is forced.
             if (!waiting.empty() && filling.empty() && heads.empty() && feet.empty()) {
                 const float tall = context.height - used - reserved;
-                if (const auto [taken, filled] = fitting(waiting, spanning, tall, forced); !taken.empty() && (forced || filled >= rules.page * tall)) {
+                if (const auto [taken, filled] = fitting(waiting, spanning, tall, forced);
+                    !taken.empty() && (forced || filled >= rules.page * tall)) {
                     std::vector<Float> set;
-                    for (const std::size_t index: taken) set.push_back(std::move(waiting[index]));
-                    for (const std::size_t index: std::views::reverse(taken)) waiting.erase(
-                        waiting.begin() + static_cast<std::deque<Float>::difference_type>(index));
+                    for (const std::size_t index : taken)
+                        set.push_back(std::move(waiting[index]));
+                    for (const std::size_t index : std::views::reverse(taken))
+                        waiting.erase(waiting.begin() + static_cast<std::deque<Float>::difference_type>(index));
                     filling = alone(set, tall);
                     height = tall;
-                    for (const Float &item: set) call(item);
+                    for (const Float &item : set)
+                        call(item);
                     turn(forced);
                     return;
                 }

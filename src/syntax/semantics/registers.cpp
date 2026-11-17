@@ -22,7 +22,7 @@ namespace syntax::semantics {
         if (global) {
             levels[bank][slot] = 0;
         } else if (const auto depth = static_cast<std::uint32_t>(marks.size());
-            depth != 0 && levels[bank][slot] != depth) {
+                   depth != 0 && levels[bank][slot] != depth) {
             records.push_back(Record{type, static_cast<std::uint8_t>(slot), values[bank][slot], levels[bank][slot]});
             levels[bank][slot] = depth;
         }
@@ -33,9 +33,9 @@ namespace syntax::semantics {
                          const bool character) {
         if (slot && *slot >= slots) return;
         if (symbol >= names.size()) names.resize(symbol + 1);
-        names[symbol] = slot
-                            ? Name{type, static_cast<std::uint8_t>(*slot), static_cast<std::uint8_t>(character ? 3 : 2)}
-                            : Name{type, 0, 1};
+        names[symbol] =
+                slot ? Name{type, static_cast<std::uint8_t>(*slot), static_cast<std::uint8_t>(character ? 3 : 2)}
+                     : Name{type, 0, 1};
     }
 
     std::optional<Registers::Type> Registers::bank(const Symbol symbol) const noexcept {

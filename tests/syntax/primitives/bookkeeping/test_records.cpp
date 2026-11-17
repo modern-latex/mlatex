@@ -4,8 +4,8 @@
 #include "syntax/mouth.hpp"
 #include "syntax/node.hpp"
 #include "syntax/parser.hpp"
-#include "syntax/primitives/context.hpp"
 #include "syntax/primitives/bookkeeping/records.hpp"
+#include "syntax/primitives/context.hpp"
 #include "syntax/primitives/wrapper.hpp"
 #include "syntax/semantics/union.hpp"
 
@@ -41,7 +41,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
 
     std::string text;
     const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -49,7 +49,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter: text) {
+    for (const char letter : text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -59,8 +59,9 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
+    for (const auto &list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault : list)
+            errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
@@ -81,8 +82,8 @@ static void reports(const std::string_view document, const std::string_view need
     const auto [text, errors] = expand(document);
     if (errors.find(needle) == std::string::npos) {
         std::fprintf(stderr, "%s\n  document: %.*s\n  expected an error naming: %.*s\n  got: %s\n", what,
-                     static_cast<int>(document.size()), document.data(), static_cast<int>(needle.size()),
-                     needle.data(), errors.c_str());
+                     static_cast<int>(document.size()), document.data(), static_cast<int>(needle.size()), needle.data(),
+                     errors.c_str());
     }
     assert(errors.find(needle) != std::string::npos);
 }
@@ -112,8 +113,7 @@ int main() {
     sets("\\DTLloaddb{p}{prices.csv}\\DTLsort{Price=descending}{p}\\DTLforeach{p}{\\i=Item}{\\i;}",
          "Cake, lemon;Tea;Scone;", "rows ordered by a column of numbers");
     sets("\\DTLloaddb{p}{prices.csv}\\DTLsumcolumn{p}{Price}{\\t}\\DTLmeanforcolumn{p}{Price}{\\m}(\\t) (\\m)",
-         "(6.5) (2.1666666666666665)",
-         "a column's total and its mean");
+         "(6.5) (2.1666666666666665)", "a column's total and its mean");
     sets("\\DTLnewdb{e}\\DTLifdbexists{e}{yes}{no} \\DTLifdbexists{f}{yes}{no}", "yes no", "whether a database exists");
     reports("\\DTLrowcount{none}", "No database named 'none'", "a database never made");
     return 0;

@@ -3,19 +3,19 @@
 ///        `\\name`, `\\the`, TeX's allocation and naming of registers, token
 ///        registers, e-TeX's expressions, `\\romannumeral` and `\\catcode`.
 #include "syntax/primitives/arithmetic/registers.hpp"
-#include "syntax/number.hpp"
-#include "syntax/semantics/union.hpp"
 #include "logger.hpp"
 #include "patch.hpp"
+#include "syntax/number.hpp"
+#include "syntax/semantics/union.hpp"
 
 #include <algorithm>
 #include <array>
 #include <charconv>
 #include <ctime>
 #include <format>
+#include <span>
 #include <string>
 #include <string_view>
-#include <span>
 #include <utility>
 
 namespace syntax::primitives::arithmetic {
@@ -41,8 +41,7 @@ namespace syntax::primitives::arithmetic {
     std::optional<semantics::Registers::Target> Registers::slot(Mouth &mouth, const Context &context) const {
         const auto [symbol, category, location, text] = mouth.read();
         if (category != Catcodes::Category::Escape) {
-            tracebacks.emplace_back(Traceback::Type::Register, location,
-                                    "expected a register reference");
+            tracebacks.emplace_back(Traceback::Type::Register, location, "expected a register reference");
             return std::nullopt;
         }
 
@@ -53,22 +52,20 @@ namespace syntax::primitives::arithmetic {
 
         const auto type = context.registers.bank(symbol);
         if (!type) {
-            tracebacks.emplace_back(Traceback::Type::Register, location,
-                                    std::format("{} is not a register", text));
+            tracebacks.emplace_back(Traceback::Type::Register, location, std::format("{} is not a register", text));
             return std::nullopt;
         }
 
         const auto index = Number::integer(mouth, context.registers);
         if (!index || *index < 0 || std::cmp_greater_equal(*index, semantics::Registers::slots)) {
-            tracebacks.emplace_back(Traceback::Type::Register, location,
-                                    std::format("{} needs a slot number between 0 and {}",
-                                                text, semantics::Registers::slots - 1));
+            tracebacks.emplace_back(
+                    Traceback::Type::Register, location,
+                    std::format("{} needs a slot number between 0 and {}", text, semantics::Registers::slots - 1));
             return std::nullopt;
         }
 
         return semantics::Registers::Target{
-            .type = *type, .slot = static_cast<std::size_t>(*index), .character = false
-        };
+                .type = *type, .slot = static_cast<std::size_t>(*index), .character = false};
     }
 
     void Registers::operator()(Mouth &mouth, Context &context) const {
@@ -102,14 +99,12 @@ namespace syntax::primitives::arithmetic {
 #else
             localtime_r(&now, &local);
 #endif
-            const std::array<std::pair<std::string_view, std::int32_t>, 4> date{
-                {
+            const std::array<std::pair<std::string_view, std::int32_t>, 4> date{{
                     {"\\time", local.tm_hour * 60 + local.tm_min},
                     {"\\year", local.tm_year + 1900},
                     {"\\month", local.tm_mon + 1},
                     {"\\day", local.tm_mday},
-                }
-            };
+            }};
             for (std::size_t index = 0; index < date.size(); ++index) {
                 const std::size_t slot = semantics::Registers::slots - date.size() + index;
                 context.registers.set(Type::Count, slot, date[index].second, true);
@@ -133,8 +128,7 @@ namespace syntax::primitives::arithmetic {
                 type == Type::Glue && held && held->type == Type::Glue) {
                 for (std::size_t part = 0; part < flex.size(); ++part) {
                     flex[part] = context.registers.get(
-                        static_cast<Type>(static_cast<std::size_t>(Type::Stretch) + part),
-                        held->slot);
+                            static_cast<Type>(static_cast<std::size_t>(Type::Stretch) + part), held->slot);
                 }
             }
             const auto natural = Number::dimension(mouth, context.registers);
@@ -145,19 +139,23 @@ namespace syntax::primitives::arithmetic {
             if (type == Type::Glue) {
                 for (std::size_t part = 0; part < 2; ++part) {
                     const std::string_view keyword = part == 0 ? "plus" : "minus";
-                    while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
+                    while (mouth.lookahead().category == Catcodes::Category::Space)
+                        mouth.read();
                     std::size_t matched = 0;
-                    while (matched < keyword.size() && mouth.lookahead(matched).is(keyword[matched])) ++matched;
+                    while (matched < keyword.size() && mouth.lookahead(matched).is(keyword[matched]))
+                        ++matched;
                     if (matched != keyword.size()) continue;
-                    for (std::size_t index = 0; index < matched; ++index) mouth.read();
-                    while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
+                    for (std::size_t index = 0; index < matched; ++index)
+                        mouth.read();
+                    while (mouth.lookahead().category == Catcodes::Category::Space)
+                        mouth.read();
 
                     std::vector<Token> read;
                     std::string amount;
-                    for (Token next = mouth.lookahead(); next.text.size() == 1 &&
-                                                         (next.category == Catcodes::Category::Letter ||
-                                                          (next.text[0] >= '0' && next.text[0] <= '9') ||
-                                                          next.is('.') || next.is(',') || next.is('-'));
+                    for (Token next = mouth.lookahead();
+                         next.text.size() == 1 &&
+                         (next.category == Catcodes::Category::Letter || (next.text[0] >= '0' && next.text[0] <= '9') ||
+                          next.is('.') || next.is(',') || next.is('-'));
                          next = mouth.lookahead()) {
                         read.push_back(mouth.read());
                         amount += next.text;
@@ -171,8 +169,8 @@ namespace syntax::primitives::arithmetic {
                     }
                     double weight = 1.0;
                     if (infinite > 0) patch::decimal(amount.data(), amount.data() + infinite, weight);
-                    const auto order = static_cast<std::int32_t>(std::min<
-                        std::size_t>(amount.size() - infinite - 2, 3));
+                    const auto order =
+                            static_cast<std::int32_t>(std::min<std::size_t>(amount.size() - infinite - 2, 3));
                     flex[part] = static_cast<std::int32_t>(weight * 65536.0);
                     flex[2] = part == 0 ? (flex[2] & ~3) | order : (flex[2] & 3) | order << 2;
                 }
@@ -229,7 +227,8 @@ namespace syntax::primitives::arithmetic {
             Cursor stream(std::move(written));
             bool sound = true;
             const auto blanks = [&stream] {
-                while (!stream.empty() && stream.lookahead().category == Catcodes::Category::Space) stream.advance();
+                while (!stream.empty() && stream.lookahead().category == Catcodes::Category::Space)
+                    stream.advance();
             };
             // A sum of terms, a term a product of factors, a factor a signed
             // quantity or a bracketed sum. A length times or over a number
@@ -251,9 +250,8 @@ namespace syntax::primitives::arithmetic {
                     if (stream.lookahead().is('(')) {
                         stream.advance();
                         value = self(measured, true);
-                    } else if (const auto scanned = measured
-                                                        ? Number::dimension(stream, context.registers)
-                                                        : Number::integer(stream, context.registers)) {
+                    } else if (const auto scanned = measured ? Number::dimension(stream, context.registers)
+                                                             : Number::integer(stream, context.registers)) {
                         value = *scanned;
                     } else {
                         sound = false;
@@ -270,8 +268,8 @@ namespace syntax::primitives::arithmetic {
                         const std::int64_t amount = factor(false);
                         if (times) {
                             const double product = static_cast<double>(value) * static_cast<double>(amount);
-                            value = static_cast<std::int64_t>(std::clamp(product, -static_cast<double>(limit),
-                                                                         static_cast<double>(limit)));
+                            value = static_cast<std::int64_t>(
+                                    std::clamp(product, -static_cast<double>(limit), static_cast<double>(limit)));
                         } else if (amount != 0) {
                             // Rounded half away from zero, as e-TeX divides.
                             const std::int64_t half = (value < 0) == (amount < 0) ? amount : -amount;
@@ -296,14 +294,13 @@ namespace syntax::primitives::arithmetic {
             blanks();
             if (!sound || !stream.empty()) {
                 tracebacks.emplace_back(Traceback::Type::Syntax, mouth.lookahead().location,
-                                        dimensional
-                                            ? "\\dimexpr could not read its expression"
-                                            : "\\numexpr could not read its expression");
+                                        dimensional ? "\\dimexpr could not read its expression"
+                                                    : "\\numexpr could not read its expression");
             }
             return static_cast<std::int32_t>(std::clamp<std::int64_t>(value, -2147483647, 2147483647));
         };
 
-        for (const bool dimensional: {false, true}) {
+        for (const bool dimensional : {false, true}) {
             mouth.bind(dimensional ? "\\dimexpr" : "\\numexpr", [calculate, dimensional](Mouth &mouth) {
                 const std::int32_t value = calculate(mouth, dimensional).value_or(0);
                 mouth.ingest(mouth.arena.copy(dimensional ? std::format("{}sp ", value) : std::format("{} ", value)));
@@ -320,7 +317,8 @@ namespace syntax::primitives::arithmetic {
         // own from 240. The name is written bare or, as LaTeX writes it, braced.
         const auto named = [this](Mouth &mouth, const std::string_view primitive) -> Token {
             Token name = mouth.read();
-            while (name.category == Catcodes::Category::Space) name = mouth.read();
+            while (name.category == Catcodes::Category::Space)
+                name = mouth.read();
             if (name.is(Catcodes::Category::Group, '{')) {
                 name = mouth.read();
                 if (!mouth.read().is(Catcodes::Category::Group, '}')) name = {};
@@ -337,8 +335,7 @@ namespace syntax::primitives::arithmetic {
             if (next >= semantics::Registers::reserved) {
                 tracebacks.emplace_back(Traceback::Type::Register, name.location,
                                         std::format("No {} register is left for {}",
-                                                    type == Type::Count ? "integer" : "length",
-                                                    name.text));
+                                                    type == Type::Count ? "integer" : "length", name.text));
                 return std::nullopt;
             }
             context.registers.set(type, next, 0, true);
@@ -346,11 +343,10 @@ namespace syntax::primitives::arithmetic {
             return next++;
         };
 
-        for (const auto &[primitive, type]: {
-                 std::pair{"\\newcount", Type::Count}, std::pair{"\\newdimen", Type::Dimension},
-                 std::pair{"\\newlength", Type::Dimension}, std::pair{"\\newskip", Type::Glue},
-                 std::pair{"\\newmuskip", Type::Glue}
-             }) {
+        for (const auto &[primitive, type] :
+             {std::pair{"\\newcount", Type::Count}, std::pair{"\\newdimen", Type::Dimension},
+              std::pair{"\\newlength", Type::Dimension}, std::pair{"\\newskip", Type::Glue},
+              std::pair{"\\newmuskip", Type::Glue}}) {
             mouth.bind(primitive, [named, allocate, primitive, type](Mouth &mouth) {
                 if (const Token name = named(mouth, primitive); !name.empty()) static_cast<void>(allocate(name, type));
             });
@@ -360,7 +356,7 @@ namespace syntax::primitives::arithmetic {
         // register of its own so it reads as the number anywhere one is read
         // -- and \chardef's, written where text is, as its character, as
         // TeX's: `\chardef\x=65 \x` is an A.
-        for (const std::string_view primitive: {"\\chardef", "\\mathchardef"}) {
+        for (const std::string_view primitive : {"\\chardef", "\\mathchardef"}) {
             mouth.bind(primitive, [&context, named, allocate, primitive](Mouth &mouth) {
                 const Token name = named(mouth, primitive);
                 if (name.empty()) return;
@@ -375,10 +371,9 @@ namespace syntax::primitives::arithmetic {
 
         // \countdef, \dimendef and \skipdef: a name for a register a document
         // numbers itself -- `\countdef\tally=5`.
-        for (const auto &[primitive, type]: {
-                 std::pair{"\\countdef", Type::Count}, std::pair{"\\dimendef", Type::Dimension},
-                 std::pair{"\\skipdef", Type::Glue}
-             }) {
+        for (const auto &[primitive, type] :
+             {std::pair{"\\countdef", Type::Count}, std::pair{"\\dimendef", Type::Dimension},
+              std::pair{"\\skipdef", Type::Glue}}) {
             mouth.bind(primitive, [this, &context, named, primitive, type](Mouth &mouth) {
                 const Token name = named(mouth, primitive);
                 if (name.empty()) return;
@@ -409,12 +404,13 @@ namespace syntax::primitives::arithmetic {
         // itself the assignment, as it is in TeX.
         const auto store = [this](Mouth &mouth, const std::size_t slot) {
             skip(mouth, "=");
-            while (mouth.lookahead().category == Catcodes::Category::Space) mouth.read();
+            while (mouth.lookahead().category == Catcodes::Category::Space)
+                mouth.read();
             lists[slot] = mouth.argument({}, 1);
         };
         const auto list = [this, store](Mouth &mouth, const Token &name, const std::size_t slot) {
-            if (name.symbol >= listed.size()) listed.resize(std::max<std::size_t>(name.symbol + 1, listed.size() * 2),
-                                                            0);
+            if (name.symbol >= listed.size())
+                listed.resize(std::max<std::size_t>(name.symbol + 1, listed.size() * 2), 0);
             listed[name.symbol] = static_cast<std::uint16_t>(slot + 1);
             mouth.bind(name.symbol, [store, slot](Mouth &mouth) { store(mouth, slot); });
         };
@@ -451,42 +447,47 @@ namespace syntax::primitives::arithmetic {
         // back as the command that prints it.
         mouth.bind("\\char", [&context](Mouth &mouth) {
             const auto point = static_cast<std::uint32_t>(
-                std::clamp(Number::integer(mouth, context.registers).value_or(0), 0, 0x10FFFF));
+                    std::clamp(Number::integer(mouth, context.registers).value_or(0), 0, 0x10FFFF));
             std::string written;
             switch (point) {
-                case '\\': written = "\\textbackslash ";
-                    break;
-                case '{': written = "\\{";
-                    break;
-                case '}': written = "\\}";
-                    break;
-                case '^': written = "\\textasciicircum ";
-                    break;
-                case '~': written = "\\textasciitilde ";
-                    break;
-                case '#':
-                case '$':
-                case '%':
-                case '&':
-                case '_':
-                    written = {'\\', static_cast<char>(point)};
-                    break;
-                default:
-                    if (point < 0x80) {
-                        written += static_cast<char>(point);
-                    } else if (point < 0x800) {
-                        written += static_cast<char>(0xC0 | (point >> 6));
-                        written += static_cast<char>(0x80 | (point & 0x3F));
-                    } else if (point < 0x10000) {
-                        written += static_cast<char>(0xE0 | (point >> 12));
-                        written += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
-                        written += static_cast<char>(0x80 | (point & 0x3F));
-                    } else {
-                        written += static_cast<char>(0xF0 | (point >> 18));
-                        written += static_cast<char>(0x80 | ((point >> 12) & 0x3F));
-                        written += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
-                        written += static_cast<char>(0x80 | (point & 0x3F));
-                    }
+            case '\\':
+                written = "\\textbackslash ";
+                break;
+            case '{':
+                written = "\\{";
+                break;
+            case '}':
+                written = "\\}";
+                break;
+            case '^':
+                written = "\\textasciicircum ";
+                break;
+            case '~':
+                written = "\\textasciitilde ";
+                break;
+            case '#':
+            case '$':
+            case '%':
+            case '&':
+            case '_':
+                written = {'\\', static_cast<char>(point)};
+                break;
+            default:
+                if (point < 0x80) {
+                    written += static_cast<char>(point);
+                } else if (point < 0x800) {
+                    written += static_cast<char>(0xC0 | (point >> 6));
+                    written += static_cast<char>(0x80 | (point & 0x3F));
+                } else if (point < 0x10000) {
+                    written += static_cast<char>(0xE0 | (point >> 12));
+                    written += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
+                    written += static_cast<char>(0x80 | (point & 0x3F));
+                } else {
+                    written += static_cast<char>(0xF0 | (point >> 18));
+                    written += static_cast<char>(0x80 | ((point >> 12) & 0x3F));
+                    written += static_cast<char>(0x80 | ((point >> 6) & 0x3F));
+                    written += static_cast<char>(0x80 | (point & 0x3F));
+                }
             }
             if (point != 0) mouth.ingest(mouth.arena.copy(written));
         });
@@ -496,15 +497,25 @@ namespace syntax::primitives::arithmetic {
         // macros use it to expand what follows it and leave nothing behind.
         mouth.bind("\\romannumeral", [&context](Mouth &mouth) {
             std::int32_t value = Number::integer(mouth, context.registers).value_or(0);
-            static constexpr std::array<std::pair<std::int32_t, std::string_view>, 13> numerals{
-                {
-                    {1000, "m"}, {900, "cm"}, {500, "d"}, {400, "cd"}, {100, "c"}, {90, "xc"}, {50, "l"},
-                    {40, "xl"}, {10, "x"}, {9, "ix"}, {5, "v"}, {4, "iv"}, {1, "i"},
-                }
-            };
+            static constexpr std::array<std::pair<std::int32_t, std::string_view>, 13> numerals{{
+                    {1000, "m"},
+                    {900, "cm"},
+                    {500, "d"},
+                    {400, "cd"},
+                    {100, "c"},
+                    {90, "xc"},
+                    {50, "l"},
+                    {40, "xl"},
+                    {10, "x"},
+                    {9, "ix"},
+                    {5, "v"},
+                    {4, "iv"},
+                    {1, "i"},
+            }};
             std::string written;
-            for (const auto &[amount, letters]: numerals) {
-                for (; value >= amount; value -= amount) written += letters;
+            for (const auto &[amount, letters] : numerals) {
+                for (; value >= amount; value -= amount)
+                    written += letters;
             }
             if (!written.empty()) mouth.ingest(mouth.arena.copy(written));
         });
@@ -525,12 +536,12 @@ namespace syntax::primitives::arithmetic {
             // TeX's numbering, onto the lexer's categories: 9 is ignored, 14 a
             // comment, 15 invalid.
             static constexpr std::array<Catcodes::Category, 16> categories{
-                Catcodes::Category::Escape, Catcodes::Category::Group, Catcodes::Category::Group,
-                Catcodes::Category::Shift, Catcodes::Category::Align, Catcodes::Category::Space,
-                Catcodes::Category::Parameter, Catcodes::Category::Mark, Catcodes::Category::Index,
-                Catcodes::Category::Ignore, Catcodes::Category::Space, Catcodes::Category::Letter,
-                Catcodes::Category::Other, Catcodes::Category::Active, Catcodes::Category::Comment,
-                Catcodes::Category::Invalid,
+                    Catcodes::Category::Escape,    Catcodes::Category::Group,  Catcodes::Category::Group,
+                    Catcodes::Category::Shift,     Catcodes::Category::Align,  Catcodes::Category::Space,
+                    Catcodes::Category::Parameter, Catcodes::Category::Mark,   Catcodes::Category::Index,
+                    Catcodes::Category::Ignore,    Catcodes::Category::Space,  Catcodes::Category::Letter,
+                    Catcodes::Category::Other,     Catcodes::Category::Active, Catcodes::Category::Comment,
+                    Catcodes::Category::Invalid,
             };
             const bool global = std::exchange(context.global, false);
             const Catcodes::Category chosen = categories[static_cast<std::size_t>(*category)];
@@ -538,7 +549,7 @@ namespace syntax::primitives::arithmetic {
             // What the document has not yet been read of is read the new way.
             mouth.recategorize(static_cast<char>(*code), chosen, global);
         });
-        for (const std::string_view primitive: {"\\lccode", "\\uccode", "\\sfcode", "\\mathcode", "\\delcode"}) {
+        for (const std::string_view primitive : {"\\lccode", "\\uccode", "\\sfcode", "\\mathcode", "\\delcode"}) {
             mouth.bind(primitive, [&context](Mouth &mouth) {
                 static_cast<void>(Number::integer(mouth, context.registers));
                 skip(mouth, "=");
@@ -581,8 +592,7 @@ namespace syntax::primitives::arithmetic {
                 mouth.read();
                 held = calculate(mouth, lead.symbol == dimexpr).value_or(0);
                 target = semantics::Registers::Target{
-                    .type = lead.symbol == dimexpr ? Type::Dimension : Type::Count, .slot = 0, .character = false
-                };
+                        .type = lead.symbol == dimexpr ? Type::Dimension : Type::Count, .slot = 0, .character = false};
             } else {
                 target = slot(mouth, context);
                 if (!target) return;
@@ -620,7 +630,7 @@ namespace syntax::primitives::arithmetic {
                 const std::int32_t orders = context.registers.get(Type::Order, target->slot);
                 for (std::size_t part = 0; part < 2; ++part) {
                     const std::int32_t side = context.registers.get(
-                        static_cast<Type>(static_cast<std::size_t>(Type::Stretch) + part), target->slot);
+                            static_cast<Type>(static_cast<std::size_t>(Type::Stretch) + part), target->slot);
                     if (side == 0) continue;
                     text += part == 0 ? " plus " : " minus ";
                     print(side, units[static_cast<std::size_t>((orders >> (part * 2)) & 3)]);
@@ -636,8 +646,7 @@ namespace syntax::primitives::arithmetic {
             skip(mouth, "=");
             const auto scanned = quantity(mouth, target->type);
             if (!scanned) {
-                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
-                                        "\\set needs a value");
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location, "\\set needs a value");
                 return;
             }
 
@@ -666,34 +675,33 @@ namespace syntax::primitives::arithmetic {
             // length; multiplied or divided, it takes a whole number, as
             // TeX's \multiply and \divide do whatever the register is.
             skip(mouth, "by");
-            const auto scanned = operation == '+'
-                                     ? quantity(mouth, target->type)
-                                     : Number::integer(mouth, context.registers);
+            const auto scanned =
+                    operation == '+' ? quantity(mouth, target->type) : Number::integer(mouth, context.registers);
             if (!scanned) {
-                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
-                                        "expected an amount");
+                tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location, "expected an amount");
                 return;
             }
 
-            const auto current = static_cast<std::int64_t>(
-                context.registers.get(target->type, target->slot));
+            const auto current = static_cast<std::int64_t>(context.registers.get(target->type, target->slot));
             const auto amount = static_cast<std::int64_t>(*scanned);
 
             std::int64_t result = current;
             switch (operation) {
-                case '+': result = current + amount;
-                    break;
-                case '*': result = current * amount;
-                    break;
-                case '/':
-                    if (amount == 0) {
-                        tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location,
-                                                "\\reduce by zero");
-                        return;
-                    }
-                    result = current / amount;
-                    break;
-                default: break;
+            case '+':
+                result = current + amount;
+                break;
+            case '*':
+                result = current * amount;
+                break;
+            case '/':
+                if (amount == 0) {
+                    tracebacks.emplace_back(Traceback::Type::Register, mouth.lookahead().location, "\\reduce by zero");
+                    return;
+                }
+                result = current / amount;
+                break;
+            default:
+                break;
             }
 
             constexpr std::int64_t ceiling = 2147483647;
@@ -746,8 +754,7 @@ namespace syntax::primitives::arithmetic {
         mouth.bind("\\name", [this, &context, &mouth](Mouth &) {
             const Token alias = mouth.read();
             if (alias.category != Catcodes::Category::Escape) {
-                tracebacks.emplace_back(Traceback::Type::Register, alias.location,
-                                        "\\name needs a control sequence");
+                tracebacks.emplace_back(Traceback::Type::Register, alias.location, "\\name needs a control sequence");
                 return;
             }
 

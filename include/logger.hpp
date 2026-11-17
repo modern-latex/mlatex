@@ -30,14 +30,7 @@ public:
         All = 0x3Fu
     };
 
-    enum class Level : std::uint8_t {
-        Traceback = 0,
-        Debug = 1,
-        Informative = 2,
-        Warning = 3,
-        Error = 4,
-        Silent = 5
-    };
+    enum class Level : std::uint8_t { Traceback = 0, Debug = 1, Informative = 2, Warning = 3, Error = 4, Silent = 5 };
 
     /// @brief The least severe level this build keeps at all.
     ///
@@ -46,11 +39,11 @@ public:
     /// constant at every call site, an optimiser that inlines log() drops the
     /// call outright. `--debug` and `--trace` therefore report only from a
     /// debug build, which is the only build anyone reads them in. A release
-    /// build is told by NDEBUG, or by LATEX_RELEASE, which the build gives
+    /// build is told by NDEBUG, or by MLATEX_RELEASE, which the build gives
     /// everything linked against a release engine -- the tests among them,
     /// which undefine NDEBUG for their asserts -- so every part of one
     /// program keeps the same floor.
-#if defined(NDEBUG) || defined(LATEX_RELEASE)
+#if defined(NDEBUG) || defined(MLATEX_RELEASE)
     static constexpr Level floor = Level::Informative;
 #else
     static constexpr Level floor = Level::Traceback;
@@ -98,18 +91,16 @@ public:
     /// against its arguments when the engine is compiled, exactly as
     /// std::format checks one -- and remembering the call's own place, which
     /// a report copied to a file names for a warning or an error.
-    template<typename... Args>
-    struct Pattern {
+    template <typename... Args> struct Pattern {
         /// @brief Reads a literal pattern, and where it was written.
         /// @param text  The pattern.
         /// @param where The call's place; left to its default.
-        template<typename Text>
+        template <typename Text>
         consteval Pattern(const Text &text, const std::source_location where = std::source_location::current())
-            : format(text), location(where) {
-        }
+            : format(text), location(where) {}
 
         std::format_string<Args...> format; ///< The pattern, checked.
-        std::source_location location; ///< Where it was written.
+        std::source_location location;      ///< Where it was written.
     };
 
     /// @brief Reports something, formatted the way std::format formats.
@@ -128,18 +119,16 @@ public:
     /// @param value   How severe it is.
     /// @param pattern The report, as std::format takes one.
     /// @param args    What its placeholders stand for.
-    template<typename... Args>
+    template <typename... Args>
     static void log(const Type target, const Level value, const Pattern<std::type_identity_t<Args>...> pattern,
-                    Args &&... args) noexcept {
+                    Args &&...args) noexcept {
         if constexpr (floor != Level::Traceback) {
             if (value < floor) return;
         }
         if (!check(target, value)) return;
         try {
-            write(target, value, std::vformat(pattern.format.get(), std::make_format_args(args...)),
-                  pattern.location);
-        } catch (...) {
-        }
+            write(target, value, std::vformat(pattern.format.get(), std::make_format_args(args...)), pattern.location);
+        } catch (...) {}
     }
 
     /// @brief A subsystem's name, as a report prints it.
@@ -154,8 +143,7 @@ private:
     /// @param value    How severe it is.
     /// @param text     The report, formatted.
     /// @param location Where it was written.
-    static void write(Type target, Level value, std::string_view text,
-                      const std::source_location &location) noexcept;
+    static void write(Type target, Level value, std::string_view text, const std::source_location &location) noexcept;
 
     inline static std::mutex mutex{};
     inline static std::atomic<Type> mask{Type::None}; // read by check() without the lock

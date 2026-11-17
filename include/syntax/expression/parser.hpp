@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/arena.hpp"
 #include "syntax/expression/node.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/arena.hpp"
 
 #include <array>
 #include <functional>
@@ -24,21 +24,21 @@ namespace syntax::expression {
         /// @brief What one command or character means in a formula.
         struct Rule {
             Node::Type type = Node::Type::Variable; ///< What type of node it makes.
-            int weight = 0; ///< How tightly it binds as an operator; 0 for none.
-            bool right = false; ///< True for an operator that groups to the right.
-            bool structural = false; ///< True when it takes brace arguments, not operands.
-            int arity = -1; ///< Its arguments; below zero, one brace group if one is present.
-            bool silent = false; ///< Read and set as nothing: `\\displaystyle`, `\\limits`.
-            std::uint8_t bracket = 0; ///< Which grid the command opens, counted from one; 0 for none.
+            int weight = 0;                         ///< How tightly it binds as an operator; 0 for none.
+            bool right = false;                     ///< True for an operator that groups to the right.
+            bool structural = false;                ///< True when it takes brace arguments, not operands.
+            int arity = -1;                         ///< Its arguments; below zero, one brace group if one is present.
+            bool silent = false;                    ///< Read and set as nothing: `\\displaystyle`, `\\limits`.
+            std::uint8_t bracket = 0;               ///< Which grid the command opens, counted from one; 0 for none.
         };
 
         /// @brief One grid command: its interned name, what it fences the
         ///        finished grid with, and how it lines its columns up.
         struct Bracket {
-            Symbol name = none; ///< `\\pmatrix`, `\\cases`, `\\aligned` and the rest.
-            std::uint32_t open = 0; ///< Left delimiter, 0 for none.
-            std::uint32_t close = 0; ///< @copydoc open
-            std::string_view preamble = "c"; ///< Column letters; see Node::value.
+            Symbol name = none;                   ///< `\\pmatrix`, `\\cases`, `\\aligned` and the rest.
+            std::uint32_t open = 0;               ///< Left delimiter, 0 for none.
+            std::uint32_t close = 0;              ///< @copydoc open
+            std::string_view preamble = "c";      ///< Column letters; see Node::value.
             Node::Grid grid = Node::Grid::Spaced; ///< How its columns are spaced and its cells set.
         };
 
@@ -55,8 +55,8 @@ namespace syntax::expression {
         /// @param right      True when it groups to the right.
         /// @param structural True when it takes brace arguments.
         /// @param arity      How many arguments; below zero, one brace group if present.
-        void bind(Symbol symbol, Node::Type type, int weight = 0, bool right = false,
-                  bool structural = false, int arity = -1);
+        void bind(Symbol symbol, Node::Type type, int weight = 0, bool right = false, bool structural = false,
+                  int arity = -1);
 
         /// @brief Says how many brace groups a command reads.
         /// @param symbol The command.
@@ -101,10 +101,10 @@ namespace syntax::expression {
         /// their group before them as the numerator and the rest after.
         std::array<Symbol, 3> infixes{};
 
-        Symbol array = none; ///< `\\array`, whose preamble is its own first argument.
+        Symbol array = none;        ///< `\\array`, whose preamble is its own first argument.
         Symbol operatorname = none; ///< `\\operatorname`, which may be starred.
-        Symbol column = none; ///< `&`, between a grid's cells.
-        Symbol row = none; ///< `\\\\`, between its rows.
+        Symbol column = none;       ///< `&`, between a grid's cells.
+        Symbol row = none;          ///< `\\\\`, between its rows.
     };
 
     /// @brief Reads one formula into a tree, by a Grammar.
@@ -132,11 +132,11 @@ namespace syntax::expression {
 
         ~Parser();
 
-        Parser(const Parser &) = delete(
-            "a formula's parser gives its lookahead back to the expander once, when it is destroyed");
+        Parser(const Parser &) =
+                delete ("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
 
-        Parser &operator=(const Parser &) = delete(
-            "a formula's parser gives its lookahead back to the expander once, when it is destroyed");
+        Parser &operator=(const Parser &) =
+                delete ("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
 
         Node *parse(char closing);
 
@@ -184,8 +184,7 @@ namespace syntax::expression {
         ///                 @p alternate actually ended the run, or #none when
         ///                 it ended some other way.
         /// @return One node holding everything read, or nullptr when nothing was.
-        Node *sequence(char closing = 0, Symbol stop = none, Symbol alternate = none,
-                       Symbol *matched = nullptr);
+        Node *sequence(char closing = 0, Symbol stop = none, Symbol alternate = none, Symbol *matched = nullptr);
 
         Node *step(int priority = 0);
 
@@ -232,7 +231,7 @@ namespace syntax::expression {
 
         std::vector<Traceback> tracebacks{}; ///< Errors found in this formula.
 
-        Hook hook{}; ///< Told about the outermost grid's rows; may be empty.
+        Hook hook{};           ///< Told about the outermost grid's rows; may be empty.
         std::size_t grids = 0; ///< How many grids are open around the token being read.
 
         /// @brief What ends the innermost run being read: the character it
@@ -240,8 +239,8 @@ namespace syntax::expression {
         ///        it -- what sequence() was given. A binary sign written last
         ///        in a run looks here, so it takes no operand from past it.
         struct Bound {
-            char closing = 0; ///< Group character that ends it, or 0.
-            Symbol stop = none; ///< Control sequence that ends it, or none.
+            char closing = 0;        ///< Group character that ends it, or 0.
+            Symbol stop = none;      ///< Control sequence that ends it, or none.
             Symbol alternate = none; ///< A second one, or none.
         };
 

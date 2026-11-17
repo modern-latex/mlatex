@@ -39,11 +39,8 @@ namespace protocols {
     /// @return The response, or nullopt when it could not be sent at all,
     ///         it failed the check above, or no response came back. A
     ///         non-2xx status is still a response.
-    [[nodiscard]] std::optional<Response> compose(
-        std::string_view method,
-        std::string_view url,
-        std::string_view body = {}
-    );
+    [[nodiscard]] std::optional<Response> compose(std::string_view method, std::string_view url,
+                                                  std::string_view body = {});
 
     /// @brief Reads the bytes an `\includegraphics` source, or any other
     ///        caller, names.
@@ -55,8 +52,5 @@ namespace protocols {
     /// @param source Where to read from.
     /// @param base   A directory to resolve a relative path against.
     /// @return The bytes, or nullopt when neither reading nor a request worked.
-    [[nodiscard]] std::optional<std::vector<std::uint8_t> > get(
-        std::string_view source,
-        std::string_view base = {}
-    );
+    [[nodiscard]] std::optional<std::vector<std::uint8_t>> get(std::string_view source, std::string_view base = {});
 }

@@ -4,8 +4,8 @@
 ///        everything past this file expects.
 #include "render/graphics/image.hpp"
 
-#include <png.h>
 #include <jpeglib.h>
+#include <png.h>
 #include <webp/decode.h>
 
 #include <csetjmp>
@@ -13,18 +13,15 @@
 #include <initializer_list>
 
 namespace render::graphics {
-    [[nodiscard]] static bool signature(
-        const std::span<const std::byte> bytes,
-        const std::initializer_list<unsigned char> want
-    ) noexcept {
+    [[nodiscard]] static bool signature(const std::span<const std::byte> bytes,
+                                        const std::initializer_list<unsigned char> want) noexcept {
         if (bytes.size() < want.size()) return false;
         return std::memcmp(bytes.data(), want.begin(), want.size()) == 0;
     }
 
     [[nodiscard]] static bool riff(const std::span<const std::byte> bytes) noexcept {
         if (bytes.size() < 12) return false;
-        return std::memcmp(bytes.data(), "RIFF", 4) == 0 &&
-               std::memcmp(bytes.data() + 8, "WEBP", 4) == 0;
+        return std::memcmp(bytes.data(), "RIFF", 4) == 0 && std::memcmp(bytes.data() + 8, "WEBP", 4) == 0;
     }
 
     [[nodiscard]] static std::optional<Image> png(const std::span<const std::byte> bytes) {
@@ -80,7 +77,7 @@ namespace render::graphics {
     // elsewhere still surfaces.
 #if defined(_MSC_VER)
 #pragma warning(push)
-#pragma warning(disable: 4324 4611)
+#pragma warning(disable : 4324 4611)
 #endif
 
     /// @param bytes Encoded JPEG data.
@@ -94,7 +91,8 @@ namespace render::graphics {
             jmp_buf point{};
         };
         const auto abandon = [](j_common_ptr source) {
-            longjmp(reinterpret_cast<Failure *>(source->err)->point, 1); // NOLINT(modernize-avoid-setjmp, cert-err52-cpp)
+            longjmp(reinterpret_cast<Failure *>(source->err)->point,
+                    1); // NOLINT(modernize-avoid-setjmp, cert-err52-cpp)
         };
 
         jpeg_decompress_struct info{};
@@ -147,8 +145,7 @@ namespace render::graphics {
         }
 
         while (info.output_scanline < info.output_height) {
-            jpeg_read_scanlines(&info, rows.data() + info.output_scanline,
-                                info.output_height - info.output_scanline);
+            jpeg_read_scanlines(&info, rows.data() + info.output_scanline, info.output_height - info.output_scanline);
         }
 
         jpeg_finish_decompress(&info);
@@ -164,12 +161,12 @@ namespace render::graphics {
     [[nodiscard]] static std::optional<Image> webp(const std::span<const std::byte> bytes) {
         int width = 0;
         int height = 0;
-        std::uint8_t *decoded = WebPDecodeRGB(
-            reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size(), &width, &height);
+        std::uint8_t *decoded =
+                WebPDecodeRGB(reinterpret_cast<const std::uint8_t *>(bytes.data()), bytes.size(), &width, &height);
         if (!decoded) return std::nullopt;
 
-        std::vector<std::uint8_t> pixels(
-            decoded, decoded + static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 3);
+        std::vector<std::uint8_t> pixels(decoded, decoded + static_cast<std::size_t>(width) *
+                                                                    static_cast<std::size_t>(height) * 3);
         WebPFree(decoded);
 
         return Image(width, height, std::move(pixels));

@@ -14,16 +14,15 @@
 
 namespace syntax::primitives {
     Wrapper::Wrapper(Lexicon &lexicon) noexcept
-        : conditionals(lexicon), environments(lexicon), macros(lexicon), registers(lexicon),
-          integers(lexicon), loops(lexicon), packages(lexicon),
-          variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon), records(lexicon) {
-    }
+        : conditionals(lexicon), environments(lexicon), macros(lexicon), registers(lexicon), integers(lexicon),
+          loops(lexicon), packages(lexicon), variables(lexicon), decimals(lexicon), hooks(lexicon), strings(lexicon),
+          records(lexicon) {}
 
     void Wrapper::operator()(Mouth &mouth, Context &context) const {
         // One fold over every module. Adding a primitive means adding a member
         // and a name here; nothing else changes.
-        bind(mouth, context, conditionals, environments, macros, registers, integers, loops, packages,
-             variables, decimals, hooks, strings, records);
+        bind(mouth, context, conditionals, environments, macros, registers, integers, loops, packages, variables,
+             decimals, hooks, strings, records);
 
         // Every word of the engine's own that is not LaTeX's, a second time
         // under an `@` name -- the way LaTeX's own internals are named, out of
@@ -34,14 +33,15 @@ namespace syntax::primitives {
         // The register banks' own names are not among them: a register is
         // told by its name's symbol when a number is read, so each has one.
         static constexpr std::array<std::string_view, 40> vocabulary{
-            "define", "forget", "alias", "shared", "spanning", "guarded", "set", "increase", "scale", "reduce",
-            "name", "evaluate", "repeat", "group", "ungroup", "enter", "leave",
-            "variable", "setvariable", "unsetvariable", "ifvariable", "setkeys", "calculate", "amount",
-            "separators", "addtohook", "usehook", "requirepackage", "providepackage", "ifempty", "ifstar",
-            "ifnextchar", "ifpackageloaded", "ifstrequal", "provided", "expanded", "declare", "switch",
-            "iffile", "iftest",
+                "define",      "forget",        "alias",           "shared",         "spanning",       "guarded",
+                "set",         "increase",      "scale",           "reduce",         "name",           "evaluate",
+                "repeat",      "group",         "ungroup",         "enter",          "leave",          "variable",
+                "setvariable", "unsetvariable", "ifvariable",      "setkeys",        "calculate",      "amount",
+                "separators",  "addtohook",     "usehook",         "requirepackage", "providepackage", "ifempty",
+                "ifstar",      "ifnextchar",    "ifpackageloaded", "ifstrequal",     "provided",       "expanded",
+                "declare",     "switch",        "iffile",          "iftest",
         };
-        for (const std::string_view word: vocabulary) {
+        for (const std::string_view word : vocabulary) {
             const Symbol plain = mouth.lexicon.intern(std::format("\\{}", word));
             mouth.lend(mouth.lexicon.intern(std::format("\\@{}", word)), plain);
         }
@@ -53,13 +53,11 @@ namespace syntax::primitives {
         // the document's block closes, so it sees what the document defined,
         // as LaTeX's own \\AtEndDocument code does.
         environments.watch(
-            "document",
-            [this](Mouth &mouth) { hooks.run(mouth, "begindocument"); },
-            [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); },
-            /*transparent=*/false, /*lingering=*/true);
+                "document", [this](Mouth &mouth) { hooks.run(mouth, "begindocument"); },
+                [this](Mouth &mouth) { hooks.run(mouth, "enddocument"); },
+                /*transparent=*/false, /*lingering=*/true);
 
-        Logger::log(Logger::Type::Semantics, Logger::Level::Informative,
-                    "Core primitives installed");
+        Logger::log(Logger::Type::Semantics, Logger::Level::Informative, "Core primitives installed");
     }
 
     std::vector<Traceback> Wrapper::traceback() const {
@@ -67,18 +65,18 @@ namespace syntax::primitives {
         // the rest, so leaving it out here lost runaway and unclosed-\if
         // reports even though the module had recorded them.
         const std::vector<Traceback> *lists[] = {
-            &conditionals.traceback(), &environments.traceback(), &macros.traceback(),
-            &registers.traceback(), &integers.traceback(), &loops.traceback(),
-            &packages.traceback(), &variables.traceback(), &decimals.traceback(),
-            &hooks.traceback(), &strings.traceback(), &records.traceback(),
+                &conditionals.traceback(), &environments.traceback(), &macros.traceback(),   &registers.traceback(),
+                &integers.traceback(),     &loops.traceback(),        &packages.traceback(), &variables.traceback(),
+                &decimals.traceback(),     &hooks.traceback(),        &strings.traceback(),  &records.traceback(),
         };
 
         std::size_t total = 0uz;
-        for (const auto *list: lists) total += list->size();
+        for (const auto *list : lists)
+            total += list->size();
 
         std::vector<Traceback> gathered;
         gathered.reserve(total);
-        for (const auto *list: lists) {
+        for (const auto *list : lists) {
             gathered.insert(gathered.end(), list->begin(), list->end());
         }
         return gathered;

@@ -1,5 +1,5 @@
-#include "latex.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "typography/collection.hpp"
 #include "typography/registry.hpp"
 #include "typography/shaper.hpp"
@@ -11,19 +11,17 @@
 // same request, another size another font from the same opened file.
 
 /// The engine's assets directory, found from this file.
-static std::filesystem::path assets() {
-    return latex::locate(__FILE__);
-}
+static std::filesystem::path assets() { return mlatex::locate(__FILE__); }
 
 /// The body face and the maths face at ten points, and what built them.
 struct Fonts {
-    memory::Arena arena{1u << 24}; ///< What the faces and nodes take.
-    memory::Arena scratch{1u << 22}; ///< What a layout pass takes and drops.
-    render::typography::Collection collection{arena}; ///< The indexed tree.
+    memory::Arena arena{1u << 24};                            ///< What the faces and nodes take.
+    memory::Arena scratch{1u << 22};                          ///< What a layout pass takes and drops.
+    render::typography::Collection collection{arena};         ///< The indexed tree.
     render::typography::Registry registry{arena, collection}; ///< The faces at their sizes.
-    const render::typography::Shaper shaper{arena}; ///< Text into glyphs.
-    const render::typography::Font *text{nullptr}; ///< Latin Modern Roman.
-    const render::typography::Font *maths{nullptr}; ///< New Computer Modern Math.
+    const render::typography::Shaper shaper{arena};           ///< Text into glyphs.
+    const render::typography::Font *text{nullptr};            ///< Latin Modern Roman.
+    const render::typography::Font *maths{nullptr};           ///< New Computer Modern Math.
 
     Fonts() {
         collection.post((assets() / "fonts").string());
@@ -53,7 +51,8 @@ int main() {
     // New Computer Modern, Devanagari by its faces for that.
     const render::typography::Font *cyrillic = registry.cover(*fonts.text, 0x0416);
     assert((cyrillic && cyrillic->family() == "newcm10-regular" && cyrillic->size() == 10.0f &&
-            cyrillic->index(0x0416) != 0) && "Cyrillic is Computer Modern's own, at the same size");
+            cyrillic->index(0x0416) != 0) &&
+           "Cyrillic is Computer Modern's own, at the same size");
     assert((registry.cover(*fonts.text, 0x0436) == cyrillic) && "a second letter of the block is a lookup");
     assert((registry.cover(*fonts.text, 0x03B1) == cyrillic) && "Greek is in the same face");
     const render::typography::Font *bold = registry.get({.family = "lmroman10-bold", .size = 10.0f});

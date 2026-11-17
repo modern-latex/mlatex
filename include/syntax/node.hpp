@@ -12,26 +12,26 @@ namespace syntax::expression {
 namespace syntax {
     struct Node {
         enum class Type {
-            Text, ///< Plain unformatted character stream
-            Paragraph, ///< Explicit paragraph break (\\par)
-            Expression, ///< Math block entry point (\\(...\\), \\[...\\], $...$)
-            Group, ///< Enclosed scope block ({...})
+            Text,        ///< Plain unformatted character stream
+            Paragraph,   ///< Explicit paragraph break (\\par)
+            Expression,  ///< Math block entry point (\\(...\\), \\[...\\], $...$)
+            Group,       ///< Enclosed scope block ({...})
             Environment, ///< Generalized environment (\\begin{name}...\\end{name})
-            Verbatim, ///< Raw unformatted code container
-            Macro, ///< Macro expansion or directive (\\def, \\newcommand)
-            Argument, ///< Positional or optional argument payload ({...}, [...])
-            Alignment, ///< Table or grid cell/row alignment marker (& and the row break)
-            Comment, ///< Source code line comment (% ...)
-            Directive ///< Opaque engine-produced payload (boxes, glue, rules, penalties)
+            Verbatim,    ///< Raw unformatted code container
+            Macro,       ///< Macro expansion or directive (\\def, \\newcommand)
+            Argument,    ///< Positional or optional argument payload ({...}, [...])
+            Alignment,   ///< Table or grid cell/row alignment marker (& and the row break)
+            Comment,     ///< Source code line comment (% ...)
+            Directive    ///< Opaque engine-produced payload (boxes, glue, rules, penalties)
         };
 
         Type type = Type::Text;
-        std::string_view value{}; ///< Its literal text, if any.
-        memory::Location location{}; ///< Where it came from.
-        memory::Slice<Node *> nodes{}; ///< Child nodes, if any.
+        std::string_view value{};                    ///< Its literal text, if any.
+        memory::Location location{};                 ///< Where it came from.
+        memory::Slice<Node *> nodes{};               ///< Child nodes, if any.
         const expression::Node *expression{nullptr}; ///< Set for Type::Expression.
-        bool display = false; ///< `\\[...\\]` rather than `\\(...\\)`.
-        void *directive{nullptr}; ///< Set for Type::Directive; opaque here.
+        bool display = false;                        ///< `\\[...\\]` rather than `\\(...\\)`.
+        void *directive{nullptr};                    ///< Set for Type::Directive; opaque here.
 
         /// @brief The face this text is to be set in, or null for whichever is
         ///        in use when it is composed.
@@ -56,7 +56,6 @@ namespace syntax {
         /// @param block    True for display math rather than inline.
         Node(const Type type, const std::string_view text, const memory::Location where,
              const memory::Slice<Node *> children = {}, const bool block = false)
-            : type(type), value(text), location(where), nodes(children), display(block) {
-        }
+            : type(type), value(text), location(where), nodes(children), display(block) {}
     };
 }

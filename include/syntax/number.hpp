@@ -1,10 +1,10 @@
 #pragma once
 
+#include "logger.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/mouth.hpp"
 #include "syntax/semantics/registers.hpp"
 #include "syntax/tokens.hpp"
-#include "logger.hpp"
 
 #include <optional>
 #include <span>
@@ -38,7 +38,7 @@ namespace syntax {
     /// are consumed and discarded, as TeX does.
     class Number {
     public:
-        static constexpr std::int32_t scale = 65536; ///< sp per pt
+        static constexpr std::int32_t scale = 65536;        ///< sp per pt
         static constexpr std::int32_t maximum = 0x3FFFFFFF; ///< TeX max dimen, in sp
         static constexpr std::int64_t ceiling = 2147483647; ///< TeX max integer
 
@@ -61,8 +61,8 @@ namespace syntax {
         /// @return The value, or std::nullopt when the stream does not start
         ///         with a numeral or a register reference resolves to nothing.
         /// @complexity O(d) in the number of digit tokens consumed.
-        [[nodiscard]] static std::optional<std::int32_t> integer(
-            Cursor &cursor, const semantics::Registers &registers) {
+        [[nodiscard]] static std::optional<std::int32_t> integer(Cursor &cursor,
+                                                                 const semantics::Registers &registers) {
             const int sign = signs(cursor);
             if (cursor.empty()) return std::nullopt;
 
@@ -76,9 +76,8 @@ namespace syntax {
                                 "Count register index out of range 0-255");
                     return std::nullopt;
                 }
-                return saturate(sign * static_cast<std::int64_t>(
-                                    registers.get(semantics::Registers::Type::Count,
-                                                  static_cast<std::size_t>(*index))));
+                return saturate(sign * static_cast<std::int64_t>(registers.get(semantics::Registers::Type::Count,
+                                                                               static_cast<std::size_t>(*index))));
             }
 
             if (lead.category == Catcodes::Category::Escape) {
@@ -151,8 +150,8 @@ namespace syntax {
         ///         std::nullopt when no numeral is present or the unit is
         ///         font-relative.
         /// @complexity O(d) in the number of digit tokens consumed.
-        [[nodiscard]] static std::optional<std::int32_t> dimension(
-            Cursor &cursor, const semantics::Registers &registers) {
+        [[nodiscard]] static std::optional<std::int32_t> dimension(Cursor &cursor,
+                                                                   const semantics::Registers &registers) {
             int sign = signs(cursor);
             if (cursor.empty()) return std::nullopt;
 
@@ -169,8 +168,8 @@ namespace syntax {
                                 "Dimension register index out of range 0-255");
                     return std::nullopt;
                 }
-                return saturate(sign * static_cast<std::int64_t>(
-                                    registers.get(*named, static_cast<std::size_t>(*index))));
+                return saturate(sign *
+                                static_cast<std::int64_t>(registers.get(*named, static_cast<std::size_t>(*index))));
             }
 
             std::int64_t whole = 0;
@@ -211,8 +210,7 @@ namespace syntax {
             std::int64_t denominator = 1;
             std::size_t decimals = 0;
 
-            if (!factored && !cursor.empty() &&
-                (cursor.lookahead(0).is('.') || cursor.lookahead(0).is(','))) {
+            if (!factored && !cursor.empty() && (cursor.lookahead(0).is('.') || cursor.lookahead(0).is(','))) {
                 cursor.advance();
                 while (!cursor.empty() && decimals < 8) {
                     int digit = 0;
@@ -243,7 +241,7 @@ namespace syntax {
                     cursor.advance();
                     measure = Measure{registers.get(held->type, held->slot), 1};
                 } else if (const auto type = registers.bank(after.symbol);
-                    type && *type != semantics::Registers::Type::Count) {
+                           type && *type != semantics::Registers::Type::Count) {
                     // A bank and its slot: `0.5\wd0`.
                     cursor.advance();
                     const auto index = integer(cursor, registers);
@@ -290,8 +288,7 @@ namespace syntax {
         ///                  to ask which control sequences name a bank.
         /// @return The value, or std::nullopt when the stream does not start with one.
         /// @complexity O(d) in the number of digit tokens consumed.
-        [[nodiscard]] static std::optional<std::int32_t> integer(
-            Mouth &mouth, const semantics::Registers &registers) {
+        [[nodiscard]] static std::optional<std::int32_t> integer(Mouth &mouth, const semantics::Registers &registers) {
             settle(mouth);
             return integer(mouth.stream(), registers);
         }
@@ -302,8 +299,8 @@ namespace syntax {
         ///                  to ask which control sequences name a bank.
         /// @return The value in scaled points, or std::nullopt.
         /// @complexity O(d) in the number of digit tokens consumed.
-        [[nodiscard]] static std::optional<std::int32_t> dimension(
-            Mouth &mouth, const semantics::Registers &registers) {
+        [[nodiscard]] static std::optional<std::int32_t> dimension(Mouth &mouth,
+                                                                   const semantics::Registers &registers) {
             settle(mouth);
             return dimension(mouth.stream(), registers);
         }
@@ -325,9 +322,8 @@ namespace syntax {
             while (!cursor.empty() && cursor.lookahead(0).category == Catcodes::Category::Space) {
                 cursor.advance();
             }
-            if (const Token next = cursor.lookahead(0);
-                next.category == Catcodes::Category::Escape &&
-                (mouth.macro(next.symbol) || mouth.handler(next.symbol))) {
+            if (const Token next = cursor.lookahead(0); next.category == Catcodes::Category::Escape &&
+                                                        (mouth.macro(next.symbol) || mouth.handler(next.symbol))) {
                 if (const Token produced = mouth.expand(); !produced.empty()) {
                     cursor.inject(std::span{&produced, 1});
                 }
@@ -388,10 +384,14 @@ namespace syntax {
             if (token.text.size() != 1) return false;
             const char symbol = token.text[0];
 
-            if (symbol >= '0' && symbol <= '9') digit = symbol - '0';
-            else if (base == 16 && symbol >= 'A' && symbol <= 'F') digit = symbol - 'A' + 10;
-            else if (base == 16 && symbol >= 'a' && symbol <= 'f') digit = symbol - 'a' + 10;
-            else return false;
+            if (symbol >= '0' && symbol <= '9')
+                digit = symbol - '0';
+            else if (base == 16 && symbol >= 'A' && symbol <= 'F')
+                digit = symbol - 'A' + 10;
+            else if (base == 16 && symbol >= 'a' && symbol <= 'f')
+                digit = symbol - 'a' + 10;
+            else
+                return false;
 
             return digit < base; // rejects 8 and 9 in octal
         }
@@ -441,7 +441,8 @@ namespace syntax {
             } else if ((lead & 0xF8) == 0xF0) {
                 width = 4;
                 point = lead & 0x07u;
-            } else return lead;
+            } else
+                return lead;
 
             if (text.size() < width) return lead;
             for (std::size_t index = 1; index < width; ++index) {
@@ -477,8 +478,7 @@ namespace syntax {
             char first = 0;
             char second = 0;
             if (!pair(cursor, first, second)) {
-                Logger::log(Logger::Type::Semantics, Logger::Level::Error,
-                            "Illegal unit of measure; pt assumed");
+                Logger::log(Logger::Type::Semantics, Logger::Level::Error, "Illegal unit of measure; pt assumed");
                 return Measure{scale, 1};
             }
 
@@ -486,34 +486,44 @@ namespace syntax {
                                                         static_cast<unsigned char>(second));
 
             switch (key) {
-                case 'p' << 8 | 't': consume(cursor);
-                    return Measure{scale, 1}; // 1 pt
-                case 's' << 8 | 'p': consume(cursor);
-                    return Measure{1, 1}; // 1 sp
-                case 'p' << 8 | 'c': consume(cursor);
-                    return Measure{scale * 12LL, 1}; // 1 pc = 12 pt
-                case 'i' << 8 | 'n': consume(cursor);
-                    return Measure{scale * 7227LL, 100}; // 1 in = 72.27 pt
-                case 'b' << 8 | 'p': consume(cursor);
-                    return Measure{scale * 7227LL, 7200}; // 1 bp = 72.27/72 pt
-                case 'c' << 8 | 'm': consume(cursor);
-                    return Measure{scale * 7227LL, 254}; // 1 cm = 72.27/2.54 pt
-                case 'm' << 8 | 'm': consume(cursor);
-                    return Measure{scale * 7227LL, 2540}; // 1 mm = 72.27/25.4 pt
-                case 'd' << 8 | 'd': consume(cursor);
-                    return Measure{scale * 1238LL, 1157}; // 1 dd = 1238/1157 pt
-                case 'c' << 8 | 'c': consume(cursor);
-                    return Measure{scale * 14856LL, 1157}; // 1 cc = 12 dd
+            case 'p' << 8 | 't':
+                consume(cursor);
+                return Measure{scale, 1}; // 1 pt
+            case 's' << 8 | 'p':
+                consume(cursor);
+                return Measure{1, 1}; // 1 sp
+            case 'p' << 8 | 'c':
+                consume(cursor);
+                return Measure{scale * 12LL, 1}; // 1 pc = 12 pt
+            case 'i' << 8 | 'n':
+                consume(cursor);
+                return Measure{scale * 7227LL, 100}; // 1 in = 72.27 pt
+            case 'b' << 8 | 'p':
+                consume(cursor);
+                return Measure{scale * 7227LL, 7200}; // 1 bp = 72.27/72 pt
+            case 'c' << 8 | 'm':
+                consume(cursor);
+                return Measure{scale * 7227LL, 254}; // 1 cm = 72.27/2.54 pt
+            case 'm' << 8 | 'm':
+                consume(cursor);
+                return Measure{scale * 7227LL, 2540}; // 1 mm = 72.27/25.4 pt
+            case 'd' << 8 | 'd':
+                consume(cursor);
+                return Measure{scale * 1238LL, 1157}; // 1 dd = 1238/1157 pt
+            case 'c' << 8 | 'c':
+                consume(cursor);
+                return Measure{scale * 14856LL, 1157}; // 1 cc = 12 dd
 
-                case 'e' << 8 | 'm': consume(cursor);
-                    return Measure{quad, 1}; // 1 em
-                case 'e' << 8 | 'x': consume(cursor);
-                    return Measure{quad * 43LL, 100}; // 1 ex = 0.43 em
+            case 'e' << 8 | 'm':
+                consume(cursor);
+                return Measure{quad, 1}; // 1 em
+            case 'e' << 8 | 'x':
+                consume(cursor);
+                return Measure{quad * 43LL, 100}; // 1 ex = 0.43 em
 
-                default:
-                    Logger::log(Logger::Type::Semantics, Logger::Level::Error,
-                                "Illegal unit of measure; pt assumed");
-                    return Measure{scale, 1};
+            default:
+                Logger::log(Logger::Type::Semantics, Logger::Level::Error, "Illegal unit of measure; pt assumed");
+                return Measure{scale, 1};
             }
         }
 

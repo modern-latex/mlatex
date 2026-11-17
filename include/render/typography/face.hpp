@@ -38,9 +38,9 @@ namespace render::typography {
 
         ~Face() noexcept;
 
-        Face(const Face &) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
+        Face(const Face &) = delete ("a face owns its HarfBuzz face, which would be destroyed twice");
 
-        Face &operator=(const Face &) = delete("a face owns its HarfBuzz face, which would be destroyed twice");
+        Face &operator=(const Face &) = delete ("a face owns its HarfBuzz face, which would be destroyed twice");
 
         Face(Face &&input) noexcept;
 
@@ -94,19 +94,19 @@ namespace render::typography {
     private:
         /// @brief One remembered glyph extent.
         struct Slot {
-            std::uint32_t glyph{0}; ///< Which glyph these extents describe.
-            bool ready{false}; ///< False until this slot has been filled.
+            std::uint32_t glyph{0};       ///< Which glyph these extents describe.
+            bool ready{false};            ///< False until this slot has been filled.
             hb_glyph_extents_t extents{}; ///< The extents, in the face's units.
         };
 
         /// Cache size, less one: a power of two, so the slot is a mask.
         static constexpr std::size_t mask = 0x3FF;
 
-        hb_face_t *face{nullptr}; ///< HarfBuzz's view of the file.
+        hb_face_t *face{nullptr};                ///< HarfBuzz's view of the file.
         std::span<const std::uint8_t> storage{}; ///< Borrowed file contents.
-        float scale{1000.0f}; ///< Units per em.
+        float scale{1000.0f};                    ///< Units per em.
 
         mutable hb_font_t *measure{nullptr}; ///< The face at its own units, made when first asked.
-        mutable std::vector<Slot> cache{}; ///< Remembered extents, sized when first asked.
+        mutable std::vector<Slot> cache{};   ///< Remembered extents, sized when first asked.
     };
 }

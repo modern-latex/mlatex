@@ -11,11 +11,11 @@
 
 #include "syntax/semantics/scope.hpp"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
-#include <optional>
-#include <algorithm>
 #include <format>
+#include <optional>
 #include <span>
 #include <string>
 
@@ -36,61 +36,64 @@ namespace render::primitives::typesetting {
         const std::string_view written = dash == std::string_view::npos ? std::string_view{} : name.substr(dash + 1);
         const auto says = [written](const std::string_view part) {
             return !std::ranges::search(written, part, [](const char have, const char want) {
-                return static_cast<char>(have >= 'A' && have <= 'Z' ? have + 32 : have) == want;
-            }).empty();
+                        return static_cast<char>(have >= 'A' && have <= 'Z' ? have + 32 : have) == want;
+                    }).empty();
         };
 
         const std::size_t digit = name.find_first_of("0123456789");
         const std::string_view prefix = name.substr(0, digit == std::string_view::npos ? name.size() : digit);
-        Family family = prefix.starts_with("lmroman")
-                            ? Family::Roman
-                            : prefix.starts_with("lmsans")
-                                  ? Family::Sans
-                                  : prefix.starts_with("lmmono")
-                                        ? Family::Mono
-                                        : Family::Other;
+        Family family = prefix.starts_with("lmroman")  ? Family::Roman
+                        : prefix.starts_with("lmsans") ? Family::Sans
+                        : prefix.starts_with("lmmono") ? Family::Mono
+                                                       : Family::Other;
         const std::string_view stem = dash == std::string_view::npos ? name : name.substr(0, dash);
         const bool capital = !written.empty() && written.front() >= 'A' && written.front() <= 'Z';
         bool bold = says("bold");
-        Shape shape = prefix.contains("caps")
-                          ? Shape::Caps
-                          : prefix.contains("slant")
-                                ? Shape::Slanted
-                                : says("italic") || says("oblique")
-                                      ? Shape::Italic
-                                      : Shape::Upright;
+        Shape shape = prefix.contains("caps")             ? Shape::Caps
+                      : prefix.contains("slant")          ? Shape::Slanted
+                      : says("italic") || says("oblique") ? Shape::Italic
+                                                          : Shape::Upright;
 
         switch (cut) {
-            case Cut::Current: break;
-            case Cut::Normal:
-                if (family != Family::Other) family = context.sans ? Family::Sans : Family::Roman;
-                bold = false;
-                shape = Shape::Upright;
-                break;
-            case Cut::Roman: if (family != Family::Other) family = Family::Roman;
-                break;
-            case Cut::Sans: if (family != Family::Other) family = Family::Sans;
-                break;
-            case Cut::Mono:
-                // Another family has no typewriter of its own to find; Latin
-                // Modern's is the one a document means.
-                family = Family::Mono;
-                break;
-            case Cut::Medium: bold = false;
-                break;
-            case Cut::Bold: bold = true;
-                break;
-            case Cut::Upright: shape = Shape::Upright;
-                break;
-            case Cut::Italic: shape = Shape::Italic;
-                break;
-            case Cut::Slanted: shape = Shape::Slanted;
-                break;
-            case Cut::Caps: shape = Shape::Caps;
-                break;
-            case Cut::Emphasis:
-                shape = shape == Shape::Italic || shape == Shape::Slanted ? Shape::Upright : Shape::Italic;
-                break;
+        case Cut::Current:
+            break;
+        case Cut::Normal:
+            if (family != Family::Other) family = context.sans ? Family::Sans : Family::Roman;
+            bold = false;
+            shape = Shape::Upright;
+            break;
+        case Cut::Roman:
+            if (family != Family::Other) family = Family::Roman;
+            break;
+        case Cut::Sans:
+            if (family != Family::Other) family = Family::Sans;
+            break;
+        case Cut::Mono:
+            // Another family has no typewriter of its own to find; Latin
+            // Modern's is the one a document means.
+            family = Family::Mono;
+            break;
+        case Cut::Medium:
+            bold = false;
+            break;
+        case Cut::Bold:
+            bold = true;
+            break;
+        case Cut::Upright:
+            shape = Shape::Upright;
+            break;
+        case Cut::Italic:
+            shape = Shape::Italic;
+            break;
+        case Cut::Slanted:
+            shape = Shape::Slanted;
+            break;
+        case Cut::Caps:
+            shape = Shape::Caps;
+            break;
+        case Cut::Emphasis:
+            shape = shape == Shape::Italic || shape == Shape::Slanted ? Shape::Upright : Shape::Italic;
+            break;
         }
 
         // The file the cut is filed under, written into a buffer here rather
@@ -103,16 +106,19 @@ namespace render::primitives::typesetting {
         std::string_view ending;
         if (family == Family::Other) {
             base = stem;
-            ending = capital
-                         ? (bold && slanted ? "BoldItalic" : bold ? "Bold" : slanted ? "Italic" : "Regular")
-                         : (bold && slanted ? "bolditalic" : bold ? "bold" : slanted ? "italic" : "regular");
+            ending = capital ? (bold && slanted ? "BoldItalic"
+                                : bold          ? "Bold"
+                                : slanted       ? "Italic"
+                                                : "Regular")
+                             : (bold && slanted ? "bolditalic"
+                                : bold          ? "bold"
+                                : slanted       ? "italic"
+                                                : "regular");
         } else if (family == Family::Roman) {
             base = shape == Shape::Slanted ? "lmromanslant" : shape == Shape::Caps ? "lmromancaps" : "lmroman";
-            ending = shape == Shape::Caps
-                         ? "regular"
-                         : shape == Shape::Italic
-                               ? (bold ? "bolditalic" : "italic")
-                               : (bold ? "bold" : "regular");
+            ending = shape == Shape::Caps     ? "regular"
+                     : shape == Shape::Italic ? (bold ? "bolditalic" : "italic")
+                                              : (bold ? "bold" : "regular");
         } else if (family == Family::Sans) {
             base = "lmsans";
             ending = slanted ? (bold ? "boldoblique" : "oblique") : (bold ? "bold" : "regular");
@@ -124,26 +130,20 @@ namespace render::primitives::typesetting {
             ending = shape == Shape::Italic ? "italic" : "regular";
         }
 
-        const int optical = size < 5.5f
-                                ? 5
-                                : size < 6.5f
-                                      ? 6
-                                      : size < 7.5f
-                                            ? 7
-                                            : size < 8.5f
-                                                  ? 8
-                                                  : size < 9.5f
-                                                        ? 9
-                                                        : size < 11.0f
-                                                              ? 10
-                                                              : size < 15.0f
-                                                                    ? 12
-                                                                    : 17;
+        const int optical = size < 5.5f    ? 5
+                            : size < 6.5f  ? 6
+                            : size < 7.5f  ? 7
+                            : size < 8.5f  ? 8
+                            : size < 9.5f  ? 9
+                            : size < 11.0f ? 10
+                            : size < 15.0f ? 12
+                                           : 17;
         std::array<char, 128> buffer{};
-        for (const int design: {optical, 10}) {
-            const auto end = family == Family::Other
-                                 ? std::format_to_n(buffer.data(), buffer.size(), "{}-{}", base, ending).out
-                                 : std::format_to_n(buffer.data(), buffer.size(), "{}{}-{}", base, design, ending).out;
+        for (const int design : {optical, 10}) {
+            const auto end =
+                    family == Family::Other
+                            ? std::format_to_n(buffer.data(), buffer.size(), "{}-{}", base, ending).out
+                            : std::format_to_n(buffer.data(), buffer.size(), "{}{}-{}", base, design, ending).out;
             const std::string_view file(buffer.data(), static_cast<std::size_t>(end - buffer.data()));
             if (const typography::Font *found = context.registry.get({.family = file, .size = size})) return found;
             if (family == Family::Other || optical == 10) break;
@@ -156,22 +156,11 @@ namespace render::primitives::typesetting {
 
     float Styles::measure(const float body, const Size step) noexcept {
         // LaTeX's size10.clo, size11.clo and size12.clo, \tiny to \Huge.
-        static constexpr std::array<std::array<float, 10>, 3> tables{
-                                                                 {
-                                                                     {
-                                                                         5.0f, 7.0f, 8.0f, 9.0f, 10.0f, 12.0f, 14.4f,
-                                                                         17.28f, 20.74f, 24.88f
-                                                                     },
-                                                                     {
-                                                                         6.0f, 8.0f, 9.0f, 10.0f, 10.95f, 12.0f, 14.4f,
-                                                                         17.28f, 20.74f, 24.88f
-                                                                     },
-                                                                     {
-                                                                         6.0f, 8.0f, 10.0f, 10.95f, 12.0f, 14.4f,
-                                                                         17.28f, 20.74f, 24.88f, 24.88f
-                                                                     },
-                                                                 }
-                                                             };
+        static constexpr std::array<std::array<float, 10>, 3> tables{{
+                {5.0f, 7.0f, 8.0f, 9.0f, 10.0f, 12.0f, 14.4f, 17.28f, 20.74f, 24.88f},
+                {6.0f, 8.0f, 9.0f, 10.0f, 10.95f, 12.0f, 14.4f, 17.28f, 20.74f, 24.88f},
+                {6.0f, 8.0f, 10.0f, 10.95f, 12.0f, 14.4f, 17.28f, 20.74f, 24.88f, 24.88f},
+        }};
         static constexpr std::array bodies{10.0f, 10.95f, 12.0f};
 
         std::size_t nearest = 0;
@@ -192,14 +181,13 @@ namespace render::primitives::typesetting {
         struct Style {
             std::string_view bounded; ///< The form that takes an argument.
             std::string_view running; ///< The form that runs to the end of its group.
-            Cut cut; ///< What it changes about the face, if anything.
-            Size size; ///< The size it selects, when its cut is Cut::Current.
+            Cut cut;                  ///< What it changes about the face, if anything.
+            Size size;                ///< The size it selects, when its cut is Cut::Current.
         };
 
         // The sizes keep whatever face is in use, so `\\bfseries\\large`
         // stays bold, and every change of face keeps the size in use.
-        static constexpr std::array<Style, 21> styles{
-            {
+        static constexpr std::array<Style, 21> styles{{
                 {.bounded = "\\textrm", .running = "\\rmfamily", .cut = Cut::Roman, .size = Size::Normal},
                 {.bounded = "\\textsf", .running = "\\sffamily", .cut = Cut::Sans, .size = Size::Normal},
                 {.bounded = "\\texttt", .running = "\\ttfamily", .cut = Cut::Mono, .size = Size::Normal},
@@ -222,21 +210,19 @@ namespace render::primitives::typesetting {
                 {.bounded = "\\textLARGE", .running = "\\LARGE", .cut = Cut::Current, .size = Size::Largest},
                 {.bounded = "\\texthuge", .running = "\\huge", .cut = Cut::Current, .size = Size::Huge},
                 {.bounded = "\\textHuge", .running = "\\Huge", .cut = Cut::Current, .size = Size::Hugest},
-            }
-        };
+        }};
 
         // The face a style selects where it is written: a change of face at
         // the size in use, or the size asked for against the class's body.
         const auto select = [&context](const Cut cut, const Size size) -> const typography::Font * {
             const typography::Font *current = context.selection.text();
             if (!current) return nullptr;
-            const float points = cut == Cut::Current
-                                     ? measure(context.document.configuration.size, size)
-                                     : current->size();
+            const float points =
+                    cut == Cut::Current ? measure(context.document.configuration.size, size) : current->size();
             return resolve(context, cut, points);
         };
 
-        for (const auto &[bounded, running, cut, size]: styles) {
+        for (const auto &[bounded, running, cut, size] : styles) {
             // The running form: selects, and lets the group it sits in undo
             // the selection when it closes.
             // Bound in the parser rather than the expander, so the text read
@@ -244,8 +230,7 @@ namespace render::primitives::typesetting {
             parser.bind(running, [this, &context, select, cut, size](const syntax::Parser &reader) -> syntax::Node * {
                 const typography::Font *font = select(cut, size);
                 if (!font) {
-                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive,
-                                            reader.mouth.lookahead().location,
+                    tracebacks.emplace_back(syntax::Traceback::Type::Primitive, reader.mouth.lookahead().location,
                                             "A style needs a text face to change");
                     return nullptr;
                 }
@@ -285,8 +270,7 @@ namespace render::primitives::typesetting {
 
                 // A group node, not a box: a box could not be broken across a
                 // line, and a styled sentence has to be.
-                return arena.compose<syntax::Node>(
-                    syntax::Node::Type::Group, std::string_view{}, origin, children);
+                return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, children);
             });
         }
 
@@ -299,7 +283,8 @@ namespace render::primitives::typesetting {
         // the roman the body is set in.
         const auto read = [](syntax::Mouth &mouth) {
             std::string text;
-            for (const syntax::Token &token: mouth.argument({}, 0)) text += token.text;
+            for (const syntax::Token &token : mouth.argument({}, 0))
+                text += token.text;
             return text;
         };
         parser.mouth.bind("\\fontsize", [this, &context, read](syntax::Mouth &mouth) {
@@ -314,23 +299,18 @@ namespace render::primitives::typesetting {
         });
         parser.mouth.bind("\\fontfamily", [this, read](syntax::Mouth &mouth) {
             const std::string family = read(mouth);
-            pending.family = family.contains("ss") || family == "phv" || family == "sans"
-                                 ? Cut::Sans
-                                 : family.contains("tt") || family == "pcr"
-                                       ? Cut::Mono
-                                       : Cut::Roman;
+            pending.family = family.contains("ss") || family == "phv" || family == "sans" ? Cut::Sans
+                             : family.contains("tt") || family == "pcr"                   ? Cut::Mono
+                                                                                          : Cut::Roman;
         });
         parser.mouth.bind("\\fontseries", [this, read](syntax::Mouth &mouth) {
             pending.series = read(mouth).starts_with('b') ? Cut::Bold : Cut::Medium;
         });
         parser.mouth.bind("\\fontshape", [this, read](syntax::Mouth &mouth) {
             const std::string shape = read(mouth);
-            pending.shape = shape == "it"
-                                ? Cut::Italic
-                                : shape == "sl"
-                                      ? Cut::Slanted
-                                      : shape == "sc"
-                                            ? Cut::Caps
+            pending.shape = shape == "it"   ? Cut::Italic
+                            : shape == "sl" ? Cut::Slanted
+                            : shape == "sc" ? Cut::Caps
                                             : Cut::Upright;
         });
         parser.mouth.bind("\\fontencoding", [read](syntax::Mouth &mouth) { static_cast<void>(read(mouth)); });
@@ -338,7 +318,7 @@ namespace render::primitives::typesetting {
             const typography::Font *current = context.selection.text();
             if (!current) return nullptr;
             const float points = pending.size.value_or(current->size());
-            for (const std::optional cut: {pending.family, pending.series, pending.shape}) {
+            for (const std::optional cut : {pending.family, pending.series, pending.shape}) {
                 if (!cut) continue;
                 if (const typography::Font *font = resolve(context, *cut, points)) context.selection.text(font);
             }
@@ -352,13 +332,10 @@ namespace render::primitives::typesetting {
             const std::string &family = parts[0];
             pending.family = family.contains("ss") ? Cut::Sans : family.contains("tt") ? Cut::Mono : Cut::Roman;
             pending.series = parts[1].starts_with('b') ? Cut::Bold : Cut::Medium;
-            pending.shape = parts[2] == "it"
-                                ? Cut::Italic
-                                : parts[2] == "sl"
-                                      ? Cut::Slanted
-                                      : parts[2] == "sc"
-                                            ? Cut::Caps
-                                            : Cut::Upright;
+            pending.shape = parts[2] == "it"   ? Cut::Italic
+                            : parts[2] == "sl" ? Cut::Slanted
+                            : parts[2] == "sc" ? Cut::Caps
+                                               : Cut::Upright;
             mouth.ingest("\\selectfont ");
         });
 
@@ -367,24 +344,25 @@ namespace render::primitives::typesetting {
         // or beamer's class -- followed through the macros it names to the
         // family's own name: the body in it, and the normal face after.
         context.environments.watch(
-            "document",
-            [&context](const syntax::Mouth &mouth) {
-                std::string written = "\\familydefault";
-                for (int depth = 0; depth < 3 && written.starts_with('\\'); ++depth) {
-                    const syntax::Mouth::Macro *macro = mouth.macro(mouth.lexicon.intern(written));
-                    if (!macro) break;
-                    written.clear();
-                    for (const syntax::Token &token: macro->body) written += token.text;
-                }
-                context.sans = written.contains("ss") || written == "phv" || written == "sans";
-                const typography::Font *current = context.selection.text();
-                if (!context.sans || !current) return;
-                if (const typography::Font *font = resolve(context, Cut::Normal, current->size())) {
-                    context.selection.text(font);
-                    context.document.furniture.face = font;
-                }
-            },
-            {});
+                "document",
+                [&context](const syntax::Mouth &mouth) {
+                    std::string written = "\\familydefault";
+                    for (int depth = 0; depth < 3 && written.starts_with('\\'); ++depth) {
+                        const syntax::Mouth::Macro *macro = mouth.macro(mouth.lexicon.intern(written));
+                        if (!macro) break;
+                        written.clear();
+                        for (const syntax::Token &token : macro->body)
+                            written += token.text;
+                    }
+                    context.sans = written.contains("ss") || written == "phv" || written == "sans";
+                    const typography::Font *current = context.selection.text();
+                    if (!context.sans || !current) return;
+                    if (const typography::Font *font = resolve(context, Cut::Normal, current->size())) {
+                        context.selection.text(font);
+                        context.document.furniture.face = font;
+                    }
+                },
+                {});
 
         Logger::log(Logger::Type::Layout, Logger::Level::Debug, "Bound style primitives");
     }

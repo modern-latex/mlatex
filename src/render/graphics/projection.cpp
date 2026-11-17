@@ -14,11 +14,7 @@ namespace render::graphics {
     /// @param azimuth   Degrees around z, applied first.
     /// @return The point's x and y in the rotated frame; its z is depth,
     ///         which an orthographic view never draws.
-    [[nodiscard]] static Point2 rotate(
-        const Point3 &point,
-        const float elevation,
-        const float azimuth
-    ) noexcept {
+    [[nodiscard]] static Point2 rotate(const Point3 &point, const float elevation, const float azimuth) noexcept {
         constexpr float turn = std::numbers::pi_v<float> / 180.0f;
         const float turned = azimuth * turn;
         const float tilted = elevation * turn;
@@ -29,9 +25,7 @@ namespace render::graphics {
         return {.across = across, .up = along * std::cos(tilted) - point.up * std::sin(tilted)};
     }
 
-    Projection Projection::planar() noexcept {
-        return orthographic(0.0f, 0.0f);
-    }
+    Projection Projection::planar() noexcept { return orthographic(0.0f, 0.0f); }
 
     Projection Projection::isometric() noexcept {
         // Elevation here is measured from looking straight down the z axis
@@ -51,8 +45,8 @@ namespace render::graphics {
 
     Point2 Projection::project(const Point3 &point) const noexcept {
         return {
-            .across = point.across * across.across + point.along * along.across + point.up * up.across,
-            .up = point.across * across.up + point.along * along.up + point.up * up.up,
+                .across = point.across * across.across + point.along * along.across + point.up * up.across,
+                .up = point.across * across.up + point.along * along.up + point.up * up.up,
         };
     }
 }

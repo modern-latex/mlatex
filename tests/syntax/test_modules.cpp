@@ -1,5 +1,5 @@
-#include "latex.hpp"
 #include "memory/arena.hpp"
+#include "mlatex.hpp"
 #include "syntax/cursor.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/modules.hpp"
@@ -43,7 +43,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
 
     std::string text;
     const auto get = [&text](this const auto &self, const memory::Slice<syntax::Node *> nodes) -> void {
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node && node->type == syntax::Node::Type::Text) text += node->value;
             if (node && node->type == syntax::Node::Type::Group) self(node->nodes);
         }
@@ -51,7 +51,7 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     get(parser.parse(0));
 
     std::string folded;
-    for (const char letter: text) {
+    for (const char letter : text) {
         if (letter != ' ' && letter != '\n' && letter != '\t' && letter != '\r') {
             folded += letter;
         } else if (!folded.empty() && folded.back() != ' ') {
@@ -61,8 +61,9 @@ static std::pair<std::string, std::string> expand(const std::string_view documen
     if (!folded.empty() && folded.back() == ' ') folded.pop_back();
 
     std::string errors;
-    for (const auto &list: {parser.traceback(), mouth.traceback(), core.traceback()}) {
-        for (const syntax::Traceback &fault: list) errors += fault.format() + '\n';
+    for (const auto &list : {parser.traceback(), mouth.traceback(), core.traceback()}) {
+        for (const syntax::Traceback &fault : list)
+            errors += fault.format() + '\n';
     }
     return {folded, errors};
 }
@@ -90,13 +91,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -123,27 +124,34 @@ int main() {
     assert((!syntax::modules::get("nosuch/main.mtex").has_value()) && "a file that is not there is none");
 
     static constexpr std::string_view packages[] = {
-        "amsmath", "amssymb", "amsthm", "amsfonts", "mathtools", "graphicx", "xcolor", "color", "hyperref", "url",
-        "cleveref", "natbib", "biblatex", "booktabs", "multirow", "array", "tabularx", "longtable", "tabulary",
-        "dcolumn", "colortbl", "hhline", "makecell", "threeparttable", "bigstrut", "diagbox", "caption",
-        "subcaption", "subfig", "float", "wrapfig", "rotating", "lscape", "pdflscape", "sidecap", "placeins",
-        "afterpage", "needspace", "enumitem", "paralist", "enumerate", "listings", "verbatim", "fancyvrb", "minted",
-        "algorithm", "algorithmic", "algpseudocode", "algorithm2e", "geometry", "fullpage", "a4wide", "setspace",
-        "parskip", "indentfirst", "titlesec", "titling", "fancyhdr", "lastpage", "footmisc", "xspace", "ragged2e",
-        "microtype", "babel", "inputenc", "fontenc", "lmodern", "times", "textcomp", "gensymb", "eurosym",
-        "siunitx", "units", "nicefrac", "xfrac", "cancel", "bm", "mathrsfs", "bbm", "dsfont", "upgreek", "stmaryrd",
-        "esint", "mhchem", "physics", "braket", "tikz", "todonotes", "marginnote", "soul", "ulem", "csquotes",
-        "lipsum", "blindtext", "datetime", "datetime2", "etoolbox", "ifthen", "xparse", "calc", "comment",
-        "appendix", "authblk", "abstract", "epigraph", "framed", "mdframed", "tcolorbox", "fancybox", "glossaries",
-        "pifont", "fontspec", "unicode-math", "pgfplots", "tikz-cd", "tocloft", "ctable", "xurl", "soulutf8",
-        "subfigure", "mwe", "iftex", "stfloats", "balance", "sectsty", "newtxmath", "libertine", "nicematrix",
+            "amsmath",     "amssymb",    "amsthm",    "amsfonts",   "mathtools",    "graphicx",
+            "xcolor",      "color",      "hyperref",  "url",        "cleveref",     "natbib",
+            "biblatex",    "booktabs",   "multirow",  "array",      "tabularx",     "longtable",
+            "tabulary",    "dcolumn",    "colortbl",  "hhline",     "makecell",     "threeparttable",
+            "bigstrut",    "diagbox",    "caption",   "subcaption", "subfig",       "float",
+            "wrapfig",     "rotating",   "lscape",    "pdflscape",  "sidecap",      "placeins",
+            "afterpage",   "needspace",  "enumitem",  "paralist",   "enumerate",    "listings",
+            "verbatim",    "fancyvrb",   "minted",    "algorithm",  "algorithmic",  "algpseudocode",
+            "algorithm2e", "geometry",   "fullpage",  "a4wide",     "setspace",     "parskip",
+            "indentfirst", "titlesec",   "titling",   "fancyhdr",   "lastpage",     "footmisc",
+            "xspace",      "ragged2e",   "microtype", "babel",      "inputenc",     "fontenc",
+            "lmodern",     "times",      "textcomp",  "gensymb",    "eurosym",      "siunitx",
+            "units",       "nicefrac",   "xfrac",     "cancel",     "bm",           "mathrsfs",
+            "bbm",         "dsfont",     "upgreek",   "stmaryrd",   "esint",        "mhchem",
+            "physics",     "braket",     "tikz",      "todonotes",  "marginnote",   "soul",
+            "ulem",        "csquotes",   "lipsum",    "blindtext",  "datetime",     "datetime2",
+            "etoolbox",    "ifthen",     "xparse",    "calc",       "comment",      "appendix",
+            "authblk",     "abstract",   "epigraph",  "framed",     "mdframed",     "tcolorbox",
+            "fancybox",    "glossaries", "pifont",    "fontspec",   "unicode-math", "pgfplots",
+            "tikz-cd",     "tocloft",    "ctable",    "xurl",       "soulutf8",     "subfigure",
+            "mwe",         "iftex",      "stfloats",  "balance",    "sectsty",      "newtxmath",
+            "libertine",   "nicematrix",
     };
-    for (const std::string_view name: packages) {
+    for (const std::string_view name : packages) {
         const Result result = typeset("\\documentclass{article}\\usepackage{" + std::string(name) +
                                       "}\\begin{document}x\\end{document}");
         if (!result.clean)
-            std::fprintf(stderr, "  %.*s: %s", static_cast<int>(name.size()), name.data(),
-                         result.errors.c_str());
+            std::fprintf(stderr, "  %.*s: %s", static_cast<int>(name.size()), name.data(), result.errors.c_str());
         assert((result.clean && !holds(result.errors, "not found")) &&
                "a package loads, known by name, with no error reported");
     }
@@ -154,8 +162,8 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{xurl}\\begin{document}"
-            "\\ifpackageloaded{url}{url}{none} \\ifpackageloaded{xurl}{xurl}{none}"
-            "\\end{document}");
+                                      "\\ifpackageloaded{url}{url}{none} \\ifpackageloaded{xurl}{xurl}{none}"
+                                      "\\end{document}");
         assert((result.clean && result.errors.empty() && holds(result.text, "urlxurl")) &&
                "a package under another's name loads that one, and both are loaded");
     }
@@ -200,26 +208,26 @@ int main() {
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\acrodef{API}{application programming interface}"
-                                      "\\acs{API} \\acl{API} \\acf{API}");
-        assert((result.clean && holds(result.text,
-                                      "APIapplicationprogramminginterfaceapplicationprogramminginterface(API)")) &&
+                                                               "\\acs{API} \\acl{API} \\acf{API}");
+        assert((result.clean &&
+                holds(result.text, "APIapplicationprogramminginterfaceapplicationprogramminginterface(API)")) &&
                "every form");
     }
     {
-        const Result result = article("\\usepackage{acronym}",
-                                      "\\newacronym{os}{OS}{operating system}\\acp{os}, \\acp{os}");
+        const Result result =
+                article("\\usepackage{acronym}", "\\newacronym{os}{OS}{operating system}\\acp{os}, \\acp{os}");
         assert((result.clean && holds(result.text, "operatingsystems(OSs),OSs")) && "plurals");
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\newacronym{pdf}{PDF}{Portable Document Format}"
-                                      "\\ac{pdf} \\acreset{pdf}\\ac{pdf}");
+                                                               "\\ac{pdf} \\acreset{pdf}\\ac{pdf}");
         assert((result.clean && holds(result.text, "PortableDocumentFormat(PDF)PortableDocumentFormat(PDF)")) &&
                "\\acreset spells it out again");
     }
     {
         const Result result = article("\\usepackage{acronym}", "\\ac{GUI} and \\ac{GUI}.\n\n"
-                                      "\\begin{acronym}\\acro{GUI}{graphical user interface}"
-                                      "\\end{acronym}");
+                                                               "\\begin{acronym}\\acro{GUI}{graphical user interface}"
+                                                               "\\end{acronym}");
         assert((result.clean && holds(result.text, "graphicaluserinterface(GUI)andGUI.") &&
                 holds(result.text, "GUIgraphicaluserinterface")) &&
                "an acronym used before its list defines it, and the list");
@@ -251,11 +259,14 @@ int main() {
                                       "\\numlist{1;2;3} \\qty{5}{\\percent} \\SI{1.0e-6}{\\square\\metre\\per\\second} "
                                       "\\qtyrange{1}{5}{\\kilo\\metre} \\ang{45}");
         assert((result.clean) && "siunitx typesets without a report");
-        assert((holds(result.text, "100000")) &&
-               "a number's digits, grouped by thin spaces the text layer leaves out");
-        assert((holds(result.text, "3.21\xC3\x97" "10\xE2\x88\x92" "3")) &&
+        assert((holds(result.text, "100000")) && "a number's digits, grouped by thin spaces the text layer leaves out");
+        assert((holds(result.text, "3.21\xC3\x97"
+                                   "10\xE2\x88\x92"
+                                   "3")) &&
                "an exponent written out as a power of ten");
-        assert((holds(result.text, "9.81ms\xE2\x88\x92" "2")) && "a unit after \\per raised to a negative power");
+        assert((holds(result.text, "9.81ms\xE2\x88\x92"
+                                   "2")) &&
+               "a unit after \\per raised to a negative power");
         assert((holds(result.text, "1,2and3")) && "a list with and before its last number");
         assert((holds(result.text, "5%")) && "a percentage");
         assert((holds(result.text, "1kmto5km")) && "a range of quantities, the unit on both");
@@ -272,15 +283,13 @@ int main() {
 #else
         localtime_r(&now, &local);
 #endif
-        static constexpr const char *months[] = {
-            "January", "February", "March", "April", "May", "June", "July",
-            "August", "September", "October", "November", "December"
-        };
+        static constexpr const char *months[] = {"January", "February", "March",     "April",   "May",      "June",
+                                                 "July",    "August",   "September", "October", "November", "December"};
         const int year = local.tm_year + 1900;
         char iso[16];
         std::snprintf(iso, sizeof iso, "%04d-%02d-%02d", year, local.tm_mon + 1, local.tm_mday);
-        const std::string today = std::string(months[local.tm_mon]) + " " + std::to_string(local.tm_mday) + ", " +
-                                  std::to_string(year);
+        const std::string today =
+                std::string(months[local.tm_mon]) + " " + std::to_string(local.tm_mday) + ", " + std::to_string(year);
         sets("\\include{core/dates}\\today", today, "\\today is LaTeX's own");
         sets("\\include{core/dates}\\usepackage{datetime}\\isodate", iso, "\\isodate");
         sets("\\include{core/dates}\\monthname{2} \\usepackage{datetime}\\shortmonthname{12}", "February Dec",
@@ -289,15 +298,20 @@ int main() {
 
     {
         const Result result = article(
-            "\\usepackage{soul,ulem,gensymb,eurosym,units,nicefrac,xfrac,bbm,upgreek,stmaryrd,glossaries,fancybox}"
-            "\\newacronym{gpu}{GPU}{graphics processing unit}",
-            "A:\\hl{marked} \\ul{under} \\st{struck} \\caps{Caps}. B:\\uline{one} \\sout{gone}. "
-            "C:30\\celsius{} \\ohm{} \\EUR{12} \\unit[5]{m}. D:$\\mathbbm{R}$ $\\upalpha$ $\\llbracket x\\rrbracket$. "
-            "E:\\gls{gpu} then \\gls{gpu}, \\acrshort{gpu}. F:\\shadowbox{shadow}. G:\\nicefrac{1}{2} \\sfrac{3}{4}.");
+                "\\usepackage{soul,ulem,gensymb,eurosym,units,nicefrac,xfrac,bbm,upgreek,stmaryrd,glossaries,fancybox}"
+                "\\newacronym{gpu}{GPU}{graphics processing unit}",
+                "A:\\hl{marked} \\ul{under} \\st{struck} \\caps{Caps}. B:\\uline{one} \\sout{gone}. "
+                "C:30\\celsius{} \\ohm{} \\EUR{12} \\unit[5]{m}. D:$\\mathbbm{R}$ $\\upalpha$ $\\llbracket "
+                "x\\rrbracket$. "
+                "E:\\gls{gpu} then \\gls{gpu}, \\acrshort{gpu}. F:\\shadowbox{shadow}. G:\\nicefrac{1}{2} "
+                "\\sfrac{3}{4}.");
         assert((result.clean) && "the text packages set without a report");
         assert((holds(result.text, "A:markedunderstruck")) && "soul keeps the words it marks");
         assert((holds(result.text, "B:onegone.")) && "and ulem");
-        assert((holds(result.text, "C:30\xC2\xB0" "C\xE2\x84\xA6") || holds(result.text, "C:30\xC2\xB0" "C\xCE\xA9")) &&
+        assert((holds(result.text, "C:30\xC2\xB0"
+                                   "C\xE2\x84\xA6") ||
+                holds(result.text, "C:30\xC2\xB0"
+                                   "C\xCE\xA9")) &&
                "gensymb's units");
         assert((holds(result.text, "12\xE2\x82\xAC")) && "eurosym's \\EUR");
         assert((holds(result.text, "E:graphicsprocessingunit(GPU)thenGPU,GPU.")) &&
@@ -309,16 +323,17 @@ int main() {
                                       "\\begin{algorithm}\\KwIn{a list}\\ForEach{$x$}{add it}\\Return{$s$}"
                                       "\\caption{Sum}\\end{algorithm}");
         assert((result.clean && holds(result.text, "Input:alist") && holds(result.text, "foreach") &&
-                holds(result.text, "Algorithm1Sum")) && "algorithm2e's steps, set as a captioned float");
+                holds(result.text, "Algorithm1Sum")) &&
+               "algorithm2e's steps, set as a captioned float");
     }
     {
-        const Result result = article("\\usepackage{lastpage}",
-                                      "One.\\newpage Page \\thepage{} of \\pageref{LastPage}.");
+        const Result result =
+                article("\\usepackage{lastpage}", "One.\\newpage Page \\thepage{} of \\pageref{LastPage}.");
         assert((result.clean && holds(result.text, "Page2of2.")) && "lastpage labels the last page");
     }
     {
-        const Result result = article("\\usepackage{epigraph,authblk}",
-                                      "\\epigraph{The purpose of computing is insight.}{Hamming}");
+        const Result result =
+                article("\\usepackage{epigraph,authblk}", "\\epigraph{The purpose of computing is insight.}{Hamming}");
         assert((result.clean && holds(result.text, "Thepurposeofcomputingisinsight.") &&
                 holds(result.text, "Hamming")) &&
                "an epigraph and its source");
@@ -326,19 +341,19 @@ int main() {
 
     {
         const Result result = article(
-            "\\newif\\ifdraft"
-            "\\newcommand{\\given}{original}\\providecommand{\\given}{replaced}\\providecommand{\\fresh}{fresh}"
-            "\\def\\half{one}\\edef\\frozen{\\half}\\def\\half{two}"
-            "\\NewDocumentCommand{\\pair}{s o m}{\\IfBooleanTF{#1}{star}{plain}-\\IfNoValueTF{#2}{none}{#2}-#3}"
-            "\\NewDocumentCommand{\\opt}{O{dflt} m}{[#1|#2]}"
-            "\\let\\strong\\textbf \\let\\equal=\\half"
-            "\\expandafter\\def\\csname built\\endcsname{made}"
-            "\\newcommand{\\set}{mine}",
-            "A:\\ifdraft on\\else off\\fi. \\drafttrue B:\\ifdraft on\\else off\\fi. "
-            "C:\\given. D:\\fresh. E:\\frozen. F:\\pair{x}. G:\\pair*[y]{z}. H:\\opt{q}. I:\\opt[r]{s}. "
-            "J:\\strong{bold}. K:\\built. L:\\set. M:\\equal. "
-            "N:\\@ifundefined{built}{no}{yes}. O:\\@ifundefined{nothing}{no}{yes}. "
-            "P:\\ifdefined\\strong def\\fi. Q:\\ifcsname built\\endcsname cs\\fi. R:\\the\\textwidth.");
+                "\\newif\\ifdraft"
+                "\\newcommand{\\given}{original}\\providecommand{\\given}{replaced}\\providecommand{\\fresh}{fresh}"
+                "\\def\\half{one}\\edef\\frozen{\\half}\\def\\half{two}"
+                "\\NewDocumentCommand{\\pair}{s o m}{\\IfBooleanTF{#1}{star}{plain}-\\IfNoValueTF{#2}{none}{#2}-#3}"
+                "\\NewDocumentCommand{\\opt}{O{dflt} m}{[#1|#2]}"
+                "\\let\\strong\\textbf \\let\\equal=\\half"
+                "\\expandafter\\def\\csname built\\endcsname{made}"
+                "\\newcommand{\\set}{mine}",
+                "A:\\ifdraft on\\else off\\fi. \\drafttrue B:\\ifdraft on\\else off\\fi. "
+                "C:\\given. D:\\fresh. E:\\frozen. F:\\pair{x}. G:\\pair*[y]{z}. H:\\opt{q}. I:\\opt[r]{s}. "
+                "J:\\strong{bold}. K:\\built. L:\\set. M:\\equal. "
+                "N:\\@ifundefined{built}{no}{yes}. O:\\@ifundefined{nothing}{no}{yes}. "
+                "P:\\ifdefined\\strong def\\fi. Q:\\ifcsname built\\endcsname cs\\fi. R:\\the\\textwidth.");
         assert((result.clean) && "the kernel's definitions read without a report");
         assert((holds(result.text, "A:off.B:on.")) && "\\newif's switch starts false and \\drafttrue turns it");
         assert((holds(result.text, "C:original.D:fresh.")) &&
@@ -352,19 +367,19 @@ int main() {
         assert((holds(result.text, "R:345.0pt.")) && "\\the prints a length as TeX does");
     }
     {
-        const Result result = article(
-            "\\NeedsTeXFormat{LaTeX2e}[1995/12/01]\\ProvidesPackage{mine}[2024/01/01 v1.0]"
-            "\\RequirePackage{amsmath}\\DeclareOption{draft}{}\\ProcessOptions\\relax"
-            "\\makeatletter\\newcommand{\\@inner}{inner}\\makeatother"
-            "\\DeclareRobustCommand{\\name}{Name}\\typeout{Loading}\\PackageWarning{mine}{careful}"
-            "\\IfFileExists{nothing.tex}{found}{}",
-            "\\name, \\@inner, \\textsuperscript{th} and a\\,b\\;c\\quad\\null d.");
+        const Result result =
+                article("\\NeedsTeXFormat{LaTeX2e}[1995/12/01]\\ProvidesPackage{mine}[2024/01/01 v1.0]"
+                        "\\RequirePackage{amsmath}\\DeclareOption{draft}{}\\ProcessOptions\\relax"
+                        "\\makeatletter\\newcommand{\\@inner}{inner}\\makeatother"
+                        "\\DeclareRobustCommand{\\name}{Name}\\typeout{Loading}\\PackageWarning{mine}{careful}"
+                        "\\IfFileExists{nothing.tex}{found}{}",
+                        "\\name, \\@inner, \\textsuperscript{th} and a\\,b\\;c\\quad\\null d.");
         assert((result.clean && holds(result.text, "Name,inner,thandabcd.")) &&
                "a package's opening words read and let go, and what the preamble defined is there");
     }
     {
-        const Result result = article("\\title{The Title}\\author{A. Author \\and B. Author}\\date{Today}",
-                                      "\\maketitle Body.");
+        const Result result =
+                article("\\title{The Title}\\author{A. Author \\and B. Author}\\date{Today}", "\\maketitle Body.");
         assert((result.clean && holds(result.text, "TheTitleA.AuthorB.AuthorTodayBody.")) &&
                "a title, its authors and date");
     }

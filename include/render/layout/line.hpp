@@ -53,11 +53,8 @@ namespace render::layout {
         /// @param target Width to set to, or 0 to take the natural width.
         /// @return The box; never null.
         /// @complexity O(n) in the nodes.
-        [[nodiscard]] static Node *horizontal(
-            memory::Arena &arena,
-            memory::Slice<Node *> nodes,
-            float target = 0.0f
-        ) noexcept;
+        [[nodiscard]] static Node *horizontal(memory::Arena &arena, memory::Slice<Node *> nodes,
+                                              float target = 0.0f) noexcept;
 
         /// @brief Packs nodes top to bottom.
         ///
@@ -67,12 +64,8 @@ namespace render::layout {
         /// @param anchor  Where the contents sit across the column.
         /// @return The box; never null.
         /// @complexity O(n) in the nodes.
-        [[nodiscard]] static Node *vertical(
-            memory::Arena &arena,
-            memory::Slice<Node *> nodes,
-            float skip = 0.0f,
-            Anchor anchor = Anchor::Start
-        ) noexcept;
+        [[nodiscard]] static Node *vertical(memory::Arena &arena, memory::Slice<Node *> nodes, float skip = 0.0f,
+                                            Anchor anchor = Anchor::Start) noexcept;
 
         /// @brief How far a node moves the pen along a line.
         /// @param node Node to measure; null measures zero.

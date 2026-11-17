@@ -8,8 +8,8 @@
 /// trie, and a run spends nothing building this one. Defined here, apart
 /// from the rest of the class, so the bytes live in exactly one translation
 /// unit.
-#include "typography/hyphenator.hpp"
 #include "logger.hpp"
+#include "typography/hyphenator.hpp"
 
 #include <algorithm>
 #include <array>
@@ -18,9 +18,8 @@ namespace render::typography {
     /// American English, the language a document is broken in unless it
     /// asks for another.
     static constexpr char english[] = {
-#embed "../../../assets/hyphens/hyph-en-us.pat.txt" suffix(,)
-        0
-    };
+#embed "../../../assets/hyphens/hyph-en-us.pat.txt" suffix(, )
+            0};
 
     /// The English trie's size, found by building it once; the trie itself
     /// is built again into arrays of that size, since what the compiler
@@ -37,11 +36,11 @@ namespace render::typography {
         // A language's trie as the compiler leaves it: the packed trie
         // parse() made, copied into arrays of exactly its size.
         struct Compiled {
-            std::array<Hyphenator::Node, measured[0]> nodes{}; // Every node, packed; the first is the root.
-            std::array<Hyphenator::Edge, measured[1]> edges{}; // Every node's children, side by side.
-            std::array<std::uint8_t, measured[2]> levels{}; // Every pattern's digits.
+            std::array<Hyphenator::Node, measured[0]> nodes{};          // Every node, packed; the first is the root.
+            std::array<Hyphenator::Edge, measured[1]> edges{};          // Every node's children, side by side.
+            std::array<std::uint8_t, measured[2]> levels{};             // Every pattern's digits.
             std::array<std::uint32_t, Hyphenator::alphabet> initials{}; // The root's child for each first letter.
-            std::size_t patterns{0}; // How many patterns it holds.
+            std::size_t patterns{0};                                    // How many patterns it holds.
         };
         Compiled built{};
         std::ranges::copy(trie.nodes, built.nodes.begin());
@@ -64,8 +63,8 @@ namespace render::typography {
         levels = american.levels;
         initials = american.initials.data();
         patterns = american.patterns;
-        Logger::log(Logger::Type::Layout, Logger::Level::Informative,
-                    "Embedded {} hyphenation patterns for {}", patterns, name);
+        Logger::log(Logger::Type::Layout, Logger::Level::Informative, "Embedded {} hyphenation patterns for {}",
+                    patterns, name);
         return patterns;
     }
 }

@@ -61,9 +61,8 @@ namespace render::primitives::arrangement {
                 return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, children);
             }
             const memory::Slice<syntax::Node *> wrapped = arena.allocate<syntax::Node *>(children.count + 2);
-            for (const auto [at, command]: {
-                     std::pair{0uz, Command::Save}, std::pair{children.count + 1, Command::Restore}
-                 }) {
+            for (const auto [at, command] :
+                 {std::pair{0uz, Command::Save}, std::pair{children.count + 1, Command::Restore}}) {
                 auto *order = arena.compose<layout::Node>(layout::Node::Type::Directive);
                 order->directive({.command = command});
                 wrapped[at] = directive(arena, order, origin);
@@ -72,24 +71,21 @@ namespace render::primitives::arrangement {
             return arena.compose<syntax::Node>(syntax::Node::Type::Group, std::string_view{}, origin, wrapped);
         };
 
-        parser.bind("{", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
-            return grouped(reader, '}', close);
-        });
-        parser.bind("\\bgroup", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
-            return grouped(reader, '}', close);
-        });
-        parser.bind("\\begingroup", [this, grouped](syntax::Parser &reader) -> syntax::Node * {
-            return grouped(reader, 0, end);
-        });
+        parser.bind("{",
+                    [this, grouped](syntax::Parser &reader) -> syntax::Node * { return grouped(reader, '}', close); });
+        parser.bind("\\bgroup",
+                    [this, grouped](syntax::Parser &reader) -> syntax::Node * { return grouped(reader, '}', close); });
+        parser.bind("\\begingroup",
+                    [this, grouped](syntax::Parser &reader) -> syntax::Node * { return grouped(reader, 0, end); });
 
         // A block is a group too: a face or a color chosen inside one --
         // `\begin{quote}\itshape` -- ends where the block does.
         context.environments.watch([this, &context](syntax::Mouth &) { kept.push_back(context.selection); },
-                             [this, &context](syntax::Mouth &) {
-                                 if (kept.empty()) return;
-                                 context.selection = kept.back();
-                                 kept.pop_back();
-                             });
+                                   [this, &context](syntax::Mouth &) {
+                                       if (kept.empty()) return;
+                                       context.selection = kept.back();
+                                       kept.pop_back();
+                                   });
 
         // Every run of text marked as it is read with the face and color in
         // use, so a switch part way through a paragraph -- `\bfseries`,

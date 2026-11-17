@@ -35,10 +35,10 @@ namespace syntax {
         /// @param arena Allocator for name text; must outlive the table.
         explicit Lexicon(memory::Arena &arena);
 
-        Lexicon(const Lexicon &) = delete("a symbol is an index into one table, and means nothing in a copy of it");
+        Lexicon(const Lexicon &) = delete ("a symbol is an index into one table, and means nothing in a copy of it");
 
-        Lexicon &operator=(const Lexicon &) = delete(
-            "a symbol is an index into one table, and means nothing in a copy of it");
+        Lexicon &
+        operator=(const Lexicon &) = delete ("a symbol is an index into one table, and means nothing in a copy of it");
 
         /// @brief Interns a name.
         /// @param name Text to intern.
@@ -58,9 +58,9 @@ namespace syntax {
         [[nodiscard]] std::size_t size() const noexcept { return names.size(); }
 
     private:
-        memory::Arena &arena; ///< Storage for name text.
+        memory::Arena &arena;                ///< Storage for name text.
         std::vector<std::string_view> names; ///< Text of each symbol.
-        std::vector<Symbol> table; ///< Open-addressed slots for longer names; #none is empty.
-        std::array<Symbol, 256> singles{}; ///< Symbol of each one-byte name.
+        std::vector<Symbol> table;           ///< Open-addressed slots for longer names; #none is empty.
+        std::array<Symbol, 256> singles{};   ///< Symbol of each one-byte name.
     };
 }

@@ -13,17 +13,12 @@
 #include <utility>
 
 namespace render::typography {
-    Face::~Face() noexcept {
-        dispose();
-    }
+    Face::~Face() noexcept { dispose(); }
 
     Face::Face(Face &&input) noexcept
-        : face(std::exchange(input.face, nullptr)),
-          storage(std::exchange(input.storage, {})),
-          scale(std::exchange(input.scale, 1000.0f)),
-          measure(std::exchange(input.measure, nullptr)),
-          cache(std::exchange(input.cache, {})) {
-    }
+        : face(std::exchange(input.face, nullptr)), storage(std::exchange(input.storage, {})),
+          scale(std::exchange(input.scale, 1000.0f)), measure(std::exchange(input.measure, nullptr)),
+          cache(std::exchange(input.cache, {})) {}
 
     Face &Face::operator=(Face &&input) noexcept {
         if (this != &input) {
@@ -50,9 +45,7 @@ namespace render::typography {
         cache = {};
     }
 
-    std::size_t Face::count() const noexcept {
-        return face ? hb_face_get_glyph_count(face) : 0;
-    }
+    std::size_t Face::count() const noexcept { return face ? hb_face_get_glyph_count(face) : 0; }
 
     hb_glyph_extents_t Face::extents(const std::uint32_t glyph) const noexcept {
         if (!face) return {};
@@ -75,11 +68,11 @@ namespace render::typography {
             // where it began, which goes nowhere: only a stroke that goes
             // somewhere counts, from where it starts to where it ends.
             struct Ink {
-                float left{0.0f}; // the outline's leftmost point
+                float left{0.0f};   // the outline's leftmost point
                 float bottom{0.0f}; // its lowest
-                float right{0.0f}; // its rightmost
-                float top{0.0f}; // its highest
-                bool drawn{false}; // whether it has drawn any point yet
+                float right{0.0f};  // its rightmost
+                float top{0.0f};    // its highest
+                bool drawn{false};  // whether it has drawn any point yet
 
                 // One point the outline passes through or bends toward: a
                 // control point's box holds its curve, as the file's own
@@ -95,37 +88,39 @@ namespace render::typography {
             static hb_draw_funcs_t *const pen = [] {
                 hb_draw_funcs_t *made = hb_draw_funcs_create();
                 hb_draw_funcs_set_line_to_func(
-                    made,
-                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float x, const float y, void *) {
-                        if (x == state->current_x && y == state->current_y) return;
-                        static_cast<Ink *>(data)->post(state->current_x, state->current_y);
-                        static_cast<Ink *>(data)->post(x, y);
-                    },
-                    nullptr, nullptr);
+                        made,
+                        [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float x, const float y,
+                           void *) {
+                            if (x == state->current_x && y == state->current_y) return;
+                            static_cast<Ink *>(data)->post(state->current_x, state->current_y);
+                            static_cast<Ink *>(data)->post(x, y);
+                        },
+                        nullptr, nullptr);
                 hb_draw_funcs_set_quadratic_to_func(
-                    made,
-                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float bendx, const float bendy,
-                       const float x, const float y, void *) {
-                        if (x == state->current_x && y == state->current_y && bendx == x && bendy == y) return;
-                        static_cast<Ink *>(data)->post(state->current_x, state->current_y);
-                        static_cast<Ink *>(data)->post(bendx, bendy);
-                        static_cast<Ink *>(data)->post(x, y);
-                    },
-                    nullptr, nullptr);
+                        made,
+                        [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float bendx, const float bendy,
+                           const float x, const float y, void *) {
+                            if (x == state->current_x && y == state->current_y && bendx == x && bendy == y) return;
+                            static_cast<Ink *>(data)->post(state->current_x, state->current_y);
+                            static_cast<Ink *>(data)->post(bendx, bendy);
+                            static_cast<Ink *>(data)->post(x, y);
+                        },
+                        nullptr, nullptr);
                 hb_draw_funcs_set_cubic_to_func(
-                    made,
-                    [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float firstx, const float firsty,
-                       const float secondx, const float secondy, const float x, const float y, void *) {
-                        if (x == state->current_x && y == state->current_y && firstx == x && firsty == y &&
-                            secondx == x && secondy == y) {
-                            return;
-                        }
-                        static_cast<Ink *>(data)->post(state->current_x, state->current_y);
-                        static_cast<Ink *>(data)->post(firstx, firsty);
-                        static_cast<Ink *>(data)->post(secondx, secondy);
-                        static_cast<Ink *>(data)->post(x, y);
-                    },
-                    nullptr, nullptr);
+                        made,
+                        [](hb_draw_funcs_t *, void *data, hb_draw_state_t *state, const float firstx,
+                           const float firsty, const float secondx, const float secondy, const float x, const float y,
+                           void *) {
+                            if (x == state->current_x && y == state->current_y && firstx == x && firsty == y &&
+                                secondx == x && secondy == y) {
+                                return;
+                            }
+                            static_cast<Ink *>(data)->post(state->current_x, state->current_y);
+                            static_cast<Ink *>(data)->post(firstx, firsty);
+                            static_cast<Ink *>(data)->post(secondx, secondy);
+                            static_cast<Ink *>(data)->post(x, y);
+                        },
+                        nullptr, nullptr);
                 hb_draw_funcs_make_immutable(made);
                 return made;
             }();
@@ -139,10 +134,10 @@ namespace render::typography {
                 const auto left = static_cast<hb_position_t>(std::lround(ink.left));
                 const auto top = static_cast<hb_position_t>(std::lround(ink.top));
                 found = hb_glyph_extents_t{
-                    .x_bearing = left,
-                    .y_bearing = top,
-                    .width = static_cast<hb_position_t>(std::lround(ink.right)) - left,
-                    .height = static_cast<hb_position_t>(std::lround(ink.bottom)) - top,
+                        .x_bearing = left,
+                        .y_bearing = top,
+                        .width = static_cast<hb_position_t>(std::lround(ink.right)) - left,
+                        .height = static_cast<hb_position_t>(std::lround(ink.bottom)) - top,
                 };
             } else if (!hb_font_get_glyph_extents(measure, glyph, &found)) {
                 // No outline -- a bitmap, or nothing at all: the file's box.
@@ -159,9 +154,9 @@ namespace render::typography {
         // Read-only and with no destructor: the bytes belong to the arena,
         // which outlives every face built over them. HarfBuzz therefore never
         // copies and never frees them.
-        hb_blob_t *blob = hb_blob_create(
-            reinterpret_cast<const char *>(data.data()), static_cast<unsigned int>(data.size()),
-            HB_MEMORY_MODE_READONLY, nullptr, nullptr);
+        hb_blob_t *blob =
+                hb_blob_create(reinterpret_cast<const char *>(data.data()), static_cast<unsigned int>(data.size()),
+                               HB_MEMORY_MODE_READONLY, nullptr, nullptr);
         if (!blob) return false;
 
         hb_face_t *opened = hb_face_create(blob, 0);
@@ -169,8 +164,7 @@ namespace render::typography {
 
         if (!opened || hb_face_get_glyph_count(opened) == 0) {
             if (opened) hb_face_destroy(opened);
-            Logger::log(Logger::Type::Layout, Logger::Level::Error,
-                        "HarfBuzz rejected the font file");
+            Logger::log(Logger::Type::Layout, Logger::Level::Error, "HarfBuzz rejected the font file");
             return false;
         }
 

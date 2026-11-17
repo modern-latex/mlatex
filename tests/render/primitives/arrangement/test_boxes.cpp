@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <cassert>
 #include <cstdio>
@@ -26,13 +26,13 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, &result.pages);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, &result.pages);
     result.errors = errors.str();
-    for (std::string &page: result.pages) {
+    for (std::string &page : result.pages) {
         std::erase_if(page, [](const char letter) { return letter == ' ' || letter == '\n'; });
         result.text += page;
     }
@@ -55,15 +55,15 @@ static bool holds(const std::string_view text, const std::string_view part) {
 
 int main() {
     {
-        const Result result = article(
-            "\\usepackage{xcolor}\\newsavebox{\\stash}\\newlength{\\gap}",
-            "\\mbox{kept} \\fbox{framed} \\framebox[3cm][r]{right} \\colorbox{yellow}{behind} "
-            "\\fcolorbox{red}{white}{both} \\raisebox{1ex}{raised} x\\makebox[0pt][l]{over}y "
-            "[\\phantom{hidden}] \\sbox{\\stash}{saved}\\usebox{\\stash}\\usebox{\\stash} "
-            "\\settowidth{\\gap}{MMMM}\\rule{\\gap}{1pt}\\rule{0.5\\linewidth}{1pt}\\par"
-            "\\noindent\\begin{minipage}[t]{0.45\\textwidth}Left column.\\end{minipage}\\hfill"
-            "\\begin{minipage}[t]{0.45\\textwidth}Right column.\\end{minipage}\\par"
-            "\\parbox{4cm}{A parbox.} Name\\dotfill Value \\hrulefill");
+        const Result result =
+                article("\\usepackage{xcolor}\\newsavebox{\\stash}\\newlength{\\gap}",
+                        "\\mbox{kept} \\fbox{framed} \\framebox[3cm][r]{right} \\colorbox{yellow}{behind} "
+                        "\\fcolorbox{red}{white}{both} \\raisebox{1ex}{raised} x\\makebox[0pt][l]{over}y "
+                        "[\\phantom{hidden}] \\sbox{\\stash}{saved}\\usebox{\\stash}\\usebox{\\stash} "
+                        "\\settowidth{\\gap}{MMMM}\\rule{\\gap}{1pt}\\rule{0.5\\linewidth}{1pt}\\par"
+                        "\\noindent\\begin{minipage}[t]{0.45\\textwidth}Left column.\\end{minipage}\\hfill"
+                        "\\begin{minipage}[t]{0.45\\textwidth}Right column.\\end{minipage}\\par"
+                        "\\parbox{4cm}{A parbox.} Name\\dotfill Value \\hrulefill");
         assert((result.clean) && "the boxes read without a report");
         assert((holds(result.text, "keptframedrightbehindbothraisedxovery[]savedsaved")) &&
                "every box keeps its contents, a phantom sets none, a saved box twice");
@@ -82,16 +82,16 @@ int main() {
 
     {
         const Result result = article("", "\\setbox3=\\hbox{boxed}[\\copy3][\\box3][\\box3] "
-                                      "\\setbox0\\hbox{measure}\\the\\wd0.");
+                                          "\\setbox0\\hbox{measure}\\the\\wd0.");
         assert((result.clean) && "box registers read without a report");
         assert((holds(result.text, "[boxed][boxed][]")) && "\\copy keeps the box, \\box empties the register");
         assert((holds(result.text, "pt.")) && "\\wd reads its width as a length");
     }
 
     {
-        const Result result = article("\\usepackage{graphicx}",
-                                      "\\rotatebox{90}{up} \\scalebox{2}{big} \\resizebox{2cm}{!}{wide} "
-                                      "\\reflectbox{mirror}");
+        const Result result =
+                article("\\usepackage{graphicx}", "\\rotatebox{90}{up} \\scalebox{2}{big} \\resizebox{2cm}{!}{wide} "
+                                                  "\\reflectbox{mirror}");
         assert((result.clean && holds(result.text, "upbigwidemirror")) && "each transform keeps its text");
         assert((holds(result.pdf, " cm\n")) && "and draws it through a matrix");
         assert((holds(result.pdf, "0 -1 1 0 ") || holds(result.pdf, "0 1 -1 0 ")) &&
@@ -108,7 +108,7 @@ int main() {
 
     {
         const Result result = article("\\newlength{\\w}", "\\settowidth{\\w}{}\\the\\w{} "
-                                      "\\setlength{\\w}{\\widthof{MM}}\\ifdim\\w>0pt wide\\fi");
+                                                          "\\setlength{\\w}{\\widthof{MM}}\\ifdim\\w>0pt wide\\fi");
         assert((result.clean && holds(result.text, "0.0pt") && holds(result.text, "wide")) &&
                "nothing is no width, and \\widthof measures");
     }
@@ -117,20 +117,20 @@ int main() {
     // columns side by side -- as blocks and as \column.
     {
         const Result result = article("", "\\begin{block}{Title}Body.\\end{block}"
-                                      "\\begin{alertblock}<2->{Alert}Careful.\\end{alertblock}");
+                                          "\\begin{alertblock}<2->{Alert}Careful.\\end{alertblock}");
         assert((result.clean && holds(result.text, "TitleBody.AlertCareful.")) && "a block's title, then its body");
-        assert(
-            (holds(result.pdf, "0.2 0.2 0.7 rg") || holds(result.pdf, "0 0 0 rg")) && "in a bar of the block's color");
+        assert((holds(result.pdf, "0.2 0.2 0.7 rg") || holds(result.pdf, "0 0 0 rg")) &&
+               "in a bar of the block's color");
     }
     {
         const Result result = article("", "\\begin{columns}\\column{0.45\\textwidth}Left.\\column{0.45\\textwidth}"
-                                      "Right.\\end{columns}After.");
+                                          "Right.\\end{columns}After.");
         assert((result.clean && holds(result.text, "Left.Right.After.")) && "\\column's columns, then the text after");
         assert((result.pages.size() == 1) && "on one line");
     }
     {
         const Result result = article("", "\\begin{columns}[t]\\begin{column}{0.4\\textwidth}One.\\end{column}"
-                                      "\\begin{column}{0.4\\textwidth}Two.\\end{column}\\end{columns}");
+                                          "\\begin{column}{0.4\\textwidth}Two.\\end{column}\\end{columns}");
         assert((result.clean && holds(result.text, "One.Two.")) && "column blocks, hung by their tops");
     }
 
@@ -142,8 +142,8 @@ int main() {
         const Result result = article("\\usepackage{tcolorbox}\\tcbset{colframe=red}"
                                       "\\newtcolorbox{note}[1]{title=#1, fonttitle=\\bfseries}",
                                       "\\begin{note}{Heads}Body.\\end{note}");
-        assert(
-            (result.clean && holds(result.text, "HeadsBody.")) && "a box \\newtcolorbox names, its title its argument");
+        assert((result.clean && holds(result.text, "HeadsBody.")) &&
+               "a box \\newtcolorbox names, its title its argument");
         assert((holds(result.pdf, "1 0 0 rg")) && "in \\tcbset's colors");
     }
     {

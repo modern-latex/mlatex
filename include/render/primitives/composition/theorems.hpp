@@ -1,7 +1,7 @@
 #pragma once
 
-#include "render/primitives/context.hpp"
 #include "memory/dictionary.hpp"
+#include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
 
@@ -59,28 +59,26 @@ namespace render::primitives::composition {
         /// Wrapper::traceback() gathers them when a run finishes. A module
         /// records an error by appending to the list where it finds it, which
         /// is why there is no reporting function to go looking for.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief amsthm's three styles.
         enum class Style : std::uint8_t {
-            Plain, ///< Bold head, italic body: theorems, lemmas, corollaries.
+            Plain,      ///< Bold head, italic body: theorems, lemmas, corollaries.
             Definition, ///< Bold head, upright body: definitions, examples.
-            Remark ///< Italic head, upright body: remarks, notes.
+            Remark      ///< Italic head, upright body: remarks, notes.
         };
 
         /// @brief One environment `\\newtheorem` declared.
         struct Type {
-            std::string title{}; ///< What its head calls it: `Theorem`.
-            std::string counter{}; ///< The counter it numbers by, or empty for none.
+            std::string title{};       ///< What its head calls it: `Theorem`.
+            std::string counter{};     ///< The counter it numbers by, or empty for none.
             Style style{Style::Plain}; ///< How it is set.
         };
 
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
-        mutable memory::Dictionary<Type> types{}; ///< Every environment declared, by name.
-        mutable memory::Dictionary<Style> styles{}; ///< Styles by name, amsthm's and a document's.
-        mutable Style style{Style::Plain}; ///< The style the next declaration takes.
+        mutable memory::Dictionary<Type> types{};            ///< Every environment declared, by name.
+        mutable memory::Dictionary<Style> styles{};          ///< Styles by name, amsthm's and a document's.
+        mutable Style style{Style::Plain};                   ///< The style the next declaration takes.
     };
 }

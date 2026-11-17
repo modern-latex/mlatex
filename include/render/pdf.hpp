@@ -71,11 +71,8 @@ namespace render {
         /// @param path   File to write.
         /// @return True when the file was written.
         /// @complexity O(n) in the marks on the pages, plus the fonts embedded.
-        [[nodiscard]] static bool compose(
-            Composer &composer,
-            memory::Slice<layout::Pager::Page> pages,
-            std::string_view path
-        );
+        [[nodiscard]] static bool compose(Composer &composer, memory::Slice<layout::Pager::Page> pages,
+                                          std::string_view path);
 
     private:
         /// @brief One PDF file, assembled object by object.
@@ -84,7 +81,7 @@ namespace render {
         /// byte offset is recorded, because the cross-reference table at the
         /// end of the file is a list of exactly those offsets.
         struct File {
-            std::string bytes{}; ///< The file so far.
+            std::string bytes{};                ///< The file so far.
             std::vector<std::size_t> offsets{}; ///< Where each object starts.
 
             /// @brief Reserves the next object number without writing it yet.

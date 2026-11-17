@@ -42,9 +42,7 @@ namespace render::primitives::retrieval {
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.

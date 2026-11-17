@@ -47,12 +47,18 @@ void Logger::compose(const int count, char **arguments) {
             level(Level::Debug);
         } else if (option.starts_with("--log-level=")) {
             const std::string_view value = option.substr(12);
-            if (value == "traceback") level(Level::Traceback);
-            else if (value == "debug") level(Level::Debug);
-            else if (value == "info") level(Level::Informative);
-            else if (value == "warn") level(Level::Warning);
-            else if (value == "error") level(Level::Error);
-            else if (value == "silent") level(Level::Silent);
+            if (value == "traceback")
+                level(Level::Traceback);
+            else if (value == "debug")
+                level(Level::Debug);
+            else if (value == "info")
+                level(Level::Informative);
+            else if (value == "warn")
+                level(Level::Warning);
+            else if (value == "error")
+                level(Level::Error);
+            else if (value == "silent")
+                level(Level::Silent);
         } else if (option.starts_with("--log-file=")) {
             file(std::string(option.substr(11)));
         } else if (option == "--no-color") {
@@ -61,24 +67,17 @@ void Logger::compose(const int count, char **arguments) {
     }
 }
 
-void Logger::types(const Type target) noexcept {
-    mask.store(target, std::memory_order_relaxed);
-}
+void Logger::types(const Type target) noexcept { mask.store(target, std::memory_order_relaxed); }
 
 void Logger::enable(const Type target) noexcept {
     Type current = mask.load(std::memory_order_relaxed);
-    while (!mask.compare_exchange_weak(current, current | target,
-                                       std::memory_order_relaxed, std::memory_order_relaxed)) {
-    }
+    while (!mask.compare_exchange_weak(current, current | target, std::memory_order_relaxed,
+                                       std::memory_order_relaxed)) {}
 }
 
-void Logger::level(const Level value) noexcept {
-    threshold.store(value, std::memory_order_relaxed);
-}
+void Logger::level(const Level value) noexcept { threshold.store(value, std::memory_order_relaxed); }
 
-void Logger::color(const bool flag) noexcept {
-    ansi.store(flag, std::memory_order_relaxed);
-}
+void Logger::color(const bool flag) noexcept { ansi.store(flag, std::memory_order_relaxed); }
 
 void Logger::file(const std::string &path) {
     const std::lock_guard guard(mutex);
@@ -128,17 +127,12 @@ void Logger::write(const Type target, const Level value, const std::string_view 
 
         if (colored) {
             // Each level its own colour: grey, cyan, green, yellow, red.
-            const std::string_view tint = value == Level::Traceback
-                                              ? "\x1b[90m"
-                                              : value == Level::Debug
-                                                    ? "\x1b[36m"
-                                                    : value == Level::Informative
-                                                          ? "\x1b[32m"
-                                                          : value == Level::Warning
-                                                                ? "\x1b[33m"
-                                                                : value == Level::Error
-                                                                      ? "\x1b[31m"
-                                                                      : "";
+            const std::string_view tint = value == Level::Traceback     ? "\x1b[90m"
+                                          : value == Level::Debug       ? "\x1b[36m"
+                                          : value == Level::Informative ? "\x1b[32m"
+                                          : value == Level::Warning     ? "\x1b[33m"
+                                          : value == Level::Error       ? "\x1b[31m"
+                                                                        : "";
             std::clog << tint << output << plain << std::flush;
         } else {
             std::clog << output << std::flush;
@@ -147,35 +141,48 @@ void Logger::write(const Type target, const Level value, const std::string_view 
         if (stream.is_open()) {
             stream << output;
             if (value >= Level::Warning) {
-                stream << std::format("    at {}:{} ({})\n",
-                                      location.file_name(), location.line(), location.function_name());
+                stream << std::format("    at {}:{} ({})\n", location.file_name(), location.line(),
+                                      location.function_name());
             }
             stream.flush();
         }
-    } catch (...) {
-    }
+    } catch (...) {}
 }
 
 std::string_view Logger::name(const Type target) noexcept {
     switch (target) {
-        case Type::Lexer: return "Lexer";
-        case Type::Mouth: return "Mouth";
-        case Type::Parser: return "Parser";
-        case Type::Layout: return "Layout";
-        case Type::Memory: return "Memory";
-        case Type::Semantics: return "Semantics";
-        case Type::All: return "All";
-        default: return "General";
+    case Type::Lexer:
+        return "Lexer";
+    case Type::Mouth:
+        return "Mouth";
+    case Type::Parser:
+        return "Parser";
+    case Type::Layout:
+        return "Layout";
+    case Type::Memory:
+        return "Memory";
+    case Type::Semantics:
+        return "Semantics";
+    case Type::All:
+        return "All";
+    default:
+        return "General";
     }
 }
 
 std::string_view Logger::name(const Level value) noexcept {
     switch (value) {
-        case Level::Traceback: return "Traceback";
-        case Level::Debug: return "Debug";
-        case Level::Informative: return "Informative";
-        case Level::Warning: return "Warning";
-        case Level::Error: return "Error";
-        default: return "Log";
+    case Level::Traceback:
+        return "Traceback";
+    case Level::Debug:
+        return "Debug";
+    case Level::Informative:
+        return "Informative";
+    case Level::Warning:
+        return "Warning";
+    case Level::Error:
+        return "Error";
+    default:
+        return "Log";
     }
 }

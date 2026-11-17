@@ -45,7 +45,7 @@ namespace render::primitives::arrangement {
 
     private:
         mutable std::vector<Selection> kept{}; ///< What each open block was entered with.
-        syntax::Symbol close{}; ///< `\\egroup`, which closes a brace group as `}` does.
-        syntax::Symbol end{}; ///< `\\endgroup`, which closes `\\begingroup`'s.
+        syntax::Symbol close{};                ///< `\\egroup`, which closes a brace group as `}` does.
+        syntax::Symbol end{};                  ///< `\\endgroup`, which closes `\\begingroup`'s.
     };
 }

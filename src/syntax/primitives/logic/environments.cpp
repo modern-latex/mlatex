@@ -5,9 +5,9 @@
 /// same closures as `\\begin` and `\\end`, so the two are the same primitive
 /// under two names rather than two implementations to keep in step.
 #include "syntax/primitives/logic/environments.hpp"
+#include "logger.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/glossary.hpp"
-#include "logger.hpp"
 
 #include <array>
 #include <span>
@@ -17,8 +17,7 @@
 #include <utility>
 
 namespace syntax::primitives::logic {
-    Environments::Environments(Lexicon &lexicon) noexcept : lexicon(&lexicon) {
-    }
+    Environments::Environments(Lexicon &lexicon) noexcept : lexicon(&lexicon) {}
 
     Symbol Environments::title(Mouth &mouth) {
         const std::string joined = Argument::text(mouth);
@@ -31,8 +30,8 @@ namespace syntax::primitives::logic {
         return lexicon->resolve(open.back());
     }
 
-    void Environments::watch(const std::string_view name, Handler entering, Handler leaving,
-                       const bool transparent, const bool persisting) const {
+    void Environments::watch(const std::string_view name, Handler entering, Handler leaving, const bool transparent,
+                             const bool persisting) const {
         if (!lexicon || name.empty()) return;
 
         // Indexed by the interned name, so dispatch is one bounds check and
@@ -42,10 +41,10 @@ namespace syntax::primitives::logic {
 
         Hook &hook = hooks[slot];
         if (!hook.entering && !hook.leaving) {
-            hook = Hook{
-                .entering = std::move(entering), .leaving = std::move(leaving), .transparent = transparent,
-                .lingering = persisting
-            };
+            hook = Hook{.entering = std::move(entering),
+                        .leaving = std::move(leaving),
+                        .transparent = transparent,
+                        .lingering = persisting};
             return;
         }
 
@@ -77,21 +76,18 @@ namespace syntax::primitives::logic {
         const auto word = [](const Mouth &mouth, const std::string &name) {
             const Symbol symbol = mouth.lexicon.intern(name);
             return Token{
-                .symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)
-            };
+                    .symbol = symbol, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(symbol)};
         };
         const auto brace = [](const Mouth &mouth, const char written) {
             const Symbol symbol = mouth.lexicon.intern(std::string_view(&written, 1));
             return Token{
-                .symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)
-            };
+                    .symbol = symbol, .category = Catcodes::Category::Group, .text = mouth.lexicon.resolve(symbol)};
         };
 
         const Mouth::Handler entering = [this, word](Mouth &mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
-                tracebacks.emplace_back(Traceback::Type::Environment,
-                                        mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Environment, mouth.lookahead().location,
                                         "\\begin needs a block name");
                 return;
             }
@@ -133,18 +129,15 @@ namespace syntax::primitives::logic {
         // A block closed, once whatever its end code opened has been.
         const auto close = [this, word](Mouth &mouth, const Symbol name) {
             if (open.empty()) {
-                tracebacks.emplace_back(Traceback::Type::Environment,
-                                        mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Environment, mouth.lookahead().location,
                                         std::format("Extra \\end{{{}}}", mouth.lexicon.resolve(name)));
                 return;
             }
 
             if (open.back() != name) {
-                tracebacks.emplace_back(
-                    Traceback::Type::Environment, mouth.lookahead().location,
-                    std::format("\\begin{{{}}} ended by \\end{{{}}}",
-                                mouth.lexicon.resolve(open.back()),
-                                mouth.lexicon.resolve(name)));
+                tracebacks.emplace_back(Traceback::Type::Environment, mouth.lookahead().location,
+                                        std::format("\\begin{{{}}} ended by \\end{{{}}}",
+                                                    mouth.lexicon.resolve(open.back()), mouth.lexicon.resolve(name)));
                 // Still closed: leaving the scope open would cascade every
                 // later \end into the same complaint.
             }
@@ -169,7 +162,8 @@ namespace syntax::primitives::logic {
                 const std::size_t added = mouth.stream().size() - before;
                 std::vector<Token> code;
                 code.reserve(added + 1);
-                for (std::size_t index = 0; index < added; ++index) code.push_back(mouth.stream().advance());
+                for (std::size_t index = 0; index < added; ++index)
+                    code.push_back(mouth.stream().advance());
                 code.push_back(word(mouth, "\\end:linger"));
                 mouth.stream().inject(std::span{code});
                 lingering.push_back(open.back());
@@ -183,8 +177,7 @@ namespace syntax::primitives::logic {
         const Mouth::Handler leaving = [this, word, close](Mouth &mouth) {
             const Symbol name = title(mouth);
             if (name == none) {
-                tracebacks.emplace_back(Traceback::Type::Environment,
-                                        mouth.lookahead().location,
+                tracebacks.emplace_back(Traceback::Type::Environment, mouth.lookahead().location,
                                         "\\end needs a block name");
                 return;
             }
@@ -195,10 +188,8 @@ namespace syntax::primitives::logic {
             const auto slot = static_cast<std::size_t>(name);
             if (slot < hooks.size() && hooks[slot].own) {
                 closing.push_back(name);
-                const std::array<Token, 2> code{
-                    word(mouth, std::format("\\{}:close", mouth.lexicon.resolve(name))),
-                    word(mouth, "\\end:finish")
-                };
+                const std::array<Token, 2> code{word(mouth, std::format("\\{}:close", mouth.lexicon.resolve(name))),
+                                                word(mouth, "\\end:finish")};
                 mouth.stream().inject(std::span{code});
                 return;
             }
@@ -264,8 +255,8 @@ namespace syntax::primitives::logic {
             if (providing && (hook.own || native)) return;
             if (renewing && native) {
                 tracebacks.emplace_back(
-                    Traceback::Type::Warning, origin,
-                    std::format("renewenvironment {}: the engine sets this block itself, and still does", name));
+                        Traceback::Type::Warning, origin,
+                        std::format("renewenvironment {}: the engine sets this block itself, and still does", name));
                 return;
             }
             hook.own = true;

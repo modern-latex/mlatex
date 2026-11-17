@@ -1,10 +1,10 @@
 #pragma once
 
+#include "memory/location.hpp"
 #include "syntax/catcodes.hpp"
 #include "syntax/lexicon.hpp"
 #include "syntax/tokens.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/location.hpp"
 
 #include <cstdint>
 #include <string_view>
@@ -15,9 +15,9 @@ namespace syntax {
     public:
         enum class Type {
             Newline, ///< State N: line start; an end-of-line here is \\par
-            Skip, ///< State S: skipping blanks; an end-of-line here starts a new line and nothing more
-            Middle, ///< State M: mid-line; an end-of-line here is a space
-            Blank ///< Just past a \\par; further empty lines add nothing
+            Skip,    ///< State S: skipping blanks; an end-of-line here starts a new line and nothing more
+            Middle,  ///< State M: mid-line; an end-of-line here is a space
+            Blank    ///< Just past a \\par; further empty lines add nothing
         };
 
         /// @brief Binds a lexer to a source buffer.

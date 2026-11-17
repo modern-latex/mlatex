@@ -27,7 +27,8 @@ struct Harness {
 /// @brief How many nodes of a type a list holds.
 static std::size_t count(const memory::Slice<syntax::Node *> nodes, const syntax::Node::Type type) {
     std::size_t found = 0;
-    for (const syntax::Node *node: nodes) found += node && node->type == type;
+    for (const syntax::Node *node : nodes)
+        found += node && node->type == type;
     return found;
 }
 
@@ -40,7 +41,7 @@ int main() {
         assert((count(nodes, syntax::Node::Type::Text) >= 2) && "text is text");
         assert((count(nodes, syntax::Node::Type::Paragraph) == 1) && "an empty line is one paragraph break");
         std::string text;
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node->type == syntax::Node::Type::Text) text += node->value;
         }
         assert((text.find("Welcome") != std::string::npos && text.find("second") != std::string::npos) &&
@@ -65,12 +66,12 @@ int main() {
         Harness harness;
         const auto nodes = harness.parse("before \\nosuch after");
         bool named = false;
-        for (const syntax::Traceback &fault: harness.parser.traceback()) {
+        for (const syntax::Traceback &fault : harness.parser.traceback()) {
             named = named || fault.format().find("\\nosuch") != std::string::npos;
         }
         assert((named) && "an unknown command is reported by name");
         std::string text;
-        for (const syntax::Node *node: nodes) {
+        for (const syntax::Node *node : nodes) {
             if (node->type == syntax::Node::Type::Text) text += node->value;
         }
         assert((text.find("after") != std::string::npos) && "and the text after it still parses");

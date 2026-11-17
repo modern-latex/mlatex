@@ -1,6 +1,6 @@
 #pragma once
 
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <filesystem>
 #include <ostream>
@@ -10,13 +10,13 @@
 /// @brief Just in time: the engine kept warm between runs, so a document
 ///        changed and set again costs only what changed.
 ///
-/// Everything here is a child of the ahead-of-time pipeline in latex.hpp and
+/// Everything here is a child of the ahead-of-time pipeline in mlatex.hpp and
 /// never a second engine: whatever a run cannot shorten, it does the way
-/// latex::compose() does it. src/jit/implementation.md is the overview --
+/// mlatex::compose() does it. src/jit/implementation.md is the overview --
 /// what a run costs today, the order to build the pieces in, and how the
 /// JIT reaches WebAssembly. Each class here says what to write in it.
 namespace jit {
-    /// @brief A latex::Session kept alive between documents, which sets a
+    /// @brief A mlatex::Session kept alive between documents, which sets a
     ///        document again as its files change: the `jit` target.
     ///
     /// Today it runs the ahead-of-time pipeline on every call, so
@@ -29,7 +29,7 @@ namespace jit {
     ///
     /// @par Use
     /// @code
-    /// jit::Jit jit(latex::locate(program));
+    /// jit::Jit jit(mlatex::locate(program));
     /// jit.host.directories.emplace_back("styles");
     ///
     /// std::ostringstream errors;
@@ -41,7 +41,7 @@ namespace jit {
     /// @par What to write
     /// 1. **Notice a save at once** -- jit::Watcher, used by `--watch` in
     ///    src/main.cpp. Saves about 125 ms of waiting per save.
-    /// 2. **Keep the engine warm.** Move what `run()` in src/latex.cpp
+    /// 2. **Keep the engine warm.** Move what `run()` in src/mlatex.cpp
     ///    builds for every document, but which no document changes, into
     ///    members here: the font Collection and Registry, the Shaper, the
     ///    hyphenation patterns, and an arena they live in. Saves 1 to 2 ms a
@@ -65,7 +65,7 @@ namespace jit {
     ///
     /// Each piece should leave the pages exactly as the ahead-of-time target
     /// sets them; a test that edits a document step by step and compares
-    /// this class's `pages` with latex::typeset()'s after every edit is what
+    /// this class's `pages` with mlatex::typeset()'s after every edit is what
     /// proves it (see tests/jit/test_jit.cpp).
     ///
     /// @par Names
@@ -77,26 +77,26 @@ namespace jit {
     /// @par WebAssembly
     /// This file compiles into the WebAssembly module as it is: src/jit/ is
     /// part of the engine library there too. To hand the JIT to JavaScript,
-    /// make render::Wasm a child of this class instead of latex::Session --
+    /// make render::Wasm a child of this class instead of mlatex::Session --
     /// `class Wasm : public jit::Jit` in render/wasm.hpp -- and give this
     /// class a warm `typeset(std::string_view)` of its own: every page that
     /// already uses `new engine.Session()` is then warm with no change to
-    /// latex.js or latex.d.ts. The steps are in src/jit/implementation.md.
-    class Jit : public latex::Session {
+    /// mlatex.js or mlatex.d.ts. The steps are in src/jit/implementation.md.
+    class Jit : public mlatex::Session {
     public:
-        using latex::Session::Session;
+        using mlatex::Session::Session;
 
-        /// The in-memory latex::Session::typeset(), which runs ahead of time:
-        /// a call through a `latex::Session&` reaches that one whatever this
+        /// The in-memory mlatex::Session::typeset(), which runs ahead of time:
+        /// a call through a `mlatex::Session&` reaches that one whatever this
         /// class adds, since nothing in Session is virtual. Give this class
         /// its own `typeset(std::string_view)` when piece 2 exists, and the
         /// bindings' sessions are warm too.
-        using latex::Session::typeset;
+        using mlatex::Session::typeset;
 
         /// @brief Sets a document from disk into a PDF on disk -- what the
         ///        command line's `jit` target calls, once per run.
         ///
-        /// For now this is latex::compose() with this session's #host: the
+        /// For now this is mlatex::compose() with this session's #host: the
         /// ahead-of-time run, whole. The pieces listed above shorten it from
         /// the inside, and its signature stays as it is.
         ///

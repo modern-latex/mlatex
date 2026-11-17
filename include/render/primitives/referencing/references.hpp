@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -66,15 +66,13 @@ namespace render::primitives::referencing {
         void operator()(syntax::Parser &parser, Context &context) const;
 
         /// @brief Errors this module has recorded: a label defined twice.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
         /// @brief The two marks a link is drawn between, and the color its
         ///        text takes.
         struct Hyperlink {
-            layout::Node *open{nullptr}; ///< Opens it; null when there is no link to make.
-            layout::Node *close{nullptr}; ///< Ends it.
+            layout::Node *open{nullptr};              ///< Opens it; null when there is no link to make.
+            layout::Node *close{nullptr};             ///< Ends it.
             const layout::Node::Color *tint{nullptr}; ///< Its text's color with `colorlinks`; null for the text's own.
         };
 
@@ -103,23 +101,23 @@ namespace render::primitives::referencing {
     private:
         /// @brief How a reference is written out.
         enum class Form : std::uint8_t {
-            Number, ///< The number alone: `\\ref`, and inside `\\eqref`'s parentheses.
-            Named, ///< Its type, then its number: `\\cref`.
+            Number,  ///< The number alone: `\\ref`, and inside `\\eqref`'s parentheses.
+            Named,   ///< Its type, then its number: `\\cref`.
             Capital, ///< The same, the type capitalised: `\\Cref`.
-            Page, ///< The page it is on: `\\pageref`.
-            Title ///< What it is called: `\\nameref`.
+            Page,    ///< The page it is on: `\\pageref`.
+            Title    ///< What it is called: `\\nameref`.
         };
 
         /// @brief One label, and every reference that came before it.
         struct Mark {
-            std::string text{}; ///< What it names, once defined.
-            std::string type{}; ///< What type of thing that is.
-            std::string title{}; ///< What that is called.
+            std::string text{};                               ///< What it names, once defined.
+            std::string type{};                               ///< What type of thing that is.
+            std::string title{};                              ///< What that is called.
             std::size_t anchor{static_cast<std::size_t>(-1)}; ///< Where it stands, for its page.
-            bool defined{false}; ///< Whether its `\\label` has been read.
+            bool defined{false};                              ///< Whether its `\\label` has been read.
 
             /// Text nodes to fill when it is, each with how.
-            std::vector<std::pair<syntax::Node *, Form> > references{};
+            std::vector<std::pair<syntax::Node *, Form>> references{};
 
             /// Links to it made before it was, to be pointed at its anchor.
             std::vector<layout::Node *> links{};
@@ -138,11 +136,11 @@ namespace render::primitives::referencing {
         /// @param context Where the names and the pages are kept.
         [[nodiscard]] static std::string write(const Mark &mark, Form form, const Context &context);
 
-        mutable memory::Dictionary<Mark> marks{}; ///< Every label seen or asked for.
+        mutable memory::Dictionary<Mark> marks{};    ///< Every label seen or asked for.
         mutable memory::Dictionary<Mark> forwards{}; ///< Every text `\\@fulfil` gave or `\\@forward` asked for, by key.
-        mutable std::vector<std::pair<std::string, memory::Location> > awaited{};
+        mutable std::vector<std::pair<std::string, memory::Location>> awaited{};
         ///< Labels referred to before they were made, and where.
-        mutable std::vector<std::size_t> waiting{}; ///< Anchors a label gave out, for its mark to set down.
+        mutable std::vector<std::size_t> waiting{};          ///< Anchors a label gave out, for its mark to set down.
         mutable std::vector<syntax::Traceback> tracebacks{}; ///< Errors this module found.
 
         syntax::Symbol place{}; ///< The mark a label leaves in the text; no document can write it.

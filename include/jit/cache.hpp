@@ -65,6 +65,5 @@ namespace jit {
     /// The same in the module. Its memory only grows, so size both tables
     /// smaller there -- under `#if defined(__EMSCRIPTEN__)` -- and empty them
     /// rather than let them grow past a few megabytes.
-    class Cache {
-    };
+    class Cache {};
 }

@@ -23,7 +23,7 @@
 #endif
 #include <windows.h>
 #include <winhttp.h>
-#elif defined(LATEX_CURL)
+#elif defined(MLATEX_CURL)
 #include <curl/curl.h>
 #include <string>
 #endif
@@ -34,15 +34,11 @@ namespace protocols {
     /// @param text Text about to become one field of a request line.
     /// @return True when it holds a carriage return or a line feed.
     [[nodiscard]] static bool unsafe(const std::string_view text) noexcept {
-        return text.find('\r') != std::string_view::npos ||
-               text.find('\n') != std::string_view::npos;
+        return text.find('\r') != std::string_view::npos || text.find('\n') != std::string_view::npos;
     }
 
-    std::optional<Response> compose(
-        const std::string_view method,
-        const std::string_view url,
-        const std::string_view body
-    ) {
+    std::optional<Response> compose(const std::string_view method, const std::string_view url,
+                                    const std::string_view body) {
         if (unsafe(method) || unsafe(url)) return std::nullopt;
 
         // Only the two schemes this sends: anything else is refused here, on
@@ -73,14 +69,15 @@ namespace protocols {
 
         // Closes a WinHTTP handle when it goes out of scope.
         struct Handle {
-            explicit Handle(const HINTERNET handle) noexcept : value(handle) {
+            explicit Handle(const HINTERNET handle) noexcept : value(handle) {}
+
+            Handle(const Handle &) = delete ("a handle closes its connection when it is destroyed, once");
+
+            Handle &operator=(const Handle &) = delete ("a handle closes its connection when it is destroyed, once");
+
+            ~Handle() {
+                if (value) WinHttpCloseHandle(value);
             }
-
-            Handle(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
-
-            Handle &operator=(const Handle &) = delete("a handle closes its connection when it is destroyed, once");
-
-            ~Handle() { if (value) WinHttpCloseHandle(value); }
 
             explicit operator HINTERNET() const noexcept { return value; }
             [[nodiscard]] bool ok() const noexcept { return value != nullptr; }
@@ -88,32 +85,24 @@ namespace protocols {
             HINTERNET value;
         };
 
-        const Handle session{
-            WinHttpOpen(
-                L"latex-engine/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                nullptr, nullptr, 0)
-        };
+        const Handle session{WinHttpOpen(L"mlatex/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, nullptr, nullptr, 0)};
         if (!session.ok()) return std::nullopt;
 
         const Handle connection{WinHttpConnect(static_cast<HINTERNET>(session), host, parts.nPort, 0)};
         if (!connection.ok()) return std::nullopt;
 
-        const Handle request{
-            WinHttpOpenRequest(
-                static_cast<HINTERNET>(connection), verb.c_str(), path, nullptr, nullptr,
-                nullptr, secure ? WINHTTP_FLAG_SECURE : 0)
-        };
+        const Handle request{WinHttpOpenRequest(static_cast<HINTERNET>(connection), verb.c_str(), path, nullptr,
+                                                nullptr, nullptr, secure ? WINHTTP_FLAG_SECURE : 0)};
         if (!request.ok()) return std::nullopt;
 
         // A body is sent as raw bytes exactly as given; a document asking
         // for JSON or form encoding writes the header itself, as \\httppost
         // does with its own Content-Type.
-        const auto sent = body.empty()
-                              ? WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0,
-                                                   nullptr, 0, 0, 0)
-                              : WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0,
-                                                   const_cast<void *>(static_cast<const void *>(body.data())),
-                                                   static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
+        const auto sent =
+                body.empty() ? WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0, nullptr, 0, 0, 0)
+                             : WinHttpSendRequest(static_cast<HINTERNET>(request), nullptr, 0,
+                                                  const_cast<void *>(static_cast<const void *>(body.data())),
+                                                  static_cast<DWORD>(body.size()), static_cast<DWORD>(body.size()), 0);
 
         if (!sent || !WinHttpReceiveResponse(static_cast<HINTERNET>(request), nullptr)) return std::nullopt;
 
@@ -132,12 +121,13 @@ namespace protocols {
             response.body.resize(start + available);
 
             DWORD received = 0;
-            if (!WinHttpReadData(static_cast<HINTERNET>(request), response.body.data() + start, available, &received)) break;
+            if (!WinHttpReadData(static_cast<HINTERNET>(request), response.body.data() + start, available, &received))
+                break;
             response.body.resize(start + received);
         }
 
         return response;
-#elif defined(LATEX_CURL)
+#elif defined(MLATEX_CURL)
         // Handed the method, the URL and the body as separate options, as
         // WinHTTP is; libcurl is what puts them on the wire.
         CURL *handle = curl_easy_init();
@@ -159,7 +149,7 @@ namespace protocols {
         curl_easy_setopt(handle, CURLOPT_URL, address.c_str());
         curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, verb.c_str());
         curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(handle, CURLOPT_USERAGENT, "latex-engine/1.0");
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, "mlatex/1.0");
         curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, keep);
         curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response.body);
         if (!body.empty()) {
@@ -183,10 +173,7 @@ namespace protocols {
 #endif
     }
 
-    std::optional<std::vector<std::uint8_t> > get(
-        const std::string_view source,
-        const std::string_view base
-    ) {
+    std::optional<std::vector<std::uint8_t>> get(const std::string_view source, const std::string_view base) {
         if (source.starts_with("https://")) {
             const std::optional<Response> response = compose("GET", source);
             if (!response) return std::nullopt;

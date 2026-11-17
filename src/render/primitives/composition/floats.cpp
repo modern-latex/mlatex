@@ -2,19 +2,19 @@
 /// @brief Float implementation: the blocks, and a caption as a paragraph of
 ///        its own.
 #include "render/primitives/composition/floats.hpp"
+#include "layout/line.hpp"
+#include "logger.hpp"
 #include "render/primitives/referencing/counters.hpp"
 #include "render/primitives/typesetting/styles.hpp"
 #include "syntax/argument.hpp"
 #include "syntax/semantics/scope.hpp"
-#include "layout/line.hpp"
-#include "logger.hpp"
 
 #include <algorithm>
 #include <array>
 #include <format>
 #include <span>
-#include <tuple>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -39,12 +39,13 @@ namespace render::primitives::composition {
         // `\caption[short]{long}`: the short form is what the list of
         // figures or of tables prints.
         std::string brief;
-        for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+        for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
             brief += token.text == "~" ? std::string_view{" "} : token.text;
         }
 
         syntax::Token open = mouth.read();
-        while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+        while (open.category == syntax::Catcodes::Category::Space)
+            open = mouth.read();
         if (!open.is(syntax::Catcodes::Category::Group, '{')) {
             if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
             tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "\\caption needs a brace group");
@@ -130,7 +131,8 @@ namespace render::primitives::composition {
         // Measured once, so a caption that fits on one line is centred and
         // a longer one justified, as the standard classes decide.
         std::vector<layout::Node *> measured;
-        for (const syntax::Node *child: body) compose(measured, child, context);
+        for (const syntax::Node *child : body)
+            compose(measured, child, context);
         context.selection.text(restore);
 
         const typography::Font *labelled[] = {heavy ? heavy : face};
@@ -143,7 +145,8 @@ namespace render::primitives::composition {
         layout::Node *gap = layout::Line::horizontal(arena, spaced, 0.0f);
 
         float width = head->box().width + gap->box().width;
-        for (const layout::Node *node: measured) width += layout::Line::advance(node);
+        for (const layout::Node *node : measured)
+            width += layout::Line::advance(node);
         const float room = static_cast<float>(context.registers.get(syntax::semantics::Registers::Type::Dimension,
                                                                     syntax::semantics::Registers::reserved + 1)) /
                            65536.0f;
@@ -176,18 +179,17 @@ namespace render::primitives::composition {
                 shown = arena.allocate<syntax::Node *>(1);
                 shown[0] = arena.compose<syntax::Node>(syntax::Node::Type::Text, arena.copy(brief), origin);
             }
-            context.entries.push_back({
-                .list = type == "figure" ? "lof" : "lot", .level = 1, .number = number, .title = shown, .anchor = index
-            });
+            context.entries.push_back({.list = type == "figure" ? "lof" : "lot",
+                                       .level = 1,
+                                       .number = number,
+                                       .title = shown,
+                                       .anchor = index});
             parts.push_back(order({.command = Command::Anchor, .index = index}));
         }
         parts.push_back(order({.command = Command::Save}));
-        parts.push_back(order({
-            .command = Command::Align,
-            .justification = ruled || !single
-                                 ? layout::Node::Justification::Full
-                                 : layout::Node::Justification::Center
-        }));
+        parts.push_back(order({.command = Command::Align,
+                               .justification = ruled || !single ? layout::Node::Justification::Full
+                                                                 : layout::Node::Justification::Center}));
         parts.push_back(order({.command = Command::Margin, .width = 0.0f}));
         parts.push_back(order({.command = Command::Margin, .width = 0.0f, .trailing = true}));
         parts.push_back(order({.command = Command::Flush}));
@@ -221,105 +223,120 @@ namespace render::primitives::composition {
         // under rather than beside, wrapfig's across the column rather than
         // with the text flowing round -- `[lines]{r}{width}`, read and let
         // go -- and acmart's teaser a figure too.
-        static constexpr std::array<std::pair<std::string_view, std::string_view>, 14> types{
-            {
-                {"figure", "figure"}, {"figure*", "figure"}, {"table", "table"}, {"table*", "table"},
-                {"algorithm", "algorithm"}, {"sidewaysfigure", "figure"}, {"sidewaystable", "table"},
-                {"SCfigure", "figure"}, {"SCtable", "table"}, {"wrapfigure", "figure"}, {"wraptable", "table"},
-                {"figwindow", "figure"}, {"tabwindow", "table"}, {"teaserfigure", "figure"},
-            }
-        };
+        static constexpr std::array<std::pair<std::string_view, std::string_view>, 14> types{{
+                {"figure", "figure"},
+                {"figure*", "figure"},
+                {"table", "table"},
+                {"table*", "table"},
+                {"algorithm", "algorithm"},
+                {"sidewaysfigure", "figure"},
+                {"sidewaystable", "table"},
+                {"SCfigure", "figure"},
+                {"SCtable", "table"},
+                {"wrapfigure", "figure"},
+                {"wraptable", "table"},
+                {"figwindow", "figure"},
+                {"tabwindow", "table"},
+                {"teaserfigure", "figure"},
+        }};
 
         // One float's block: where it may go read on the way in, its marks
         // for the pager left either side of what it holds. A float of a new
         // type is installed the same way as LaTeX's own.
         const auto install = [this, &context](const std::string &name, const std::string &type, const bool ruled) {
             context.environments.watch(
-                name,
-                [this, type, name, ruled](syntax::Mouth &mouth) {
-                    // Where LaTeX may place it -- `[htbp!]`, a letter each --
-                    // and `tbp` when it does not say, as the classes give
-                    // their figures and tables. `H` is the float package's:
-                    // where written, never moved. An `h` alone is LaTeX's
-                    // `ht`, as LaTeX makes it rather than lose the float.
-                    using Directive = layout::Node::Directive;
-                    bool here = false;
-                    std::uint8_t place = 0;
-                    for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
-                        for (const char letter: token.text) {
-                            switch (letter) {
-                                case 'H': here = true;
+                    name,
+                    [this, type, name, ruled](syntax::Mouth &mouth) {
+                        // Where LaTeX may place it -- `[htbp!]`, a letter each --
+                        // and `tbp` when it does not say, as the classes give
+                        // their figures and tables. `H` is the float package's:
+                        // where written, never moved. An `h` alone is LaTeX's
+                        // `ht`, as LaTeX makes it rather than lose the float.
+                        using Directive = layout::Node::Directive;
+                        bool here = false;
+                        std::uint8_t place = 0;
+                        for (const syntax::Token &token :
+                             mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+                            for (const char letter : token.text) {
+                                switch (letter) {
+                                case 'H':
+                                    here = true;
                                     break;
-                                case 'h': place |= Directive::Here;
+                                case 'h':
+                                    place |= Directive::Here;
                                     break;
-                                case 't': place |= Directive::Top;
+                                case 't':
+                                    place |= Directive::Top;
                                     break;
-                                case 'b': place |= Directive::Bottom;
+                                case 'b':
+                                    place |= Directive::Bottom;
                                     break;
-                                case 'p': place |= Directive::Alone;
+                                case 'p':
+                                    place |= Directive::Alone;
                                     break;
-                                case '!': place |= Directive::Force;
+                                case '!':
+                                    place |= Directive::Force;
                                     break;
-                                default: break;
+                                default:
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if (!(place & (Directive::Here | Directive::Top | Directive::Bottom | Directive::Alone))) {
-                        place |= Directive::Top | Directive::Bottom | Directive::Alone;
-                    }
-                    if ((place & (Directive::Here | Directive::Top | Directive::Bottom | Directive::Alone)) ==
-                        Directive::Here) {
-                        place |= Directive::Top;
-                    }
-                    if (name.starts_with("wrap")) {
-                        static_cast<void>(mouth.argument({}, 0));
-                        static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
-                        static_cast<void>(mouth.argument({}, 0));
-                        here = true;
-                    }
-                    floats.push_back(
-                        Open{.type = std::string(type), .ruled = ruled, .place = place, .across = name.ends_with('*')});
+                        if (!(place & (Directive::Here | Directive::Top | Directive::Bottom | Directive::Alone))) {
+                            place |= Directive::Top | Directive::Bottom | Directive::Alone;
+                        }
+                        if ((place & (Directive::Here | Directive::Top | Directive::Bottom | Directive::Alone)) ==
+                            Directive::Here) {
+                            place |= Directive::Top;
+                        }
+                        if (name.starts_with("wrap")) {
+                            static_cast<void>(mouth.argument({}, 0));
+                            static_cast<void>(mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0));
+                            static_cast<void>(mouth.argument({}, 0));
+                            here = true;
+                        }
+                        floats.push_back(Open{.type = std::string(type),
+                                              .ruled = ruled,
+                                              .place = place,
+                                              .across = name.ends_with('*')});
 
-                    // The cursor is a stack: the opening text goes in first
-                    // and the mark in front of it, so the mark is read first.
-                    mouth.ingest(ruled
-                                     ? "\\par\\vskip 12pt plus 2pt minus 2pt\\hrule height 0.8pt\\vskip 2pt"
-                                     "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent "
-                                     : "\\par\\vskip 12pt plus 2pt minus 2pt"
-                                     "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
-                    // A starred float is set across every column, as wide as
-                    // the text block: one column within it, as \\twocolumn's
-                    // heading is.
-                    if (name.ends_with('*')) mouth.ingest("\\@columns1 ");
-                    const syntax::Symbol opening = here ? fixed : hold;
-                    const syntax::Token mark{
-                        .symbol = opening, .category = syntax::Catcodes::Category::Escape,
-                        .text = mouth.lexicon.resolve(opening)
-                    };
-                    mouth.stream().inject(std::span{&mark, 1});
-                },
-                [this](syntax::Mouth &mouth) {
-                    const bool ruling = !floats.empty() && floats.back().ruled;
-                    const bool across = !floats.empty() && floats.back().across;
-                    if (!floats.empty()) floats.pop_back();
+                        // The cursor is a stack: the opening text goes in first
+                        // and the mark in front of it, so the mark is read first.
+                        mouth.ingest(ruled ? "\\par\\vskip 12pt plus 2pt minus 2pt\\hrule height 0.8pt\\vskip 2pt"
+                                             "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent "
+                                           : "\\par\\vskip 12pt plus 2pt minus 2pt"
+                                             "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
+                        // A starred float is set across every column, as wide as
+                        // the text block: one column within it, as \\twocolumn's
+                        // heading is.
+                        if (name.ends_with('*')) mouth.ingest("\\@columns1 ");
+                        const syntax::Symbol opening = here ? fixed : hold;
+                        const syntax::Token mark{.symbol = opening,
+                                                 .category = syntax::Catcodes::Category::Escape,
+                                                 .text = mouth.lexicon.resolve(opening)};
+                        mouth.stream().inject(std::span{&mark, 1});
+                    },
+                    [this](syntax::Mouth &mouth) {
+                        const bool ruling = !floats.empty() && floats.back().ruled;
+                        const bool across = !floats.empty() && floats.back().across;
+                        if (!floats.empty()) floats.pop_back();
 
-                    // The closing mark goes in first, so it is read after the
-                    // closing text and the space below it -- and after the
-                    // columns a starred float changed go back as they were.
-                    const syntax::Token mark{
-                        .symbol = release, .category = syntax::Catcodes::Category::Escape,
-                        .text = mouth.lexicon.resolve(release)
-                    };
-                    mouth.stream().inject(std::span{&mark, 1});
-                    if (across) mouth.ingest("\\par\\@columns0 ");
-                    mouth.ingest(ruling
-                                     ? "\\par\\vskip 2pt\\hrule height 0.4pt\\vskip 12pt plus 2pt minus 2pt"
-                                     "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent "
-                                     : "\\par\\vskip 12pt plus 2pt minus 2pt"
-                                     "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
-                });
+                        // The closing mark goes in first, so it is read after the
+                        // closing text and the space below it -- and after the
+                        // columns a starred float changed go back as they were.
+                        const syntax::Token mark{.symbol = release,
+                                                 .category = syntax::Catcodes::Category::Escape,
+                                                 .text = mouth.lexicon.resolve(release)};
+                        mouth.stream().inject(std::span{&mark, 1});
+                        if (across) mouth.ingest("\\par\\@columns0 ");
+                        mouth.ingest(ruling ? "\\par\\vskip 2pt\\hrule height 0.4pt\\vskip 12pt plus 2pt minus 2pt"
+                                              "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent "
+                                            : "\\par\\vskip 12pt plus 2pt minus 2pt"
+                                              "\\leftskip=0pt\\rightskip=0pt\\justifying\\noindent ");
+                    });
         };
-        for (const auto &[name, type]: types) install(std::string(name), std::string(type), type == "algorithm");
+        for (const auto &[name, type] : types)
+            install(std::string(name), std::string(type), type == "algorithm");
 
         // A float of the document's own type -- the float package's
         // \\newfloat, newfloat's \\DeclareFloatingEnvironment -- numbered by
@@ -334,22 +351,19 @@ namespace render::primitives::composition {
 
         // subcaption's blocks, which the box module sets as minipages: here
         // only what a caption inside one numbers by.
-        for (const std::string_view type: {"subfigure", "subtable"}) {
+        for (const std::string_view type : {"subfigure", "subtable"}) {
             context.environments.watch(
-                type,
-                [this, type](syntax::Mouth &) { floats.push_back(Open{.type = std::string(type)}); },
-                [this](syntax::Mouth &) {
-                    if (!floats.empty()) floats.pop_back();
-                });
+                    type, [this, type](syntax::Mouth &) { floats.push_back(Open{.type = std::string(type)}); },
+                    [this](syntax::Mouth &) {
+                        if (!floats.empty()) floats.pop_back();
+                    });
         }
 
         // The marks around a float's blocks, which the pager keeps together.
-        for (const auto &[symbol, command, stays]:
-             {
-                 std::tuple{hold, layout::Node::Directive::Command::Hold, false},
-                 std::tuple{fixed, layout::Node::Directive::Command::Hold, true},
-                 std::tuple{release, layout::Node::Directive::Command::Release, false}
-             }) {
+        for (const auto &[symbol, command, stays] :
+             {std::tuple{hold, layout::Node::Directive::Command::Hold, false},
+              std::tuple{fixed, layout::Node::Directive::Command::Hold, true},
+              std::tuple{release, layout::Node::Directive::Command::Release, false}}) {
             parser.bind(symbol, [this, command, stays](const syntax::Parser &parser) -> syntax::Node * {
                 memory::Arena &arena = parser.arena;
                 auto *mark = arena.compose<layout::Node>(layout::Node::Type::Directive);

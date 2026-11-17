@@ -19,7 +19,7 @@ namespace syntax::expression {
     // against an older syntax/expression/parser.hpp. The concept has to take a
     // template parameter: a requires-expression over a concrete type is
     // checked immediately and would hard-error instead of yielding false.
-    template<typename T>
+    template <typename T>
     concept Current = requires(T rule) { rule.arity; };
     static_assert(Current<Grammar::Rule>,
                   "stale syntax/expression/parser.hpp: update the header to the one matching this source");
@@ -27,21 +27,33 @@ namespace syntax::expression {
     Grammar::Grammar(Lexicon &lexicon) {
         fences = {lexicon.intern("\\left"), lexicon.intern("\\right")};
         brackets = {
-            Bracket{.name = lexicon.intern("\\pmatrix"), .open = '(', .close = ')'},
-            Bracket{.name = lexicon.intern("\\bmatrix"), .open = '[', .close = ']'},
-            Bracket{.name = lexicon.intern("\\Bmatrix"), .open = '{', .close = '}'},
-            Bracket{.name = lexicon.intern("\\vmatrix"), .open = '|', .close = '|'},
-            Bracket{.name = lexicon.intern("\\Vmatrix"), .open = 0x2016, .close = 0x2016},
-            Bracket{.name = lexicon.intern("\\matrix"), .open = 0, .close = 0},
-            Bracket{.name = lexicon.intern("\\smallmatrix"), .open = 0, .close = 0},
-            // A piecewise definition has one side to fence, not two, and
-            // both its columns start at the left: the value, then the case.
-            Bracket{.name = lexicon.intern("\\cases"), .open = '{', .close = 0, .preamble = "ll"},
-            Bracket{.name = lexicon.intern("\\dcases"), .open = '{', .close = 0, .preamble = "ll", .grid = Node::Grid::Displayed},
-            Bracket{.name = lexicon.intern("\\rcases"), .open = 0, .close = '}', .preamble = "ll"},
-            Bracket{.name = lexicon.intern("\\aligned"), .open = 0, .close = 0, .preamble = "rl", .grid = Node::Grid::Paired},
-            Bracket{.name = lexicon.intern("\\gathered"), .open = 0, .close = 0, .preamble = "c", .grid = Node::Grid::Displayed},
-            Bracket{.name = lexicon.intern("\\substack"), .open = 0, .close = 0, .preamble = "c"},
+                Bracket{.name = lexicon.intern("\\pmatrix"), .open = '(', .close = ')'},
+                Bracket{.name = lexicon.intern("\\bmatrix"), .open = '[', .close = ']'},
+                Bracket{.name = lexicon.intern("\\Bmatrix"), .open = '{', .close = '}'},
+                Bracket{.name = lexicon.intern("\\vmatrix"), .open = '|', .close = '|'},
+                Bracket{.name = lexicon.intern("\\Vmatrix"), .open = 0x2016, .close = 0x2016},
+                Bracket{.name = lexicon.intern("\\matrix"), .open = 0, .close = 0},
+                Bracket{.name = lexicon.intern("\\smallmatrix"), .open = 0, .close = 0},
+                // A piecewise definition has one side to fence, not two, and
+                // both its columns start at the left: the value, then the case.
+                Bracket{.name = lexicon.intern("\\cases"), .open = '{', .close = 0, .preamble = "ll"},
+                Bracket{.name = lexicon.intern("\\dcases"),
+                        .open = '{',
+                        .close = 0,
+                        .preamble = "ll",
+                        .grid = Node::Grid::Displayed},
+                Bracket{.name = lexicon.intern("\\rcases"), .open = 0, .close = '}', .preamble = "ll"},
+                Bracket{.name = lexicon.intern("\\aligned"),
+                        .open = 0,
+                        .close = 0,
+                        .preamble = "rl",
+                        .grid = Node::Grid::Paired},
+                Bracket{.name = lexicon.intern("\\gathered"),
+                        .open = 0,
+                        .close = 0,
+                        .preamble = "c",
+                        .grid = Node::Grid::Displayed},
+                Bracket{.name = lexicon.intern("\\substack"), .open = 0, .close = 0, .preamble = "c"},
         };
         // Found through the command's own slot in the rule table, so telling
         // a grid from any other atom costs one load rather than a scan.
@@ -58,8 +70,7 @@ namespace syntax::expression {
     }
 
     Parser::Parser(Mouth &mouth, const Grammar &grammar, memory::Arena &arena, const Node::Style style)
-        : mouth(mouth), grammar(grammar), arena(arena), style(style) {
-    }
+        : mouth(mouth), grammar(grammar), arena(arena), style(style) {}
 
     void Grammar::silence(const Symbol symbol) {
         const auto index = static_cast<std::size_t>(symbol);
@@ -148,61 +159,57 @@ namespace syntax::expression {
             // stands in for a minus sign, and the asterisk for the centred one
             // mathematics uses.
             const char written = name[0];
-            node->codepoint = written == '-'
-                                  ? 0x2212u
-                                  : written == '*'
-                                        ? 0x2217u
-                                        : static_cast<std::uint32_t>(static_cast<unsigned char>(written));
+            node->codepoint = written == '-'   ? 0x2212u
+                              : written == '*' ? 0x2217u
+                                               : static_cast<std::uint32_t>(static_cast<unsigned char>(written));
             switch (written) {
-                case '=':
-                case '<':
-                case '>':
-                case ':':
-                    node->category = Unicodes::Category::Relation;
-                    break;
-                case ',':
-                case ';':
-                    node->category = Unicodes::Category::Punctuation;
-                    break;
-                // A solidus is an ordinary symbol in TeX, whatever it is
-                // written between: `a/b` sets no space either side.
-                case '/':
-                    node->category = Unicodes::Category::Ordinary;
-                    break;
-                // A bracket is a character like any other in TeX's maths, not
-                // a group: `[0, T)` is a half-open interval, and only `\\left`
-                // and `\\right` make a pair that has to match.
-                case '(':
-                case '[':
-                case '{':
-                    node->category = Unicodes::Category::Opening;
-                    break;
-                case ')':
-                case ']':
-                case '}':
-                    node->category = Unicodes::Category::Closing;
-                    break;
-                default:
-                    node->category = type == Node::Type::Binary
-                                         ? Unicodes::Category::Binary
-                                         : Unicodes::Category::Ordinary;
-                    break;
+            case '=':
+            case '<':
+            case '>':
+            case ':':
+                node->category = Unicodes::Category::Relation;
+                break;
+            case ',':
+            case ';':
+                node->category = Unicodes::Category::Punctuation;
+                break;
+            // A solidus is an ordinary symbol in TeX, whatever it is
+            // written between: `a/b` sets no space either side.
+            case '/':
+                node->category = Unicodes::Category::Ordinary;
+                break;
+            // A bracket is a character like any other in TeX's maths, not
+            // a group: `[0, T)` is a half-open interval, and only `\\left`
+            // and `\\right` make a pair that has to match.
+            case '(':
+            case '[':
+            case '{':
+                node->category = Unicodes::Category::Opening;
+                break;
+            case ')':
+            case ']':
+            case '}':
+                node->category = Unicodes::Category::Closing;
+                break;
+            default:
+                node->category = type == Node::Type::Binary ? Unicodes::Category::Binary : Unicodes::Category::Ordinary;
+                break;
             }
         }
 
         return node;
     }
 
-    void Grammar::bind(const Symbol symbol, const Node::Type type, const int weight,
-                       const bool right, const bool structural, const int arity) {
+    void Grammar::bind(const Symbol symbol, const Node::Type type, const int weight, const bool right,
+                       const bool structural, const int arity) {
         const auto index = static_cast<std::size_t>(symbol);
         if (index >= rules.size()) {
             rules.resize(index + 1, Rule{});
         }
         rules[index] = Rule{type, weight, right, structural, arity, rules[index].silent, rules[index].bracket};
         Logger::log(Logger::Type::Parser, Logger::Level::Debug,
-                    "Bound symbol {} to rule type={}, weight={}, right={}, structural={}, arity={}",
-                    index, static_cast<int>(type), weight, right, structural, arity);
+                    "Bound symbol {} to rule type={}, weight={}, right={}, structural={}, arity={}", index,
+                    static_cast<int>(type), weight, right, structural, arity);
     }
 
     void Grammar::declare(const Symbol symbol, const int arity) {
@@ -213,8 +220,7 @@ namespace syntax::expression {
         rules[index].arity = arity;
     }
 
-    Node *Parser::sequence(const char closing, const Symbol stop, const Symbol alternate,
-                           Symbol *const matched) {
+    Node *Parser::sequence(const char closing, const Symbol stop, const Symbol alternate, Symbol *const matched) {
         if (matched) *matched = none;
 
         if (depth >= limit) {
@@ -235,8 +241,7 @@ namespace syntax::expression {
             Bound &bound;
             const Bound saved;
 
-            Restore(Bound &value, const Bound replacement) : bound(value), saved(std::exchange(value, replacement)) {
-            }
+            Restore(Bound &value, const Bound replacement) : bound(value), saved(std::exchange(value, replacement)) {}
 
             ~Restore() { bound = saved; }
         } restore(bound, Bound{.closing = closing, .stop = stop, .alternate = alternate});
@@ -284,14 +289,13 @@ namespace syntax::expression {
                 if (bounded) {
                     tracebacks.emplace_back(Traceback::Type::End, next.location,
                                             closing != 0
-                                                ? std::format("Unexpected end of input; expected '{}'", closing)
-                                                : std::string("Unexpected end of input inside a formula"));
+                                                    ? std::format("Unexpected end of input; expected '{}'", closing)
+                                                    : std::string("Unexpected end of input inside a formula"));
                 }
                 break;
             }
 
-            if ((stop != none && next.symbol == stop) ||
-                (alternate != none && next.symbol == alternate)) {
+            if ((stop != none && next.symbol == stop) || (alternate != none && next.symbol == alternate)) {
                 if (matched) *matched = next.symbol;
                 advance();
                 break;
@@ -307,9 +311,9 @@ namespace syntax::expression {
             // character that run was opened to wait for.
             if (next.is(Catcodes::Category::Group, '}')) {
                 if (closing != 0) {
-                    tracebacks.emplace_back(Traceback::Type::Delimiter, next.location,
-                                            std::format("Mismatched delimiter '{}'; expected '{}'", next.text,
-                                                        closing));
+                    tracebacks.emplace_back(
+                            Traceback::Type::Delimiter, next.location,
+                            std::format("Mismatched delimiter '{}'; expected '{}'", next.text, closing));
                     break;
                 }
 
@@ -360,7 +364,7 @@ namespace syntax::expression {
             if (outermost && hook) hook(edge);
         };
 
-        std::vector<std::vector<Node *> > table;
+        std::vector<std::vector<Node *>> table;
         std::vector<Node *> cells; // the row still being built
         bool closed = false;
 
@@ -396,15 +400,14 @@ namespace syntax::expression {
                     mouth.read();
                 }
                 if (const Token next = mouth.lookahead(); next.is('[')) {
-                    for (Token skipped = mouth.read(); !skipped.empty() && !skipped.is(']');
-                         skipped = mouth.read()) {
-                    }
+                    for (Token skipped = mouth.read(); !skipped.empty() && !skipped.is(']'); skipped = mouth.read()) {}
                 }
             }
         }
 
         std::size_t columns = 0;
-        for (const std::vector<Node *> &line: table) columns = std::max(columns, line.size());
+        for (const std::vector<Node *> &line : table)
+            columns = std::max(columns, line.size());
         if (table.empty() || columns == 0) return nullptr;
 
         auto *node = compose(Node::Type::Matrix);
@@ -418,7 +421,7 @@ namespace syntax::expression {
         // Row-major, every row filled out to the widest with empty cells.
         auto slice = arena.allocate<Node *>(table.size() * columns);
         std::size_t filled = 0;
-        for (const std::vector<Node *> &line: table) {
+        for (const std::vector<Node *> &line : table) {
             for (std::size_t index = 0; index < columns; ++index) {
                 slice[filled++] = index < line.size() ? line[index] : nullptr;
             }
@@ -448,8 +451,8 @@ namespace syntax::expression {
         if (scripted) {
             const Token next = lookahead();
             if (const auto index = static_cast<std::size_t>(next.symbol);
-                index < grammar.rules.size() && grammar.rules[index].type == Node::Type::Unary && grammar.rules[index].
-                weight == 0) {
+                index < grammar.rules.size() && grammar.rules[index].type == Node::Type::Unary &&
+                grammar.rules[index].weight == 0) {
                 if (depth >= limit) {
                     tracebacks.emplace_back(Traceback::Type::Recursion, next.location,
                                             "Expression nesting limit reached");
@@ -526,17 +529,17 @@ namespace syntax::expression {
                         continue;
                     }
                     if (nesting > 0) continue;
-                    for (const char letter: next.text) {
-                        if (letter == 'l' || letter == 'c' || letter == 'r') preamble += letter;
-                        else if (letter == 'p' || letter == 'm' || letter == 'b') preamble += 'l';
+                    for (const char letter : next.text) {
+                        if (letter == 'l' || letter == 'c' || letter == 'r')
+                            preamble += letter;
+                        else if (letter == 'p' || letter == 'm' || letter == 'b')
+                            preamble += 'l';
                     }
                 }
             }
-            node = matrix(Grammar::Bracket{
-                .name = grammar.array, .preamble = preamble.empty()
-                                                       ? std::string_view{"c"}
-                                                       : arena.copy(preamble)
-            });
+            node = matrix(
+                    Grammar::Bracket{.name = grammar.array,
+                                     .preamble = preamble.empty() ? std::string_view{"c"} : arena.copy(preamble)});
         } else if (found.structural && found.type == Node::Type::Text) {
             // A command that reads words, not a formula: `\\text` and its kin.
             // Kept as the command over one Text node, so the typesetter sets
@@ -573,8 +576,8 @@ namespace syntax::expression {
                         const std::string_view written = next.text.substr(1);
                         // The spaces a document writes out, and the characters
                         // it has to escape to write at all.
-                        if (written == " " || written == "," || written == ";" || written == ":" ||
-                            written == "quad" || written == "qquad" || written == "~") {
+                        if (written == " " || written == "," || written == ";" || written == ":" || written == "quad" ||
+                            written == "qquad" || written == "~") {
                             words += ' ';
                         } else if (written.size() == 1) {
                             words += written;
@@ -621,14 +624,18 @@ namespace syntax::expression {
             node->codepoint = delimiter(advance());
             node->value = token.text;
             switch (token.text.back()) {
-                case 'l': node->category = Unicodes::Category::Opening;
-                    break;
-                case 'r': node->category = Unicodes::Category::Closing;
-                    break;
-                case 'm': node->category = Unicodes::Category::Relation;
-                    break;
-                default: node->category = Unicodes::Category::Ordinary;
-                    break;
+            case 'l':
+                node->category = Unicodes::Category::Opening;
+                break;
+            case 'r':
+                node->category = Unicodes::Category::Closing;
+                break;
+            case 'm':
+                node->category = Unicodes::Category::Relation;
+                break;
+            default:
+                node->category = Unicodes::Category::Ordinary;
+                break;
             }
         } else if (found.structural) {
             // A radical, with its optional degree; a fraction; an accent,
@@ -655,11 +662,9 @@ namespace syntax::expression {
             node = compose(Node::Type::Variable);
             node->value = token.text;
             node->codepoint = delimiter(token);
-            node->category = token.text == "\\{"
-                                 ? Unicodes::Category::Opening
-                                 : token.text == "\\}"
-                                       ? Unicodes::Category::Closing
-                                       : Unicodes::Category::Ordinary;
+            node->category = token.text == "\\{"   ? Unicodes::Category::Opening
+                             : token.text == "\\}" ? Unicodes::Category::Closing
+                                                   : Unicodes::Category::Ordinary;
         } else if (token.text.size() == 2 && token.text[0] == '\\' &&
                    std::string_view{"%&#$_"}.contains(token.text[1])) {
             // The characters the lexer reads as instructions, escaped to be
@@ -830,11 +835,7 @@ namespace syntax::expression {
         return left;
     }
 
-    Node *Parser::parse(const char closing) {
-        return sequence(closing, none);
-    }
+    Node *Parser::parse(const char closing) { return sequence(closing, none); }
 
-    Node *Parser::parse(const Symbol closing) {
-        return sequence(0, closing);
-    }
+    Node *Parser::parse(const Symbol closing) { return sequence(0, closing); }
 }

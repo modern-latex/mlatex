@@ -1,4 +1,4 @@
-#include "latex.hpp"
+#include "mlatex.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -24,11 +24,11 @@ struct Result {
 };
 
 /// Typesets a whole document, as written, with what a program hands in.
-static Result typeset(const std::string_view document, const latex::Host &host = {}) {
-    static const std::filesystem::path assets = latex::locate(__FILE__);
+static Result typeset(const std::string_view document, const mlatex::Host &host = {}) {
+    static const std::filesystem::path assets = mlatex::locate(__FILE__);
     Result result;
     std::ostringstream errors;
-    result.clean = latex::typeset(assets, document, result.pdf, host, errors, nullptr, &result.screen);
+    result.clean = mlatex::typeset(assets, document, result.pdf, host, errors, nullptr, &result.screen);
     result.errors = errors.str();
     if (!result.clean) std::fprintf(stderr, "%s", result.errors.c_str());
     return result;
@@ -37,11 +37,11 @@ static Result typeset(const std::string_view document, const latex::Host &host =
 /// A target that remembers what it was told, in order, as words.
 class Recorder final : public render::Screen::Target {
 public:
-    std::vector<std::string> said{}; ///< Each operation, named.
-    std::vector<std::array<float, 6> > maps{}; ///< Each map placed.
-    std::vector<std::string> outlines{}; ///< Each glyph's outline, as it was filled.
-    std::vector<std::array<float, 3> > fills{}; ///< Each fill color set.
-    std::size_t pictures{0}; ///< How many pictures were drawn.
+    std::vector<std::string> said{};           ///< Each operation, named.
+    std::vector<std::array<float, 6>> maps{};  ///< Each map placed.
+    std::vector<std::string> outlines{};       ///< Each glyph's outline, as it was filled.
+    std::vector<std::array<float, 3>> fills{}; ///< Each fill color set.
+    std::size_t pictures{0};                   ///< How many pictures were drawn.
 
     void save() override { said.emplace_back("save"); }
     void restore() override { said.emplace_back("restore"); }
@@ -66,7 +66,8 @@ public:
     }
 
     void picture(std::size_t, const render::Screen::Picture &picture) override {
-        if (picture.width > 0 && picture.pixels.size() == static_cast<std::size_t>(picture.width) * picture.height * 3) {
+        if (picture.width > 0 &&
+            picture.pixels.size() == static_cast<std::size_t>(picture.width) * picture.height * 3) {
             ++pictures;
         }
     }
@@ -76,7 +77,8 @@ public:
     /// How many times it was told something.
     [[nodiscard]] std::size_t count(const std::string_view word) const {
         std::size_t found = 0;
-        for (const std::string &item: said) found += item == word;
+        for (const std::string &item : said)
+            found += item == word;
         return found;
     }
 };
@@ -84,11 +86,10 @@ public:
 /// A one-pixel PNG, for a picture handed in from memory.
 static std::string dot() {
     static constexpr unsigned char bytes[] = {
-        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
-        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F,
-        0x0F, 0x00, 0x02, 0x87, 0x01, 0x80, 0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-        0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00,
+            0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+            0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0xDA, 0x63, 0x64, 0x60, 0xF8, 0x5F, 0x0F, 0x00, 0x02, 0x87, 0x01, 0x80,
+            0xEB, 0x47, 0xBA, 0x92, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     };
     return std::string(reinterpret_cast<const char *>(bytes), sizeof bytes);
 }
@@ -105,7 +106,7 @@ int main() {
         result.screen.draw(recorder, 0, 1.0f);
         // H, e, l, l, o, the full stop, and the page's number.
         assert((recorder.count("glyph") == 7) && "each glyph of the page filled, and nothing more");
-        for (const std::string &outline: recorder.outlines) {
+        for (const std::string &outline : recorder.outlines) {
             assert((outline.starts_with('M') && outline.ends_with('Z')) && "each from its outline, closed");
         }
         assert((recorder.fills.size() == 1 && recorder.fills[0] == std::array{0.0f, 0.0f, 0.0f}) &&
@@ -122,7 +123,8 @@ int main() {
             for (std::size_t entry = 0; entry < 6; ++entry) {
                 const float doubled = once.maps[index][entry] * 2.0f;
                 const float difference = twice.maps[index][entry] - doubled;
-                assert((difference < 0.01f && difference > -0.01f) && "each twice as far and as large at twice the scale");
+                assert((difference < 0.01f && difference > -0.01f) &&
+                       "each twice as far and as large at twice the scale");
             }
         }
         Recorder none;
@@ -131,11 +133,12 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{xcolor}\\begin{document}"
-            "\\textcolor{red}{Red} \\rule{2cm}{1pt}\\end{document}");
+                                      "\\textcolor{red}{Red} \\rule{2cm}{1pt}\\end{document}");
         Recorder recorder;
         result.screen.draw(recorder, 0, 1.0f);
         bool red = false;
-        for (const auto &color: recorder.fills) red = red || color == std::array{1.0f, 0.0f, 0.0f};
+        for (const auto &color : recorder.fills)
+            red = red || color == std::array{1.0f, 0.0f, 0.0f};
         assert((red && recorder.count("rectangle") >= 1 && recorder.count("paint") >= 1) &&
                "a colored word in its color, and a rule filled as a rectangle");
     }
@@ -146,7 +149,7 @@ int main() {
                "a fitted page shown as what it holds, as the PDF's box is");
     }
     {
-        latex::Host host;
+        mlatex::Host host;
         host.files["dot.png"] = dot();
         const Result result = typeset("\\documentclass{article}\\usepackage{graphicx}\\begin{document}"
                                       "\\includegraphics{dot.png}\\end{document}",
@@ -157,39 +160,41 @@ int main() {
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{tikz}\\begin{document}"
-            "\\tikz \\draw[dashed] (0,0) -- (1,0);\\end{document}");
+                                      "\\tikz \\draw[dashed] (0,0) -- (1,0);\\end{document}");
         Recorder recorder;
         result.screen.draw(recorder, 0, 1.0f);
         assert((recorder.count("dashed") == 1 && recorder.count("trace") >= 1) && "a dashed line stroked dashed");
     }
     {
         const Result result = typeset("\\documentclass{article}\\usepackage{hyperref}"
-            "\\hypersetup{pdftitle={Linked}}\\begin{document}\\section{One}\\label{one}"
-            "\\href{https://example.com}{A site}, Section~\\ref{one}.\\end{document}");
+                                      "\\hypersetup{pdftitle={Linked}}\\begin{document}\\section{One}\\label{one}"
+                                      "\\href{https://example.com}{A site}, Section~\\ref{one}.\\end{document}");
         const auto &links = result.screen.links;
         assert((links.size() == 1 && links[0].size() == 2) && "each link on its page");
-        assert((links[0][0].target == "https://example.com" && links[0][1].target.empty() &&
-                links[0][1].page == 0 && links[0][1].down > 0.0f) &&
+        assert((links[0][0].target == "https://example.com" && links[0][1].target.empty() && links[0][1].page == 0 &&
+                links[0][1].down > 0.0f) &&
                "one to its address, one to the place its anchor was drawn");
         assert((result.screen.about.title == "Linked") && "and what the document says of itself");
     }
     {
         // Where each line of the source was drawn, for an editor to jump by.
         std::string words;
-        for (int count = 0; count < 40; ++count) words += "word ";
+        for (int count = 0; count < 40; ++count)
+            words += "word ";
         const Result result = typeset("\\documentclass{article}\n\\begin{document}\n"
                                       "\\section{Heading}\n"
                                       "First words\nand more.\n"
-                                      "\n" + words + "\n"
+                                      "\n" +
+                                      words +
+                                      "\n"
                                       "\n"
                                       "A formula $x^2$ here.\n"
                                       "\\end{document}\n");
         const auto &spots = result.screen.spots;
         assert((spots.size() == 1 && !spots[0].empty()) && "spots, by page");
         const auto find = [&](const std::uint32_t line) {
-            return std::ranges::find_if(spots[0], [line](const render::Composer::Spot &spot) {
-                return spot.origin.line == line;
-            });
+            return std::ranges::find_if(
+                    spots[0], [line](const render::Composer::Spot &spot) { return spot.origin.line == line; });
         };
         assert((find(3) != spots[0].end() && find(4) != spots[0].end() && find(5) != spots[0].end() &&
                 find(7) != spots[0].end() && find(9) != spots[0].end()) &&
@@ -198,12 +203,14 @@ int main() {
         assert((find(3)->area[3] <= find(4)->area[1] && find(4)->area[2] <= find(5)->area[0] + 0.5f &&
                 find(4)->area[1] < find(5)->area[3] && find(5)->area[1] < find(4)->area[3]) &&
                "the heading above, and a paragraph's two lines of source side by side on one line of the page");
-        assert((std::ranges::count_if(spots[0], [](const render::Composer::Spot &spot) {
-                    return spot.origin.line == 7;
-                }) >= 2) && "and a line of the source set on two lines of the page, as two spots");
-        assert((std::ranges::none_of(spots[0], [](const render::Composer::Spot &spot) {
-                    return spot.origin.line == 1 || spot.origin.line == 2 || spot.origin.line > 10;
-                })) && "and nothing for lines that draw nothing");
+        assert((std::ranges::count_if(spots[0],
+                                      [](const render::Composer::Spot &spot) { return spot.origin.line == 7; }) >= 2) &&
+               "and a line of the source set on two lines of the page, as two spots");
+        assert((std::ranges::none_of(spots[0],
+                                     [](const render::Composer::Spot &spot) {
+                                         return spot.origin.line == 1 || spot.origin.line == 2 || spot.origin.line > 10;
+                                     })) &&
+               "and nothing for lines that draw nothing");
     }
     {
         // A character no face draws, U+0378, which no script has, is named
@@ -213,13 +220,14 @@ int main() {
         assert((!std::ranges::contains(result.screen.missing, std::uint32_t{'A'})) && "and none that is drawn");
     }
     {
-        latex::Session session(latex::locate(__FILE__));
+        mlatex::Session session(mlatex::locate(__FILE__));
         assert((session.snippet("$\\int_0^1 x\\,dx$") && session.screen.sheets.size() == 1) &&
                "a session keeps its last PDF's pages for a screen");
         const std::size_t glyphs = session.screen.faces.empty() ? 0 : session.screen.faces[0].outlines.size();
         assert((glyphs > 0) && "with the outlines of what they drew");
         assert((session.typeset("\\documentclass{article}\\begin{document}One.\\newpage Two.\\end{document}") &&
-                session.screen.sheets.size() == 2) && "and the next document's in their place");
+                session.screen.sheets.size() == 2) &&
+               "and the next document's in their place");
     }
 
     return 0;

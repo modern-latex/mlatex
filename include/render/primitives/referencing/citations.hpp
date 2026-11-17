@@ -1,9 +1,9 @@
 #pragma once
 
+#include "memory/dictionary.hpp"
 #include "render/primitives/context.hpp"
 #include "syntax/parser.hpp"
 #include "syntax/traceback.hpp"
-#include "memory/dictionary.hpp"
 
 #include <optional>
 #include <string>
@@ -65,43 +65,41 @@ namespace render::primitives::referencing {
 
         /// @brief Errors this module has recorded: a key reused, a `.bib`
         ///        file missing, a key cited that no list holds.
-        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept {
-            return tracebacks;
-        }
+        [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
         /// @brief How a citation is written.
         enum class Form : std::uint8_t {
-            Plain, ///< `\\cite`: numbers in brackets, or natbib's textual form.
+            Plain,         ///< `\\cite`: numbers in brackets, or natbib's textual form.
             Parenthetical, ///< `\\citep`, `\\parencite`: (Knuth, 1984), or [1].
-            Textual, ///< `\\citet`, `\\textcite`: Knuth (1984), or Knuth [1].
-            Author, ///< `\\citeauthor`: Knuth.
-            Year, ///< `\\citeyear`: 1984.
-            Loose, ///< `\\citealt`: Knuth 1984.
-            Comma, ///< `\\citealp`: Knuth, 1984.
-            Number ///< `\\citenum`: 1.
+            Textual,       ///< `\\citet`, `\\textcite`: Knuth (1984), or Knuth [1].
+            Author,        ///< `\\citeauthor`: Knuth.
+            Year,          ///< `\\citeyear`: 1984.
+            Loose,         ///< `\\citealt`: Knuth 1984.
+            Comma,         ///< `\\citealp`: Knuth, 1984.
+            Number         ///< `\\citenum`: 1.
         };
 
         /// @brief One citation key: how it is cited, once a list has it, and
         ///        every citation still waiting for it.
         struct Mark {
-            std::string text{}; ///< Its number or label.
-            std::string author{}; ///< natbib's author, when the entry has one.
-            std::string year{}; ///< natbib's year, the same way.
-            bool defined{false}; ///< Whether a `\\bibitem` has claimed it.
+            std::string text{};                    ///< Its number or label.
+            std::string author{};                  ///< natbib's author, when the entry has one.
+            std::string year{};                    ///< natbib's year, the same way.
+            bool defined{false};                   ///< Whether a `\\bibitem` has claimed it.
             std::vector<std::size_t> references{}; ///< Citations, by index, to set again once it is.
-            std::size_t anchor{0}; ///< Where its entry stands, for a link to it.
-            std::vector<layout::Node *> links{}; ///< hyperref's links to it made before it was, to point there.
+            std::size_t anchor{0};                 ///< Where its entry stands, for a link to it.
+            std::vector<layout::Node *> links{};   ///< hyperref's links to it made before it was, to point there.
         };
 
         /// @brief One citation: the node that prints it, the keys it names in
         ///        order, its notes, and its form.
         struct Citation {
-            syntax::Node *node{nullptr}; ///< Text node holding what it prints.
+            syntax::Node *node{nullptr};     ///< Text node holding what it prints.
             std::vector<std::string> keys{}; ///< The keys, spaces trimmed.
-            std::string before{}; ///< natbib's first bracket of two: `see`.
-            std::string note{}; ///< Its last bracket: `p.~5`.
-            Form form{Form::Plain}; ///< How it is written.
+            std::string before{};            ///< natbib's first bracket of two: `see`.
+            std::string note{};              ///< Its last bracket: `p.~5`.
+            Form form{Form::Plain};          ///< How it is written.
         };
 
         /// @brief What a citation prints: numbers or labels in brackets, or
@@ -114,12 +112,12 @@ namespace render::primitives::referencing {
         /// @complexity O(k) in its keys.
         [[nodiscard]] std::string print(const Citation &citation, const Context &context) const;
 
-        mutable memory::Dictionary<Mark> marks{}; ///< Every key seen or cited.
-        mutable std::vector<Citation> citations{}; ///< Every citation, in order.
+        mutable memory::Dictionary<Mark> marks{};     ///< Every key seen or cited.
+        mutable std::vector<Citation> citations{};    ///< Every citation, in order.
         mutable std::vector<std::string> resources{}; ///< biblatex's \\addbibresource files.
-        mutable std::vector<std::string> extra{}; ///< Keys \\nocite adds; `*` for every entry.
-        mutable int entries{0}; ///< How many `\\bibitem`s so far.
-        mutable float widest{0.0f}; ///< The widest label, from the list's argument, in points.
+        mutable std::vector<std::string> extra{};     ///< Keys \\nocite adds; `*` for every entry.
+        mutable int entries{0};                       ///< How many `\\bibitem`s so far.
+        mutable float widest{0.0f};                   ///< The widest label, from the list's argument, in points.
         mutable bool hung{false}; ///< The list is set without labels, each entry hung: natbib's author-year list.
         mutable std::optional<std::string> heading{};
         ///< The list's heading as \\printbibliography's options give it, once.

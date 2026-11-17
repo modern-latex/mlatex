@@ -21,8 +21,10 @@
 namespace render::primitives::typesetting {
     /// @brief Text without the spaces around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
-        while (!text.empty() && text.front() == ' ') text.remove_prefix(1);
-        while (!text.empty() && text.back() == ' ') text.remove_suffix(1);
+        while (!text.empty() && text.front() == ' ')
+            text.remove_prefix(1);
+        while (!text.empty() && text.back() == ' ')
+            text.remove_suffix(1);
         return text;
     }
 
@@ -52,7 +54,8 @@ namespace render::primitives::typesetting {
         // xcolor's mixtures, read left to right: `a!p!b` is p percent of a
         // on b, and a missing b is white. Each result is the next one's a.
         std::vector<std::string_view> parts;
-        for (const auto part: std::views::split(text, '!')) parts.emplace_back(part.begin(), part.end());
+        for (const auto part : std::views::split(text, '!'))
+            parts.emplace_back(part.begin(), part.end());
         if (parts.empty()) return graphics::Color::parse(text);
 
         graphics::Color color = named(parts[0]);
@@ -64,15 +67,11 @@ namespace render::primitives::typesetting {
             }
             const float part = std::clamp(share / 100.0f, 0.0f, 1.0f);
 
-            const auto [red, green, blue, alpha] = index + 1 < parts.size()
-                                                       ? named(parts[index + 1])
-                                                       : graphics::white;
-            color = {
-                .red = color.red * part + red * (1.0f - part),
-                .green = color.green * part + green * (1.0f - part),
-                .blue = color.blue * part + blue * (1.0f - part),
-                .alpha = color.alpha * part + alpha * (1.0f - part)
-            };
+            const auto [red, green, blue, alpha] = index + 1 < parts.size() ? named(parts[index + 1]) : graphics::white;
+            color = {.red = color.red * part + red * (1.0f - part),
+                     .green = color.green * part + green * (1.0f - part),
+                     .blue = color.blue * part + blue * (1.0f - part),
+                     .alpha = color.alpha * part + alpha * (1.0f - part)};
         }
         return color;
     }
@@ -83,15 +82,15 @@ namespace render::primitives::typesetting {
 
         if (model == "HTML") {
             const bool hex = value.size() == 6 && std::ranges::all_of(value, [](const char digit) {
-                return std::isxdigit(static_cast<unsigned char>(digit)) != 0;
-            });
+                                 return std::isxdigit(static_cast<unsigned char>(digit)) != 0;
+                             });
             if (!hex) return std::nullopt;
             return std::format("#{}", value);
         }
 
         std::array<float, 4> numbers{};
         std::size_t count = 0;
-        for (const auto piece: std::views::split(value, ',')) {
+        for (const auto piece : std::views::split(value, ',')) {
             if (count == numbers.size()) return std::nullopt;
             const std::string_view number = trim(std::string_view(piece.begin(), piece.end()));
             const auto [stop, failure] = patch::decimal(number.data(), number.data() + number.size(), numbers[count]);
@@ -122,10 +121,10 @@ namespace render::primitives::typesetting {
             return write({.red = 1.0f - first, .green = 1.0f - second, .blue = 1.0f - third, .alpha = 1.0f});
         }
         if (model == "cmyk" && fits(4, 1.0f)) {
-            return write({
-                .red = (1.0f - first) * (1.0f - fourth), .green = (1.0f - second) * (1.0f - fourth),
-                .blue = (1.0f - third) * (1.0f - fourth), .alpha = 1.0f
-            });
+            return write({.red = (1.0f - first) * (1.0f - fourth),
+                          .green = (1.0f - second) * (1.0f - fourth),
+                          .blue = (1.0f - third) * (1.0f - fourth),
+                          .alpha = 1.0f});
         }
         return std::nullopt;
     }
@@ -137,7 +136,7 @@ namespace render::primitives::typesetting {
         // only the one target here, so it is read and set aside.
         parser.mouth.bind("\\definecolor", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
-            (void) mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+            (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
             const std::string name = syntax::Argument::text(mouth);
             const std::string model = syntax::Argument::text(mouth);
@@ -151,8 +150,8 @@ namespace render::primitives::typesetting {
             const std::optional<std::string> color = convert(model, value);
             if (!color) {
                 tracebacks.emplace_back(
-                    syntax::Traceback::Type::Argument, origin,
-                    std::format("\\definecolor{{{}}}: '{}' is not a color in the '{}' model", name, value, model));
+                        syntax::Traceback::Type::Argument, origin,
+                        std::format("\\definecolor{{{}}}: '{}' is not a color in the '{}' model", name, value, model));
                 return;
             }
             context.variables.define(std::format("color.{}", trim(name)), *color);
@@ -160,7 +159,7 @@ namespace render::primitives::typesetting {
 
         parser.mouth.bind("\\colorlet", [this, &context](syntax::Mouth &mouth) {
             const memory::Location origin = mouth.lookahead().location;
-            (void) mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
+            (void)mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0);
 
             const std::string name = syntax::Argument::text(mouth);
             const std::string value = syntax::Argument::expanded(mouth);
@@ -181,14 +180,13 @@ namespace render::primitives::typesetting {
         // after it is read.
         const auto tint = [&context](syntax::Mouth &mouth) {
             std::string model;
-            for (const syntax::Token &token: mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
+            for (const syntax::Token &token : mouth.argument(syntax::Mouth::Parameter{.optional = true}, 0)) {
                 model += token.text;
             }
             const std::string written = syntax::Argument::text(mouth);
             const std::optional<std::string> converted = model.empty() ? std::nullopt : convert(model, written);
-            const graphics::Color color = converted
-                                              ? graphics::Color::parse(*converted)
-                                              : resolve(written, context.variables);
+            const graphics::Color color =
+                    converted ? graphics::Color::parse(*converted) : resolve(written, context.variables);
             auto *kept = context.arena.compose<layout::Node::Color>();
             *kept = {.red = color.red, .green = color.green, .blue = color.blue, .alpha = color.alpha};
             return kept;
@@ -214,7 +212,8 @@ namespace render::primitives::typesetting {
 
             const layout::Node::Color *color = tint(mouth);
             syntax::Token open = mouth.read();
-            while (open.category == syntax::Catcodes::Category::Space) open = mouth.read();
+            while (open.category == syntax::Catcodes::Category::Space)
+                open = mouth.read();
             if (!open.is(syntax::Catcodes::Category::Group, '{')) {
                 if (!open.empty()) mouth.stream().inject(std::span{&open, 1});
                 tracebacks.emplace_back(syntax::Traceback::Type::Group, origin, "\\textcolor needs a brace group");

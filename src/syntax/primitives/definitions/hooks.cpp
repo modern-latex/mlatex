@@ -1,8 +1,8 @@
 /// @file
 /// @brief Hooks implementation: named token lists, added to and run.
 #include "syntax/primitives/definitions/hooks.hpp"
-#include "syntax/argument.hpp"
 #include "logger.hpp"
+#include "syntax/argument.hpp"
 
 #include <span>
 
@@ -29,8 +29,7 @@ namespace syntax::primitives::definitions {
 
             std::vector<Token> &kept = hooks[name];
             kept.insert(kept.end(), code.begin(), code.end());
-            Logger::log(Logger::Type::Mouth, Logger::Level::Debug,
-                        "Hook '{}' now runs {} token(s)", name, kept.size());
+            Logger::log(Logger::Type::Mouth, Logger::Level::Debug, "Hook '{}' now runs {} token(s)", name, kept.size());
         });
 
         mouth.bind("\\usehook", [this](Mouth &mouth) { run(mouth, Argument::text(mouth)); });

@@ -25,7 +25,8 @@ namespace syntax {
 
             std::string joined;
             joined.reserve(gathered.size());
-            for (const Token &token: gathered) joined += token.text;
+            for (const Token &token : gathered)
+                joined += token.text;
             return joined;
         }
 
@@ -51,10 +52,7 @@ namespace syntax {
 
             const Symbol marker = mouth.lexicon.intern("\\argument:end");
             gathered.push_back(Token{
-                .symbol = marker,
-                .category = Catcodes::Category::Escape,
-                .text = mouth.lexicon.resolve(marker)
-            });
+                    .symbol = marker, .category = Catcodes::Category::Escape, .text = mouth.lexicon.resolve(marker)});
 
             const std::size_t depth = mouth.stream().size();
             mouth.stream().inject(gathered);
@@ -69,9 +67,8 @@ namespace syntax {
                     break;
                 }
 
-                const bool letter = !token.text.empty() &&
-                                    ((token.text[0] >= 'a' && token.text[0] <= 'z') ||
-                                     (token.text[0] >= 'A' && token.text[0] <= 'Z'));
+                const bool letter = !token.text.empty() && ((token.text[0] >= 'a' && token.text[0] <= 'z') ||
+                                                            (token.text[0] >= 'A' && token.text[0] <= 'Z'));
                 if (word && letter) joined += ' ';
                 joined += token.text;
 
@@ -91,12 +88,14 @@ namespace syntax {
         /// @complexity O(k) in the keyword's length.
         static bool keyword(Mouth &mouth, const std::string_view word) {
             std::size_t offset = 0;
-            while (mouth.lookahead(offset).category == Catcodes::Category::Space) ++offset;
+            while (mouth.lookahead(offset).category == Catcodes::Category::Space)
+                ++offset;
             for (std::size_t index = 0; index < word.size(); ++index) {
                 const Token token = mouth.lookahead(offset + index);
                 if (token.text.size() != 1 || (token.text[0] | 0x20) != word[index]) return false;
             }
-            for (std::size_t index = 0; index < offset + word.size(); ++index) mouth.read();
+            for (std::size_t index = 0; index < offset + word.size(); ++index)
+                mouth.read();
             return true;
         }
     };
