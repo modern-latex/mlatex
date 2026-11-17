@@ -443,8 +443,8 @@ namespace render::primitives::figures {
                             if (const auto written = find(settings, key)) {
                                 if (*written == "data") {
                                     for (const Plot &plot : axis.plots) {
-                                        for (const auto &key : plot.points | std::views::keys)
-                                            found.push_back(key);
+                                        for (const auto &x : plot.points | std::views::keys)
+                                            found.push_back(x);
                                     }
                                     std::ranges::sort(found);
                                     found.erase(std::ranges::unique(found).begin(), found.end());
@@ -1352,11 +1352,11 @@ namespace render::primitives::figures {
                         if (entries > 0) {
                             std::string rows;
                             for (std::size_t index = 0; index < entries; ++index) {
-                                const auto &[color, mark, line, bar] = samples[index];
+                                const auto &[color, mark, line, square] = samples[index];
                                 // A bar's square, a line with its mark across it, a
                                 // line, or a mark alone.
                                 std::string image = "$\\bullet$";
-                                if (bar)
+                                if (square)
                                     image = "\\rule{0.8em}{0.8em}";
                                 else if (line && !mark.empty()) {
                                     image = R"(\rule[0.55ex]{0.5em}{0.6pt}$\bullet$\rule[0.55ex]{0.5em}{0.6pt})";

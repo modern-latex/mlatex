@@ -648,9 +648,13 @@ namespace render::graphics {
         };
         if (inherited.resources) made.resources = copy(*inherited.resources);
         if (const Value *group = get(*leaf, "/Group")) made.group = copy(*group);
-        for (unsigned int index : pending) {
+        // By index, not by range: copying an object reaches the objects it
+        // names -- a font's descriptor, then its file -- and they join the end
+        // of the list while it is walked, which a range's iterators would not
+        // survive.
+        for (std::size_t index = 0; index < pending.size(); ++index) {
             Object object;
-            if (const Loaded *source = load(index, 0)) {
+            if (const Loaded *source = load(pending[index], 0)) {
                 object.value = copy(source->value);
                 if (source->streamed) {
                     object.streamed = true;
