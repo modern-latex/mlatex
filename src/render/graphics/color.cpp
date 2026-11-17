@@ -23,6 +23,7 @@ namespace render::graphics {
 
     /// @brief Trims spaces from both ends.
     /// @param text Text to trim.
+    /// @return The text without them.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
         while (!text.empty() && text.front() == ' ')
             text.remove_prefix(1);

@@ -102,6 +102,7 @@ namespace syntax::primitives::definitions {
         /// @complexity O(1) average.
         [[nodiscard]] const std::string *get(std::string_view name) const noexcept;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: names read that were never set.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 

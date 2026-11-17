@@ -76,9 +76,11 @@ namespace render::graphics {
         ///             a picture's, in what its program does or its elements.
         [[nodiscard]] static std::optional<Drawing> decode(std::span<const std::byte> bytes, int page = 1);
 
+        /// @return The width, in points.
         /// @brief How wide the page is, in points.
         [[nodiscard]] float width() const noexcept { return box[2] - box[0]; }
 
+        /// @return The height, in points.
         /// @brief How tall the page is, in points.
         [[nodiscard]] float height() const noexcept { return box[3] - box[1]; }
 

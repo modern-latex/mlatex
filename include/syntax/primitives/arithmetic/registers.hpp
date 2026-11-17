@@ -53,6 +53,7 @@ namespace syntax::primitives::arithmetic {
 
         /// @brief Errors this module has recorded.
         ///
+        /// @return The errors, in the order they were found.
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes. A module

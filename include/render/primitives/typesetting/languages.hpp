@@ -73,6 +73,7 @@ namespace render::primitives::typesetting {
         /// @complexity O(n) in the languages known, which is a few dozen.
         [[nodiscard]] static const Language *get(std::string_view name) noexcept;
 
+        /// @return The errors and warnings, in the order they were found.
         /// @brief What was reported while the document was read.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 

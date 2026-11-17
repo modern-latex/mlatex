@@ -83,11 +83,13 @@ namespace render::typography {
         explicit Expression(const Font &font) noexcept;
 
         /// @brief Does this font carry a MATH table at all?
+        /// @return Whether it has a MATH table.
         /// @complexity O(1).
         [[nodiscard]] bool present() const noexcept;
 
         /// @brief Every constant, in points.
         ///
+        /// @return The constants.
         /// Read once and remembered, because a formula asks for these on every
         /// node and the table lookup behind each one is not free.
         ///
@@ -96,11 +98,12 @@ namespace render::typography {
 
         /// @brief The italic correction a glyph asks for, in points.
         ///
+        ///
+        /// @param glyph Glyph index.
+        /// @return The correction, in points; 0 when the glyph asks for none.
         /// The slope of a maths italic leaves its last stem leaning over the
         /// advance. Anything set tight against it -- a superscript above all --
         /// has to be pushed out by this much or it collides.
-        ///
-        /// @param glyph Glyph index.
         /// @complexity O(1).
         [[nodiscard]] float correction(std::uint32_t glyph) const noexcept;
 

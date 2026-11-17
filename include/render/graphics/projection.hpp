@@ -22,9 +22,11 @@ namespace render::graphics {
     /// @endcode
     class Projection {
     public:
+        /// @return The projection.
         /// @brief Looking straight down the z axis: the plain 2D case.
         [[nodiscard]] static Projection planar() noexcept;
 
+        /// @return The projection.
         /// @brief The classic drafting view: every axis foreshortened alike,
         ///        120 degrees from each of the other two on the page.
         [[nodiscard]] static Projection isometric() noexcept;
@@ -33,6 +35,7 @@ namespace render::graphics {
         /// @param elevation Degrees the view is tilted from looking straight
         ///                  down the z axis: 0 is planar(), 90 a side view.
         /// @param azimuth   Degrees the view is turned around the z axis first.
+        /// @return The projection.
         [[nodiscard]] static Projection orthographic(float elevation, float azimuth) noexcept;
 
         /// @brief Flattens one point.

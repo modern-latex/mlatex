@@ -86,30 +86,47 @@ namespace render {
             /// @param matrix a, b, c, d, e and f.
             virtual void place(const std::array<float, 6> &matrix) = 0;
 
+            /// @param red Red, from 0 to 1.
+            /// @param green Green, from 0 to 1.
+            /// @param blue Blue, from 0 to 1.
             /// @brief Sets the color a fill paints in.
             virtual void fill(float red, float green, float blue) = 0;
 
+            /// @param red Red, from 0 to 1.
+            /// @param green Green, from 0 to 1.
+            /// @param blue Blue, from 0 to 1.
             /// @brief Sets the color a stroke paints in.
             virtual void stroke(float red, float green, float blue) = 0;
 
+            /// @param value The opacity, from 0 for clear to 1 for solid.
             /// @brief Sets how opaque everything painted from here is, 0 to 1.
             virtual void alpha(float value) = 0;
 
+            /// @param value The width, in points.
             /// @brief Sets a stroke's width.
             virtual void width(float value) = 0;
 
+            /// @param dashed Whether the stroke is dashed.
             /// @brief Sets a stroke dashed, three on and three off, or solid.
             virtual void dash(bool dashed) = 0;
 
             /// @brief Starts a new path.
             virtual void begin() = 0;
 
+            /// @param x Across the page, in points.
+            /// @param y Down the page, in points.
             /// @brief Starts a piece of the path at a point.
             virtual void move(float x, float y) = 0;
 
+            /// @param x Across the page, in points.
+            /// @param y Down the page, in points.
             /// @brief Runs the path straight on to a point.
             virtual void line(float x, float y) = 0;
 
+            /// @param x Its left edge, in points.
+            /// @param y Its top edge, in points.
+            /// @param width Its width, in points.
+            /// @param height Its height, in points.
             /// @brief Adds a rectangle to the path, as a piece of its own.
             virtual void rectangle(float x, float y, float width, float height) = 0;
 
@@ -138,6 +155,10 @@ namespace render {
             /// @param picture Its pixels.
             virtual void picture(std::size_t slot, const Picture &picture) = 0;
 
+            /// @param x Its left edge, in points.
+            /// @param y Its top edge, in points.
+            /// @param width Its width, in points.
+            /// @param height Its height, in points.
             /// @brief Marks where a page of another PDF stands, which only a
             ///        PDF reader draws.
             virtual void form(float x, float y, float width, float height) = 0;

@@ -19,6 +19,8 @@
 #include <vector>
 
 namespace render::primitives::typesetting {
+    /// @param text The text to trim.
+    /// @return The text without its spaces.
     /// @brief Text without the spaces around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
         while (!text.empty() && text.front() == ' ')

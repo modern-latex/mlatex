@@ -72,11 +72,13 @@ namespace render::layout {
 
         /// @brief How far a node moves the pen along a line.
         /// @param node Node to measure; null measures zero.
+        /// @return The distance, in points.
         /// @complexity O(1).
         [[nodiscard]] static float advance(const Node *node) noexcept;
 
         /// @brief How much vertical room a node takes in a column.
         /// @param node Node to measure; null measures zero.
+        /// @return The room, in points.
         /// @complexity O(1).
         [[nodiscard]] static float extent(const Node *node) noexcept;
 

@@ -63,9 +63,11 @@ namespace render::typography {
 
         ~Registry() noexcept;
 
+        /// @brief Not copyable: every font it built is found through it, and points into its tables.
         Registry(const Registry &) = delete ("every font it built is found through it, and points into its tables");
 
         Registry &
+        /// @brief Not copy-assignable, for the same reason.
         operator=(const Registry &) = delete ("every font it built is found through it, and points into its tables");
 
         Registry(Registry &&) = delete ("every font it built is found through it, and points into its tables");

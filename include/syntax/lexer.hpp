@@ -34,13 +34,22 @@ namespace syntax {
         ///                 is, for every location handed out; zero for none.
         Lexer(std::string_view source, Catcodes &codes, Lexicon &lexicon, std::uint32_t file = 0);
 
+        /// @brief Reads the next token.
+        /// @return The token, or an end token when the text is finished.
         Token advance();
 
+        /// @brief Whether the text is finished.
+        /// @return Whether no character is left to read.
         [[nodiscard]] bool empty() const noexcept;
 
+        /// @brief Errors the lexer has recorded.
+        /// @return The errors, in the order they were found.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
+        /// @brief How many bytes a UTF-8 character takes, from its first.
+        /// @param lead Its first byte.
+        /// @return 1 to 4.
         [[nodiscard]] static constexpr std::size_t length(const char lead) noexcept {
             const auto byte = static_cast<unsigned char>(lead);
             if ((byte & 0x80) == 0) return 1;
@@ -50,15 +59,24 @@ namespace syntax {
             return 1;
         }
 
+        /// @brief Whether a character ends a line.
+        /// @param symbol The character.
+        /// @return Whether it is a carriage return or a line feed.
         [[nodiscard]] static constexpr bool ending(const char symbol) noexcept {
             return symbol == '\n' || symbol == '\r';
         }
 
+        /// @brief The text being read.
         std::string_view sources{};
+        /// @brief The category of every character, as `\\catcode` last set it.
         Catcodes &table;
+        /// @brief Where names are interned.
         Lexicon &lexicon;
+        /// @brief How far into the text the lexer has read, in bytes.
         std::size_t offset = 0;
+        /// @brief The line and column it has reached.
         memory::Location location{1, 1};
+        /// @brief Which of TeX's reading states it is in.
         Type type = Type::Newline;
 
         /// @name Text read as it stands
@@ -66,8 +84,11 @@ namespace syntax {
         /// the next token; and a verbatim block's body, from #opening to
         /// #stop, handed out whole as one token when the scan reaches it.
         /// @{
+        /// @brief A token read and not yet handed out.
         Token held{};
+        /// @brief Where text read as it stands began, or npos when none is being read.
         std::size_t opening = std::string_view::npos;
+        /// @brief Where that text stops.
         std::size_t stop = 0;
         /// @}
         std::vector<Traceback> tracebacks{}; ///< Illegal bytes, drained by Mouth::ingest.

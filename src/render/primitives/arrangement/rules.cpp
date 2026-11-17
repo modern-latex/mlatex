@@ -16,6 +16,8 @@ namespace render::primitives::arrangement {
     /// The thickness TeX gives a rule that is not measured, in points.
     static constexpr float hairline = 0.4f;
 
+    /// @param context Engine services: the color in force.
+    /// @return The color.
     /// @brief What a rule is drawn in: the color the text around it is set
     ///        in -- `\\textcolor{blue}{\\rule{1em}{1pt}}` -- black where none
     ///        was chosen.

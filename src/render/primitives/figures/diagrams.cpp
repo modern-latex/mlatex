@@ -19,8 +19,11 @@
 #include <vector>
 
 namespace render::primitives::figures {
+    /// @brief A character's category, as the lexer reads it.
     using Category = syntax::Catcodes::Category;
 
+    /// @param text The text to trim.
+    /// @return The text without its blanks.
     /// @brief Text without the blanks around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
         while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
@@ -30,6 +33,9 @@ namespace render::primitives::figures {
         return text;
     }
 
+    /// @param text The text.
+    /// @param at Where the group opens.
+    /// @return Where it closes.
     /// @brief Where the group opening at @p at closes -- braces, brackets or
     ///        parentheses, those nested inside counted -- or the text's end.
     [[nodiscard]] static std::size_t closing(const std::string_view text, const std::size_t at) noexcept {

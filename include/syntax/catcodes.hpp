@@ -87,6 +87,7 @@ namespace syntax {
 
         /// @brief Reads a character's category.
         /// @param symbol Character to look up.
+        /// @return Its category.
         /// @complexity O(1).
         [[nodiscard]] constexpr Category get(const char symbol) const noexcept {
             return table[static_cast<unsigned char>(symbol)];

@@ -46,6 +46,7 @@ namespace syntax {
         Traceback(const Type type, const memory::Location location, const std::string_view message)
             : type(type), location(location), message(message) {}
 
+        /// @return Whether it is fatal.
         /// @brief Whether it stops the document being clean: every type but a warning does.
         [[nodiscard]] bool fatal() const noexcept { return type != Type::Warning; }
 

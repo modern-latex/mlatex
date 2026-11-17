@@ -75,7 +75,9 @@ namespace render::layout {
 
         /// @brief A width and a height, in points.
         struct Size {
+            /// @brief How wide, in points.
             float width{0.0f};
+            /// @brief How tall, in points.
             float height{0.0f};
         };
 
@@ -90,6 +92,8 @@ namespace render::layout {
             float blue{0.0f};  ///< The blue channel, 0 to 1.
             float alpha{1.0f}; ///< The opacity, 0 to 1.
 
+            /// @brief Whether two colors are the same.
+            /// @return True when every component matches.
             [[nodiscard]] friend bool operator==(const Color &, const Color &) noexcept = default;
         };
 
@@ -150,10 +154,15 @@ namespace render::layout {
         /// @brief Space that stretches and shrinks, as TeX's glue: its natural width, how far it gives, and how
         /// infinitely.
         struct Glue {
+            /// @brief How wide the glue is at rest, in points.
             float width{0.0f};
+            /// @brief How far it can stretch, in points or in units of its order.
             float stretch{0.0f};
+            /// @brief How far it can shrink, in points or in units of its order.
             float shrink{0.0f};
+            /// @brief How infinite its stretch is.
             Order expand{Order::Normal};
+            /// @brief How infinite its shrink is.
             Order limit{Order::Normal};
             const Node *leader{nullptr};
             ///< Drawn along the glue: a rule stretched to its width, or a box repeated on a grid -- TeX's `\\leaders`.
@@ -161,19 +170,25 @@ namespace render::layout {
 
         /// @brief Space that never stretches, shrinks or breaks.
         struct Kern {
+            /// @brief How wide the kern is, in points.
             float width{0.0f};
         };
 
         /// @brief What breaking a line or page here costs: TeX's \\penalty, and whether it is a flagged one.
         struct Penalty {
+            /// @brief What breaking here costs: 10000 forbids it, -10000 forces it.
             std::int32_t value{0};
+            /// @brief Whether it is a flagged penalty, as at a hyphen, which TeX avoids two of in a row.
             bool flag{false};
         };
 
         /// @brief A solid rectangle of ink: its width, height and depth.
         struct Rule {
+            /// @brief How wide the rule is, in points.
             float width{0.0f};
+            /// @brief How far it reaches above the baseline, in points.
             float height{0.0f};
+            /// @brief How far it reaches below the baseline, in points.
             float depth{0.0f};
             Color color{}; ///< Fill color; black by default.
         };
@@ -239,6 +254,7 @@ namespace render::layout {
         /// @brief A page break: what it costs, and -- in the penalty's flag --
         ///        whether it ends the whole sheet rather than the column.
         struct Pause {
+            /// @brief The penalty, when the node is one.
             Penalty penalty{};
         };
 
@@ -362,64 +378,106 @@ namespace render::layout {
             ///< on takes, or 0 to count on; for Command::Source, the line.
         };
 
+        /// @brief A node of a type, its data zeroed.
+        /// @param type What the node is.
         explicit Node(const Type type = Type::Box) noexcept : type(type) {}
 
+        /// @brief The node's box data.
+        /// @return The box; valid when the node is a box.
         [[nodiscard]] const Box &box() const noexcept { return data.box; }
+        /// @brief The node's glue data.
+        /// @return The glue; valid when the node is glue.
         [[nodiscard]] const Glue &glue() const noexcept { return data.glue; }
+        /// @brief The node's kern data.
+        /// @return The kern; valid when the node is a kern.
         [[nodiscard]] const Kern &kern() const noexcept { return data.kern; }
+        /// @brief The node's penalty data.
+        /// @return The penalty; valid when the node is a penalty.
         [[nodiscard]] const Penalty &penalty() const noexcept { return data.penalty; }
+        /// @brief The node's rule data.
+        /// @return The rule; valid when the node is a rule.
         [[nodiscard]] const Rule &rule() const noexcept { return data.rule; }
+        /// @brief The node's glyph data.
+        /// @return The glyph run; valid when the node is one.
         [[nodiscard]] const Glyph &glyph() const noexcept { return data.glyph; }
+        /// @brief The node's path data.
+        /// @return The path; valid when the node is a path.
         [[nodiscard]] const Path &path() const noexcept { return data.path; }
+        /// @brief The node's picture data.
+        /// @return The picture; valid when the node is a bitmap.
         [[nodiscard]] const Bitmap &bitmap() const noexcept { return data.bitmap; }
+        /// @brief The node's pause data.
+        /// @return The pause; valid when the node is one.
         [[nodiscard]] const Pause &pause() const noexcept { return data.pause; }
+        /// @brief The node's directive data.
+        /// @return The directive; valid when the node is one.
         [[nodiscard]] const Directive &directive() const noexcept { return data.directive; }
 
+        /// @brief Makes the node a box.
+        /// @param value The box.
         void box(const Box &value) noexcept {
             type = Type::Box;
             data.box = value;
         }
 
+        /// @brief Makes the node glue.
+        /// @param value The glue.
         void glue(const Glue &value) noexcept {
             type = Type::Glue;
             data.glue = value;
         }
 
+        /// @brief Makes the node a kern.
+        /// @param value The kern.
         void kern(const Kern &value) noexcept {
             type = Type::Kern;
             data.kern = value;
         }
 
+        /// @brief Makes the node a penalty.
+        /// @param value The penalty.
         void penalty(const Penalty &value) noexcept {
             type = Type::Penalty;
             data.penalty = value;
         }
 
+        /// @brief Makes the node a rule.
+        /// @param value The rule.
         void rule(const Rule &value) noexcept {
             type = Type::Rule;
             data.rule = value;
         }
 
+        /// @brief Makes the node a glyph run.
+        /// @param value The glyph run.
         void glyph(const Glyph &value) noexcept {
             type = Type::Glyph;
             data.glyph = value;
         }
 
+        /// @brief Makes the node a path.
+        /// @param value The path.
         void path(const Path &value) noexcept {
             type = Type::Path;
             data.path = value;
         }
 
+        /// @brief Makes the node a picture.
+        /// @param value The picture.
         void bitmap(const Bitmap &value) noexcept {
             type = Type::Bitmap;
             data.bitmap = value;
         }
 
+        /// @brief Makes the node a pause.
+        /// @param value The pause.
         void pause(const Pause &value) noexcept {
             type = Type::Pause;
             data.pause = value;
         }
 
+        /// @brief Makes the node a directive.
+        /// @param value The directive.
         void directive(const Directive &value) noexcept {
             type = Type::Directive;
             data.directive = value;
@@ -430,20 +488,30 @@ namespace render::layout {
     private:
         /// @brief The data of whichever type the node is, in the space of the largest.
         union Data {
+            /// @brief A box's data.
             Box box;
+            /// @brief Glue's data.
             Glue glue;
+            /// @brief A kern's data.
             Kern kern;
+            /// @brief A penalty's data.
             Penalty penalty;
+            /// @brief A rule's data.
             Rule rule;
+            /// @brief A glyph run's data.
             Glyph glyph;
+            /// @brief A path's data.
             Path path;
+            /// @brief A picture's data.
             Bitmap bitmap;
+            /// @brief A pause's data.
             Pause pause;
+            /// @brief A directive's data.
             Directive directive;
 
             Data() : box{} {}
 
             ~Data() {}
-        } data{};
+        } data{}; ///< Whichever data the node's type holds.
     };
 }

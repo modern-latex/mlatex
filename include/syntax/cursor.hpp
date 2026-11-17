@@ -59,10 +59,12 @@ namespace syntax {
         void adopt(std::vector<Token> &&incoming);
 
         /// @brief Is the stream drained?
+        /// @return Whether no token is left.
         /// @complexity O(1).
         [[nodiscard]] bool empty() const noexcept;
 
         /// @brief How many tokens are pending.
+        /// @return The number of tokens.
         /// @complexity O(1).
         [[nodiscard]] std::size_t size() const noexcept;
 

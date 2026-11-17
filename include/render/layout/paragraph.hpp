@@ -68,6 +68,7 @@ namespace render::layout {
         /// @complexity O(n) in the list for ordinary prose.
         void layout(memory::Arena &scratch, float width, float leading) noexcept;
 
+        /// @return The box of lines, or null before layout.
         /// @brief The vertical box of lines, or nullptr before layout.
         [[nodiscard]] Node *node() const noexcept { return tree; }
 

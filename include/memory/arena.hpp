@@ -37,8 +37,10 @@ namespace memory {
         /// @brief Returns every block to the operating system.
         ~Arena();
 
+        /// @brief Not copyable: an arena owns its blocks, and two would free the same blocks twice.
         Arena(const Arena &) = delete ("an arena owns its blocks, and two of them would free the same blocks twice");
 
+        /// @brief Not copy-assignable, for the same reason.
         Arena &operator=(const Arena &) =
                 delete ("an arena owns its blocks, and two of them would free the same blocks twice");
 

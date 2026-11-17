@@ -235,6 +235,7 @@ namespace render::layout {
         void layout() noexcept;
 
         /// @brief Every block, in order.
+        /// @return The blocks, in a slice the caller reads.
         /// @complexity O(n); the list is copied into a slice for the caller.
         [[nodiscard]] memory::Slice<Element *> elements() const noexcept;
 
@@ -281,6 +282,7 @@ namespace render::layout {
         /// @brief How wide one of so many columns is across the text block,
         ///        `\\columnsep` apart: `\\columnwidth`.
         /// @param count How many columns.
+        /// @return The width, in points.
         /// @complexity O(1).
         [[nodiscard]] float column(const std::size_t count) const noexcept {
             const float text = configuration.width - configuration.left - configuration.right;
@@ -289,6 +291,7 @@ namespace render::layout {
         }
 
         /// @brief How wide text is set from here on: one of the columns in force.
+        /// @return The width, in points.
         /// @complexity O(1).
         [[nodiscard]] float column() const noexcept { return column(split ? split : configuration.columns); }
 

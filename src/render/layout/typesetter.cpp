@@ -19,7 +19,9 @@
 #include <vector>
 
 namespace render::layout {
+    /// @brief What a formula's symbol is: an operator, a relation, a delimiter.
     using Category = syntax::expression::Unicodes::Category;
+    /// @brief A node of a formula's tree.
     using Expression = syntax::expression::Node;
     // using Alphabet = Typesetter::Alphabet;
 

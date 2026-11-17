@@ -63,6 +63,7 @@ namespace render::primitives::composition {
 
         /// @brief Errors this module has recorded.
         ///
+        /// @return The errors, in the order they were found.
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes. A module
@@ -97,7 +98,9 @@ namespace render::primitives::composition {
         /// control word. `hold` opens a float -- `fixed` the one for `[H]`
         /// -- and `release` closes it.
         syntax::Symbol hold{};
+        /// @brief The symbol for a float placed exactly where it is written: `[H]`.
         syntax::Symbol fixed{};
+        /// @brief The symbol for a float let go as soon as it fits.
         syntax::Symbol release{};
     };
 }

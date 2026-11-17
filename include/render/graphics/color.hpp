@@ -38,28 +38,48 @@ namespace render::graphics {
         /// @return The color, or black when the text does not match.
         [[nodiscard]] static Color hex(std::string_view text) noexcept;
 
+        /// @brief Whether two colors are the same.
+        /// @return True when every component matches.
         [[nodiscard]] friend bool operator==(const Color &, const Color &) noexcept = default;
     };
 
     /// xcolor's nineteen base colors, exactly as it defines them, so a
     /// document written for LaTeX gets the same red it got there.
     inline constexpr Color black{0.0f, 0.0f, 0.0f};
+    /// @brief White.
     inline constexpr Color white{1.0f, 1.0f, 1.0f};
+    /// @brief Red, as xcolor defines it.
     inline constexpr Color red{1.0f, 0.0f, 0.0f};
+    /// @brief Green, as xcolor defines it.
     inline constexpr Color green{0.0f, 1.0f, 0.0f};
+    /// @brief Blue, as xcolor defines it.
     inline constexpr Color blue{0.0f, 0.0f, 1.0f};
+    /// @brief Cyan, as xcolor defines it.
     inline constexpr Color cyan{0.0f, 1.0f, 1.0f};
+    /// @brief Magenta, as xcolor defines it.
     inline constexpr Color magenta{1.0f, 0.0f, 1.0f};
+    /// @brief Yellow, as xcolor defines it.
     inline constexpr Color yellow{1.0f, 1.0f, 0.0f};
+    /// @brief Gray, as xcolor defines it.
     inline constexpr Color gray{0.5f, 0.5f, 0.5f};
+    /// @brief Dark gray, as xcolor defines it.
     inline constexpr Color darkgray{0.25f, 0.25f, 0.25f};
+    /// @brief Light gray, as xcolor defines it.
     inline constexpr Color lightgray{0.75f, 0.75f, 0.75f};
+    /// @brief Brown, as xcolor defines it.
     inline constexpr Color brown{0.75f, 0.5f, 0.25f};
+    /// @brief Lime, as xcolor defines it.
     inline constexpr Color lime{0.75f, 1.0f, 0.0f};
+    /// @brief Olive, as xcolor defines it.
     inline constexpr Color olive{0.5f, 0.5f, 0.0f};
+    /// @brief Orange, as xcolor defines it.
     inline constexpr Color orange{1.0f, 0.5f, 0.0f};
+    /// @brief Pink, as xcolor defines it.
     inline constexpr Color pink{1.0f, 0.75f, 0.75f};
+    /// @brief Purple, as xcolor defines it.
     inline constexpr Color purple{0.75f, 0.0f, 0.25f};
+    /// @brief Teal, as xcolor defines it.
     inline constexpr Color teal{0.0f, 0.5f, 0.5f};
+    /// @brief Violet, as xcolor defines it.
     inline constexpr Color violet{0.5f, 0.0f, 0.5f};
 }

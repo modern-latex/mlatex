@@ -131,6 +131,7 @@ namespace syntax {
         bool pop(semantics::Scope::Type expected);
 
         /// @brief How many groups are currently open.
+        /// @return The number of open groups.
         /// @complexity O(1).
         [[nodiscard]] std::size_t nesting() const noexcept { return marks.size(); }
 
@@ -237,6 +238,7 @@ namespace syntax {
 
         /// @brief The primitive a name was bound as, followed through lend():
         ///        itself for one bound directly.
+        /// @return The primitive, or the name itself when it is bound to none.
         /// @complexity O(1).
         [[nodiscard]] Symbol primitive(Symbol symbol) const noexcept;
 
@@ -283,6 +285,7 @@ namespace syntax {
         /// @brief Whether a control sequence means anything at all: a macro,
         ///        a primitive, or a command the #reader builds.
         /// @param symbol Interned control sequence.
+        /// @return Whether it means anything.
         /// @complexity O(1).
         [[nodiscard]] bool known(Symbol symbol) const {
             return macro(symbol) != nullptr || handler(symbol) != nullptr || (reader.means && reader.means(symbol));
@@ -290,6 +293,7 @@ namespace syntax {
 
         Reader reader{}; ///< The Parser reading from this expander, as far as names go.
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors recorded so far.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 

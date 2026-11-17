@@ -41,12 +41,19 @@ namespace render::typography {
 
         ~Face() noexcept;
 
+        /// @brief Not copyable: a face owns its HarfBuzz face, which would be destroyed twice.
         Face(const Face &) = delete ("a face owns its HarfBuzz face, which would be destroyed twice");
 
+        /// @brief Not copy-assignable, for the same reason.
         Face &operator=(const Face &) = delete ("a face owns its HarfBuzz face, which would be destroyed twice");
 
+        /// @brief Takes another face's HarfBuzz face and bytes, leaving it empty.
+        /// @param input The face to take from.
         Face(Face &&input) noexcept;
 
+        /// @brief Takes another face's HarfBuzz face and bytes, leaving it empty.
+        /// @param input The face to take from.
+        /// @return This face.
         Face &operator=(Face &&input) noexcept;
 
         /// @brief Closes the face, leaving the borrowed bytes alone.
@@ -58,14 +65,17 @@ namespace render::typography {
         /// @complexity O(1) in the file size: only the table directory is read.
         [[nodiscard]] bool compose(std::span<const std::uint8_t> data) noexcept;
 
+        /// @return The HarfBuzz face.
         /// @brief The HarfBuzz face, which shaping and metrics are read from.
         [[nodiscard]] hb_face_t *handle() const noexcept { return face; }
 
+        /// @return The file's bytes.
         /// @brief The bytes this face reads, for a writer that embeds the file.
         [[nodiscard]] std::span<const std::uint8_t> data() const noexcept { return storage; }
 
         /// @brief How many glyphs the file holds.
         ///
+        /// @return The number of glyphs.
         /// The upper bound on any glyph index from this face, which is what a
         /// caller keeping a table indexed by glyph needs to size it.
         ///
@@ -91,6 +101,7 @@ namespace render::typography {
         ///             a collision costs one outline program and no search.
         [[nodiscard]] hb_glyph_extents_t extents(std::uint32_t glyph) const noexcept;
 
+        /// @return The units per em.
         /// @brief The face's units per em, which #extents is measured in.
         [[nodiscard]] float units() const noexcept { return scale; }
 

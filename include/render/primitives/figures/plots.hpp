@@ -89,6 +89,7 @@ namespace render::primitives::figures {
                                                              double y = std::numeric_limits<double>::quiet_NaN(),
                                                              bool *measured = nullptr);
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 

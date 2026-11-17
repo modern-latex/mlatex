@@ -85,10 +85,15 @@ namespace render::typography {
             /// @brief One node while the trie grows: its letter, its first
             ///        child and its next sibling, by index; its digits.
             struct Link {
+                /// @brief The character this node of the trie stands for.
                 std::uint32_t code{0};
+                /// @brief Where the node's first child is, or 0 for none.
                 std::uint32_t child{0};
+                /// @brief Where the node's next sibling is, or 0 for none.
                 std::uint32_t next{0};
+                /// @brief Where the levels of a pattern ending here start, in the trie's table of levels.
                 std::uint32_t levels{0};
+                /// @brief How many levels that pattern has, or 0 when none ends here.
                 std::uint32_t count{0};
             };
 
@@ -258,6 +263,7 @@ namespace render::typography {
                                                           std::uint32_t pad = '.', std::size_t left = 2,
                                                           std::size_t right = 3) const;
 
+        /// @return The number of patterns.
         /// @brief How many patterns the trie holds, compiled in or added.
         [[nodiscard]] std::size_t count() const noexcept { return patterns; }
 

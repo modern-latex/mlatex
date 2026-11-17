@@ -68,6 +68,7 @@ namespace syntax::primitives::arithmetic {
         static constexpr std::size_t depth = 64;            ///< Deepest parenthesis nesting.
 
         /// @brief Errors this module has recorded.
+        /// @return The errors, in the order they were found.
         ///
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
@@ -90,18 +91,34 @@ namespace syntax::primitives::arithmetic {
             bool sound = true;                     ///< Cleared by malformed input; result becomes 0.
             bool noted = false;                    ///< An overflow has already been reported.
         };
+        /// @brief Reads sums and differences, the loosest level of an integer expression.
+        /// @param pass The parse in progress.
+        /// @return The value.
 
         [[nodiscard]] static std::int64_t expression(Pass &pass);
+        /// @brief Reads products and quotients.
+        /// @param pass The parse in progress.
+        /// @return The value.
 
         [[nodiscard]] static std::int64_t term(Pass &pass);
+        /// @brief Reads a power, which binds to the right.
+        /// @param pass The parse in progress.
+        /// @return The value.
 
         [[nodiscard]] static std::int64_t power(Pass &pass);
+        /// @brief Reads one operand: a number, a register, a signed factor or a group in parentheses.
+        /// @param pass The parse in progress.
+        /// @return The value.
 
         [[nodiscard]] static std::int64_t factor(Pass &pass);
 
         /// @brief Skips spaces and returns the next token without consuming it.
         /// @param pass The parse in progress; read from its own cursor.
+        /// @return The next token.
         [[nodiscard]] static Token lookahead(const Pass &pass);
+        /// @param pass The parse in progress, where a clamp is reported.
+        /// @param value The value to clamp.
+        /// @return The value, within the register range.
 
         /// @brief Clamps to the register range, reporting once if it had to.
         [[nodiscard]] static std::int64_t bound(Pass &pass, std::int64_t value);

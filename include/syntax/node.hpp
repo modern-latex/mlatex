@@ -30,6 +30,7 @@ namespace syntax {
             Directive    ///< Opaque engine-produced payload (boxes, glue, rules, penalties)
         };
 
+        /// @brief What the node is.
         Type type = Type::Text;
         std::string_view value{};                    ///< Its literal text, if any.
         memory::Location location{};                 ///< Where it came from.

@@ -66,6 +66,7 @@ namespace render::primitives::referencing {
         /// @param context Engine services; the block is hooked through its block module.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a key reused, a `.bib`
         ///        file missing, a key cited that no list holds.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
@@ -130,6 +131,7 @@ namespace render::primitives::referencing {
         /// `\\labelsep` -- in ems, and the space between two entries,
         /// `\\itemsep` and `\\parsep`, in points at ten point.
         static constexpr float separation = 0.5f;
+        /// @brief The space between two entries of a bibliography, in points.
         static constexpr float between = 8.0f;
     };
 }

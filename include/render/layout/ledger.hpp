@@ -40,6 +40,8 @@ namespace render::layout {
             std::string_view text{};               ///< The text itself.
             float size{0.0f};                      ///< Size in points.
 
+            /// @param other The key to compare with.
+            /// @return True when both name the same run.
             /// @brief Do two keys name the same run?
             [[nodiscard]] bool operator==(const Key &other) const noexcept;
         };
@@ -85,6 +87,7 @@ namespace render::layout {
     private:
         /// @brief Hashes a key.
         /// @param key Key to hash.
+        /// @return The hash.
         /// @complexity O(n) in the text's length.
         [[nodiscard]] static std::size_t digest(const Key &key) noexcept;
 

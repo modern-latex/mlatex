@@ -22,18 +22,21 @@ namespace syntax {
         memory::Location location{};                               ///< Source position.
         std::string_view text{};                                   ///< Interned text.
 
+        /// @return Whether it is the end of input.
         /// @brief Reports whether this is the end-of-input token.
         [[nodiscard]] constexpr bool empty() const noexcept { return symbol == none && text.empty(); }
 
         /// @brief Tests for one character of one category.
         /// @param want      Required category.
         /// @param character Required character.
+        /// @return Whether it is that character, of that category.
         [[nodiscard]] constexpr bool is(const Catcodes::Category want, const char character) const noexcept {
             return category == want && text.size() == 1 && text[0] == character;
         }
 
         /// @brief Tests for one character of any category.
         /// @param character Required character.
+        /// @return Whether it is that character.
         [[nodiscard]] constexpr bool is(const char character) const noexcept {
             return text.size() == 1 && text[0] == character;
         }

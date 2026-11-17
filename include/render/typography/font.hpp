@@ -50,12 +50,19 @@ namespace render::typography {
 
         ~Font() noexcept;
 
+        /// @brief Not copyable: a font owns its HarfBuzz font, which would be destroyed twice.
         Font(const Font &) = delete ("a font owns its HarfBuzz font, which would be destroyed twice");
 
+        /// @brief Not copy-assignable, for the same reason.
         Font &operator=(const Font &) = delete ("a font owns its HarfBuzz font, which would be destroyed twice");
 
+        /// @brief Takes another font's HarfBuzz font, leaving it empty.
+        /// @param input The font to take from.
         Font(Font &&input) noexcept;
 
+        /// @brief Takes another font's HarfBuzz font, leaving it empty.
+        /// @param input The font to take from.
+        /// @return This font.
         Font &operator=(Font &&input) noexcept;
 
         /// @brief Builds a font from a face at a size.
@@ -71,6 +78,7 @@ namespace render::typography {
         void dispose() noexcept;
 
         /// @brief This font's vertical metrics, in points.
+        /// @return The metrics.
         /// @complexity O(1); the numbers are read once at compose() time.
         [[nodiscard]] Metric metrics() const noexcept;
 
@@ -90,20 +98,25 @@ namespace render::typography {
 
         /// @brief How far the pen moves past a glyph, in points.
         /// @param glyph Glyph index.
+        /// @return The advance, in points.
         /// @complexity O(1).
         [[nodiscard]] float advance(std::uint32_t glyph) const noexcept;
 
+        /// @return The HarfBuzz font.
         /// @brief The HarfBuzz font, for shaping and for the math tables.
         [[nodiscard]] hb_font_t *handle() const noexcept { return shaper; }
 
+        /// @return The face.
         /// @brief The face this font reads.
         [[nodiscard]] const Face *face() const noexcept { return parent; }
 
+        /// @return The size, in points.
         /// @brief The size this font was built at, in points.
         [[nodiscard]] float size() const noexcept { return points; }
 
         /// @brief The family this font was built from.
         ///
+        /// @return The family's name.
         /// Asking the registry for `font.family()` at another size is how a
         /// superscript gets a real smaller font rather than a shrunken box.
         [[nodiscard]] std::string_view family() const noexcept { return name; }

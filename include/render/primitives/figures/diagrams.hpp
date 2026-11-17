@@ -64,6 +64,7 @@ namespace render::primitives::figures {
         /// @param context Engine services; its arena keeps what is written out.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
@@ -100,6 +101,7 @@ namespace render::primitives::figures {
         ///        as any does.
         /// @param mouth Expander to read from.
         /// @param name  The block.
+        /// @return The block's text.
         /// @complexity O(n) in its tokens.
         [[nodiscard]] static std::string body(syntax::Mouth &mouth, std::string_view name);
 
@@ -108,6 +110,7 @@ namespace render::primitives::figures {
         /// @param text      The grid.
         /// @param separator What stands between two cells: `&`, or what
         ///                  `ampersand replacement` names.
+        /// @return The rows, each a list of its cells' text.
         /// @complexity O(n) in the text.
         [[nodiscard]] static std::vector<std::vector<std::string>> grid(std::string_view text,
                                                                         std::string_view separator);

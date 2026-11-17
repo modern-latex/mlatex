@@ -49,6 +49,7 @@
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
 #endif
+/// @brief The program's environment, which a viewer it opens is started with.
 extern char **environ;
 #endif
 

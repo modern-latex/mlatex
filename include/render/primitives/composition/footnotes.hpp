@@ -46,6 +46,7 @@ namespace render::primitives::composition {
         /// @param context Engine services; the number comes from its counters.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a `\\footnote` with no text face.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 

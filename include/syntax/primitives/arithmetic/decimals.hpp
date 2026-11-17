@@ -86,6 +86,7 @@ namespace syntax::primitives::arithmetic {
         static constexpr std::int64_t scale = 1'000'000; ///< Millionths in one.
         static constexpr int precision = 6;              ///< Decimal places a value keeps.
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
@@ -99,10 +100,18 @@ namespace syntax::primitives::arithmetic {
             std::size_t level = 0;                   ///< Nesting, through parentheses and variables.
         };
 
+        /// @param pass The evaluation in progress.
+        /// @return The value, or nothing after an error.
         [[nodiscard]] static std::optional<std::int64_t> expression(Pass &pass); ///< Sums and differences.
-        [[nodiscard]] static std::optional<std::int64_t> term(Pass &pass);       ///< Products and quotients.
-        [[nodiscard]] static std::optional<std::int64_t> unary(Pass &pass);      ///< A signed operand.
-        [[nodiscard]] static std::optional<std::int64_t> primary(Pass &pass);    ///< A number, a name, a group.
+        /// @param pass The evaluation in progress.
+        /// @return The value, or nothing after an error.
+        [[nodiscard]] static std::optional<std::int64_t> term(Pass &pass); ///< Products and quotients.
+        /// @param pass The evaluation in progress.
+        /// @return The value, or nothing after an error.
+        [[nodiscard]] static std::optional<std::int64_t> unary(Pass &pass); ///< A signed operand.
+        /// @param pass The evaluation in progress.
+        /// @return The value, or nothing after an error.
+        [[nodiscard]] static std::optional<std::int64_t> primary(Pass &pass); ///< A number, a name, a group.
 
         /// @brief A hundred-and-twenty-eight-bit unsigned number, as two words.
         ///
@@ -121,6 +130,7 @@ namespace syntax::primitives::arithmetic {
         /// @brief Multiplies two words into a wide number, exactly.
         /// @param left  One factor.
         /// @param right The other.
+        /// @return The product, in two words.
         /// @complexity O(1).
         [[nodiscard]] static Wide multiply(std::uint64_t left, std::uint64_t right) noexcept;
 
@@ -134,6 +144,7 @@ namespace syntax::primitives::arithmetic {
 
         /// @brief The magnitude of a signed value, as a word.
         /// @param value Value to take it of; the most negative one included.
+        /// @return The magnitude.
         [[nodiscard]] static constexpr std::uint64_t magnitude(const std::int64_t value) noexcept {
             return value < 0 ? std::uint64_t{0} - static_cast<std::uint64_t>(value) : static_cast<std::uint64_t>(value);
         }
@@ -149,6 +160,7 @@ namespace syntax::primitives::arithmetic {
         /// @param letter Character to test.
         /// @param first  True for the first character, which may not be a
         ///               digit or a point.
+        /// @return Whether it can stand there in a name.
         [[nodiscard]] static constexpr bool naming(const char letter, const bool first) noexcept {
             const bool alphabetic =
                     (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') || letter == '_';

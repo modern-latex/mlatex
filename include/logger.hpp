@@ -67,18 +67,23 @@ public:
     /// @param arguments The arguments, `argv`.
     static void compose(int count, char **arguments);
 
+    /// @param target The subsystems, as flags.
     /// @brief Reports these subsystems, and no others.
     static void types(Type target) noexcept;
 
+    /// @param target The subsystems to add, as flags.
     /// @brief Reports these subsystems as well.
     static void enable(Type target) noexcept;
 
+    /// @param value The least severe level written.
     /// @brief Reports nothing below this level.
     static void level(Level value) noexcept;
 
+    /// @param flag Whether reports are colored.
     /// @brief Colors each report by its level, or leaves it plain.
     static void color(bool flag) noexcept;
 
+    /// @param path The file reports are appended to.
     /// @brief Copies every report to a file, appending to it.
     static void file(const std::string &path);
 
@@ -87,7 +92,10 @@ public:
 
     /// @brief Would a report of this subsystem, at this level, be written?
     ///
+    /// @param target The subsystem reporting.
+    /// @param value The report's level.
     /// Lock-free, so it may be asked from anywhere, a noexcept path included.
+    /// @return Whether it would be written.
     [[nodiscard]] static bool check(Type target, Level value) noexcept;
 
     /// @brief A report's pattern, and where in the engine it was written.
@@ -136,9 +144,13 @@ public:
         } catch (...) {}
     }
 
+    /// @param target The subsystem.
+    /// @return Its name.
     /// @brief A subsystem's name, as a report prints it.
     [[nodiscard]] static std::string_view name(Type target) noexcept;
 
+    /// @param value The level.
+    /// @return Its name.
     /// @brief A level's name, as a report prints it.
     [[nodiscard]] static std::string_view name(Level value) noexcept;
 
@@ -150,21 +162,37 @@ private:
     /// @param location Where it was written.
     static void write(Type target, Level value, std::string_view text, const std::source_location &location) noexcept;
 
+    /// @brief Serializes the writing of reports, so two threads' never interleave.
     inline static std::mutex mutex{};
     inline static std::atomic<Type> mask{Type::None}; ///< read by check() without the lock
+    /// @brief The least severe level written.
     inline static std::atomic<Level> threshold{Level::Error};
+    /// @brief Whether reports are colored with ANSI escapes.
     inline static std::atomic<bool> ansi{true};
+    /// @brief The file every report is copied to, when one was given.
     inline static std::ofstream stream{};
 };
 
+/// @brief Both sets of subsystems.
+/// @param left One set.
+/// @param right The other.
+/// @return The subsystems in either.
 [[nodiscard]] constexpr Logger::Type operator|(const Logger::Type left, const Logger::Type right) noexcept {
     return static_cast<Logger::Type>(static_cast<std::uint32_t>(left) | static_cast<std::uint32_t>(right));
 }
 
+/// @brief The subsystems two sets share.
+/// @param left One set.
+/// @param right The other.
+/// @return The subsystems in both.
 [[nodiscard]] constexpr Logger::Type operator&(const Logger::Type left, const Logger::Type right) noexcept {
     return static_cast<Logger::Type>(static_cast<std::uint32_t>(left) & static_cast<std::uint32_t>(right));
 }
 
+/// @brief Adds subsystems to a set.
+/// @param left The set, changed in place.
+/// @param right The subsystems to add.
+/// @return The set.
 constexpr Logger::Type &operator|=(Logger::Type &left, const Logger::Type right) noexcept {
     left = left | right;
     return left;

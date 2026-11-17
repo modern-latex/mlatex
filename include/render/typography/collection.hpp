@@ -86,9 +86,12 @@ namespace render::typography {
         /// @brief Unmaps every file mapped so far.
         ~Collection() noexcept;
 
+        /// @brief Not copyable: a collection owns the font bytes it keeps resident, and every face points into
+        ///       them.
         Collection(const Collection &) =
                 delete ("a collection owns the font bytes it keeps resident, and every face points into them");
 
+        /// @brief Not copy-assignable, for the same reason.
         Collection &operator=(const Collection &) =
                 delete ("a collection owns the font bytes it keeps resident, and every face points into them");
 
@@ -202,7 +205,9 @@ namespace render::typography {
         /// under a lock, so a second thread may open faces ahead of the one
         /// that sets the document while that one allocates from the arena.
         mutable std::vector<View> views{};
+        /// @brief Font files handed in from memory, copied so they outlive the caller's bytes.
         mutable std::vector<std::unique_ptr<std::uint8_t[]>> copies{};
+        /// @brief Guards the copies, which any thread may add to.
         mutable std::mutex guard{};
     };
 }

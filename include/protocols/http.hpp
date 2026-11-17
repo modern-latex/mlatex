@@ -17,7 +17,9 @@
 namespace protocols {
     /// @brief One HTTP response: a status code and a body.
     struct Response {
+        /// @brief The HTTP status code, or 0 when nothing came back.
         int status{0};
+        /// @brief The response's body, as it was sent.
         std::vector<std::uint8_t> body{};
     };
 

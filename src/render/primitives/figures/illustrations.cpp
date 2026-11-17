@@ -61,6 +61,8 @@ namespace render::primitives::figures {
         }
     }
 
+    /// @param text The text to trim.
+    /// @return The text without its blanks.
     /// @brief Text without the blanks around it.
     [[nodiscard]] static std::string_view trim(std::string_view text) noexcept {
         while (!text.empty() && (text.front() == ' ' || text.front() == '\n'))
@@ -111,6 +113,8 @@ namespace render::primitives::figures {
         return measured ? static_cast<float>(*worked) : static_cast<float>(*worked) * fallback;
     }
 
+    /// @param list The options.
+    /// @return Each option, as written.
     /// @brief A TikZ option list cut at its commas, those inside braces or
     ///        brackets left alone: `draw, -{Latex[length=2mm]}`.
     [[nodiscard]] static std::vector<std::string_view> pieces(const std::string_view list) {
@@ -128,6 +132,8 @@ namespace render::primitives::figures {
         return found;
     }
 
+    /// @param option The option.
+    /// @return Where its `=` is, or npos.
     /// @brief Where an option's `=` stands, outside braces and brackets, or
     ///        npos when it has none there.
     [[nodiscard]] static std::size_t equality(const std::string_view option) noexcept {

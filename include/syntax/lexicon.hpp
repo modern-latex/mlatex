@@ -38,9 +38,11 @@ namespace syntax {
         /// @param arena Allocator for name text; must outlive the table.
         explicit Lexicon(memory::Arena &arena);
 
+        /// @brief Not copyable: a symbol is an index into one table, and means nothing in a copy of it.
         Lexicon(const Lexicon &) = delete ("a symbol is an index into one table, and means nothing in a copy of it");
 
         Lexicon &
+        /// @brief Not copy-assignable, for the same reason.
         operator=(const Lexicon &) = delete ("a symbol is an index into one table, and means nothing in a copy of it");
 
         /// @brief Interns a name.
@@ -57,6 +59,7 @@ namespace syntax {
             return symbol < names.size() ? names[symbol] : std::string_view{};
         }
 
+        /// @return The number of symbols.
         /// @brief Number of symbols issued, #none included.
         [[nodiscard]] std::size_t size() const noexcept { return names.size(); }
 

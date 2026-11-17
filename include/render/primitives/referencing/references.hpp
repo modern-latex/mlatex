@@ -68,6 +68,7 @@ namespace render::primitives::referencing {
         /// @param context Engine services; a label reads its anchor.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a label defined twice.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 
@@ -83,12 +84,13 @@ namespace render::primitives::referencing {
         ///        its default frames one -- red within the document, cyan
         ///        round an address, green round a citation -- or with
         ///        `colorlinks` its text in `linkcolor`, `urlcolor` or
-        ///        `citecolor`, or neither with `hidelinks`. Nothing without
-        ///        hyperref, which is what LaTeX's own references are.
         /// @param context Engine services: the variables hyperref's options are.
         /// @param target  The address it goes to; empty for @p anchor's place.
         /// @param anchor  The anchor it goes to, when it has no address.
         /// @param type    `link`, `url` or `cite`: which of hyperref's colors.
+        /// @return The link's marks and color.
+        ///        `citecolor`, or neither with `hidelinks`. Nothing without
+        ///        hyperref, which is what LaTeX's own references are.
         [[nodiscard]] static Hyperlink hyperlink(Context &context, std::string_view target, std::size_t anchor,
                                                  std::string_view type);
 
@@ -98,6 +100,7 @@ namespace render::primitives::referencing {
         /// @param content What was set.
         /// @param link    The link; with no marks, @p content comes back as it is.
         /// @param origin  Where it was written.
+        /// @return The group holding the content and its link, or the content alone.
         [[nodiscard]] static syntax::Node *wrapped(memory::Arena &arena, syntax::Node *content, const Hyperlink &link,
                                                    memory::Location origin);
 
@@ -128,15 +131,16 @@ namespace render::primitives::referencing {
 
         /// @brief A reference's text, written out in its form.
         ///
+        ///
+        /// @param mark    The label.
+        /// @param form    How to write it.
+        /// @param context Where the names and the pages are kept.
+        /// @return The reference's text.
         /// A type is named by the variable `cref.type` -- `Cref.type` for the
         /// capitalised form -- when the cleveref package or the document set
         /// one, and by the type itself otherwise. An equation's number is
         /// parenthesised, as cleveref prints one. A page is the one the pass
         /// before found, or `??` on a first pass.
-        ///
-        /// @param mark    The label.
-        /// @param form    How to write it.
-        /// @param context Where the names and the pages are kept.
         [[nodiscard]] static std::string write(const Mark &mark, Form form, const Context &context);
 
         mutable memory::Dictionary<Mark> marks{};    ///< Every label seen or asked for.

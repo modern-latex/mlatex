@@ -79,9 +79,11 @@ namespace syntax::primitives::definitions {
 
         /// @brief Has a package been loaded -- or begun loading -- already?
         /// @param name The package, as `\\usepackage` names it.
+        /// @return Whether it has been loaded or begun loading.
         /// @complexity O(1) average.
         [[nodiscard]] bool loaded(std::string_view name) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a name found nowhere embedded.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
@@ -123,6 +125,7 @@ namespace syntax::primitives::definitions {
 
         /// @brief The names in a comma-separated list, trimmed, empty ones left out.
         /// @param list As `amsmath, amssymb`.
+        /// @return The names.
         /// @complexity O(n) in the list's length.
         [[nodiscard]] static std::vector<std::string> split(std::string_view list);
 

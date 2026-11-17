@@ -6,6 +6,8 @@
 #include <utility>
 
 namespace syntax {
+    /// @param name The name to hash.
+    /// @return The hash.
     /// @brief FNV-1a hash of a name.
     static constexpr std::size_t digest(const std::string_view name) noexcept {
         std::uint64_t value = 14695981039346656037ull; // sixty-four bits whatever a size_t is

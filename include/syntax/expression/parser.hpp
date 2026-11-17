@@ -135,14 +135,23 @@ namespace syntax::expression {
 
         ~Parser();
 
+        /// @brief Not copyable: a formula's parser gives its lookahead back to the expander once, when it is
+        ///       destroyed.
         Parser(const Parser &) =
                 delete ("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
 
+        /// @brief Not copy-assignable, for the same reason.
         Parser &operator=(const Parser &) =
                 delete ("a formula's parser gives its lookahead back to the expander once, when it is destroyed");
 
+        /// @brief Reads a formula up to a closing character: `$` or `)`.
+        /// @param closing The character that ends it.
+        /// @return The formula's tree.
         Node *parse(char closing);
 
+        /// @brief Reads a formula up to a closing control sequence: `\\]` or an environment's end.
+        /// @param closing The control sequence that ends it.
+        /// @return The formula's tree.
         Node *parse(Symbol closing);
 
         /// @brief Asks to be told about the rows of this formula's outermost grid.
@@ -166,13 +175,21 @@ namespace syntax::expression {
         ///         name was recognised.
         [[nodiscard]] Node *compose(Node::Type type, const Token &token) const;
 
+        /// @brief The token the parser read past and has not used, which the expander is given back.
+        /// @return The token, or an empty one.
         [[nodiscard]] Token pending() const noexcept;
 
+        /// @brief Errors this parser has recorded.
+        /// @return The errors, in the order they were found.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 
     private:
+        /// @brief The next token, without reading past it.
+        /// @return The token.
         [[nodiscard]] Token lookahead() const noexcept;
 
+        /// @brief Reads past the next token.
+        /// @return The token read.
         Token advance();
 
         /// @brief Reads atoms until one of up to two stop symbols, or a
@@ -189,6 +206,9 @@ namespace syntax::expression {
         /// @return One node holding everything read, or nullptr when nothing was.
         Node *sequence(char closing = 0, Symbol stop = none, Symbol alternate = none, Symbol *matched = nullptr);
 
+        /// @brief Reads one operand and every operator of at least a priority after it, by precedence climbing.
+        /// @param priority The least priority an operator must have to be taken here.
+        /// @return The subtree.
         Node *step(int priority = 0);
 
         /// @brief Reads one atom: a symbol, a group, a command over its
@@ -199,8 +219,13 @@ namespace syntax::expression {
         /// @return The atom, or nullptr at the end of the formula.
         Node *atom(bool scripted = true);
 
+        /// @brief Reads the subscripts and superscripts of a base.
+        /// @param base What they are attached to.
+        /// @return The base with its scripts, or the base alone.
         Node *script(Node *base);
 
+        /// @brief Reads one argument: a group in braces, or a single token.
+        /// @return The argument's tree.
         Node *argument();
 
         /// @brief Which character a delimiter token stands for.
@@ -224,12 +249,17 @@ namespace syntax::expression {
         /// @return The Matrix node, or nullptr when the group was empty.
         Node *matrix(const Grammar::Bracket &bracket);
 
+        /// @brief The expander tokens are read from.
         Mouth &mouth;
+        /// @brief What each symbol of a formula is: an operator, a relation, a delimiter.
         const Grammar &grammar;
+        /// @brief Where the formula's nodes are made.
         memory::Arena &arena;
+        /// @brief Whether the formula is set in a line or displayed.
         Node::Style style = Node::Style::Inline;
 
         mutable Token current{}; ///< filled on demand, returned to the mouth on destruction
+        /// @brief Whether a token has been read ahead and not yet used.
         mutable bool primed = false;
 
         std::vector<Traceback> tracebacks{}; ///< Errors found in this formula.
@@ -249,7 +279,9 @@ namespace syntax::expression {
 
         Bound bound{}; ///< The innermost run's ends.
 
+        /// @brief How deeply groups are nested where the parser is.
         std::size_t depth = 0;
+        /// @brief How deeply groups may nest before the formula is refused, so a runaway one cannot exhaust the stack.
         std::size_t limit = 256;
     };
 }

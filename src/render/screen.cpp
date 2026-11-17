@@ -30,6 +30,7 @@ namespace render {
     /// @brief One map, then another: the point through @p first, then
     ///        through @p second, as a PDF's `cm` puts a new map in front of
     ///        the one in force.
+    /// @return The two maps, as one.
     /// @complexity O(1).
     [[nodiscard]] static Matrix compose(const Matrix &first, const Matrix &second) noexcept {
         return {

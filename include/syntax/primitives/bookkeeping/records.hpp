@@ -64,6 +64,7 @@ namespace syntax::primitives::bookkeeping {
         void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error this module has recorded: a file not found, a
+        /// @return The errors, in the order they were found.
         ///        database never made. Wrapper::traceback() gathers them.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 

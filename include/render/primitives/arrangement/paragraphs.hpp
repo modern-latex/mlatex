@@ -69,6 +69,7 @@ namespace render::primitives::arrangement {
         ///                block module, and `\\leftskip` scans against its registers.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a `\\leftskip` with no
         ///        dimension after it.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }

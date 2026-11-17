@@ -99,10 +99,13 @@ namespace mlatex {
         ///               hyphenation patterns not compiled in.
         explicit Session(std::filesystem::path assets);
 
+        /// @param name The value's name.
+        /// @param value Its text.
         /// @brief Sets a value the document reads with `\\variable{name}`,
         ///        replacing one set before under the same name.
         void set(std::string_view name, std::string_view value);
 
+        /// @param name The value's name.
         /// @brief Takes back a value set before; nothing when there was none.
         void unset(std::string_view name);
 
@@ -122,6 +125,7 @@ namespace mlatex {
         /// @param bytes The file's contents, text or a picture's bytes.
         void provide(std::string_view name, std::string bytes);
 
+        /// @param name The file's name, as the document reads it.
         /// @brief Takes back a file handed in before; nothing when there was none.
         void withdraw(std::string_view name);
 

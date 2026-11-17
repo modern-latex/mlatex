@@ -49,6 +49,7 @@ namespace syntax::primitives::definitions {
 
         /// @brief Every error this module has recorded; it records none.
         ///
+        /// @return The errors: always none.
         /// Adding to a hook and running one cannot fail -- an unknown hook
         /// is an empty one -- but every module answers the same question, so
         /// Wrapper can merge them without knowing which ones can.

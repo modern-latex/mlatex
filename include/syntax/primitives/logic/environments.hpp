@@ -110,15 +110,18 @@ namespace syntax::primitives::logic {
         void watch(Handler entering, Handler leaving) const;
 
         /// @brief How many blocks are open.
+        /// @return The number of open blocks.
         /// @complexity O(1).
         [[nodiscard]] std::size_t depth() const noexcept { return open.size(); }
 
         /// @brief Name of the innermost open block, or empty when none is.
+        /// @return The block's name, or an empty one.
         /// @complexity O(1).
         [[nodiscard]] std::string_view innermost() const noexcept;
 
         /// @brief Errors this module has recorded.
         ///
+        /// @return The errors, in the order they were found.
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes. A module

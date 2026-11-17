@@ -59,6 +59,7 @@ namespace render::primitives::typesetting {
         ///                and named colors are kept among its variables.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded: a color model it does not
         ///        know, or a value that does not fit its model.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
@@ -67,11 +68,12 @@ namespace render::primitives::typesetting {
         ///        any form graphics::Color::parse() reads, or an xcolor mixture
         ///        of those.
         ///
-        /// Shared with the drawing primitives, so a line and a word read
-        /// `brand!40` the same way.
         ///
         /// @param text      The color as written.
         /// @param variables Where the document's own names are kept.
+        /// @return The color, or nothing when the text names none.
+        /// Shared with the drawing primitives, so a line and a word read
+        /// `brand!40` the same way.
         /// @complexity O(n) in the text's length.
         [[nodiscard]] static graphics::Color resolve(std::string_view text,
                                                      const syntax::primitives::definitions::Variables &variables);
@@ -86,6 +88,7 @@ namespace render::primitives::typesetting {
         [[nodiscard]] static std::optional<std::string> convert(std::string_view model, std::string_view value);
 
     private:
+        /// @return The color's text.
         /// @brief A color as text graphics::Color::parse() reads back exactly.
         [[nodiscard]] static std::string write(const graphics::Color &color);
 

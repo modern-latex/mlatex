@@ -46,12 +46,15 @@ namespace render::primitives {
     public:
         Selection() noexcept = default;
 
+        /// @brief A copy of another selection, its faces, color and visibility alike.
         Selection(const Selection &) noexcept = default;
 
         /// @brief Takes another's faces and color -- a group's, put back as it
+        /// @param other The selection to take.
         ///        closes -- which counts as a change like any other. Whether
         ///        what follows is hidden goes with the group; whether a frame
         ///        has paused does not.
+        /// @return This selection.
         Selection &operator=(const Selection &other) noexcept {
             if (this == &other) return *this;
             tint = other.tint;
@@ -62,11 +65,13 @@ namespace render::primitives {
             return *this;
         }
 
+        /// @return How many changes there have been.
         /// @brief How many times the face or the color has changed, only ever
         ///        rising: what the parser watches to end a run of text where
         ///        the face it was begun in no longer holds.
         [[nodiscard]] const std::uint64_t &changes() const noexcept { return count; }
 
+        /// @return The face, or null before one is chosen.
         /// @brief The face running text is set in.
         [[nodiscard]] const typography::Font *text() const noexcept { return prose; }
 
@@ -79,6 +84,7 @@ namespace render::primitives {
 
         /// @brief The face formulas are set in.
         ///
+        /// @return The face, or the text face when none was chosen.
         /// Falls back to the text face when none was selected, which keeps a
         /// formula visible in a document that never asked for a maths family
         /// even though the result will not be proper mathematics.
@@ -91,6 +97,7 @@ namespace render::primitives {
             ++count;
         }
 
+        /// @return The color, null for black, or a clear one while hidden.
         /// @brief The color text is set in, or null for the default, black --
         ///        and none at all, every glyph clear, while what follows is
         ///        hidden: a beamer overlay's, standing in its place unseen.
@@ -106,6 +113,7 @@ namespace render::primitives {
             ++count;
         }
 
+        /// @return Whether it is hidden.
         /// @brief Whether what follows is hidden until its group ends: an
         ///        overlay's `\\uncover`, an `\\item<2->` on its first slide.
         [[nodiscard]] bool hidden() const noexcept { return concealed; }
@@ -117,6 +125,7 @@ namespace render::primitives {
             ++count;
         }
 
+        /// @return Whether it is paused.
         /// @brief Whether a beamer frame's `\\pause` hides the rest of it on
         ///        this slide, groups or none.
         [[nodiscard]] bool paused() const noexcept { return stopped; }

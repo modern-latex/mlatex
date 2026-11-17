@@ -61,6 +61,7 @@ namespace syntax::primitives::bookkeeping {
         void operator()(Mouth &mouth, Context &context) const;
 
         /// @brief Every error this module has recorded: a count that is no
+        /// @return The errors, in the order they were found.
         ///        number. Wrapper::traceback() gathers them when a run finishes.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 

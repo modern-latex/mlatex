@@ -68,9 +68,11 @@ namespace memory {
             }
         }
 
+        /// @return The number of entries.
         /// @brief How many entries it holds.
         [[nodiscard]] static constexpr std::size_t size() noexcept { return Count; }
 
+        /// @return The entries.
         /// @brief Every entry, in the order they were listed.
         [[nodiscard]] constexpr const std::array<Entry, Count> &listing() const noexcept { return entries; }
 

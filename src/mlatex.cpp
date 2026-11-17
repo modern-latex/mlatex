@@ -585,6 +585,8 @@ namespace mlatex {
         return !broken;
     }
 
+    /// @param name The name, with or without its backslash.
+    /// @return The name without it.
     /// @brief A command's name as it is kept: without its backslash.
     [[nodiscard]] static std::string_view bare(std::string_view name) noexcept {
         if (name.starts_with('\\')) name.remove_prefix(1);

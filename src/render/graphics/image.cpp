@@ -13,17 +13,27 @@
 #include <initializer_list>
 
 namespace render::graphics {
+    /// @brief Whether bytes start with a signature.
+    /// @param bytes The file's bytes.
+    /// @param want The signature.
+    /// @return Whether they start with it.
     [[nodiscard]] static bool signature(const std::span<const std::byte> bytes,
                                         const std::initializer_list<unsigned char> want) noexcept {
         if (bytes.size() < want.size()) return false;
         return std::memcmp(bytes.data(), want.begin(), want.size()) == 0;
     }
 
+    /// @brief Whether bytes are a RIFF file of WebP.
+    /// @param bytes The file's bytes.
+    /// @return Whether they are.
     [[nodiscard]] static bool riff(const std::span<const std::byte> bytes) noexcept {
         if (bytes.size() < 12) return false;
         return std::memcmp(bytes.data(), "RIFF", 4) == 0 && std::memcmp(bytes.data() + 8, "WEBP", 4) == 0;
     }
 
+    /// @brief Decodes a PNG with libpng.
+    /// @param bytes Encoded PNG data.
+    /// @return The image, or nothing when it is not a PNG libpng reads.
     [[nodiscard]] static std::optional<Image> png(const std::span<const std::byte> bytes) {
         png_image source{};
         source.version = PNG_IMAGE_VERSION;
@@ -83,6 +93,7 @@ namespace render::graphics {
     /// @param bytes Encoded JPEG data.
     /// @param keep Whether a JPEG in grey or in colour keeps its bytes for a
     ///             PDF to decode, rather than being decoded here.
+    /// @return The image, or nothing when it is not a JPEG libjpeg reads.
     [[nodiscard]] static std::optional<Image> jpeg(const std::span<const std::byte> bytes, const bool keep = true) {
         // libjpeg's own error path: a longjmp back out of the callback it
         // insists on calling rather than returning from.
@@ -158,6 +169,9 @@ namespace render::graphics {
 #pragma warning(pop)
 #endif
 
+    /// @brief Decodes a WebP picture with libwebp.
+    /// @param bytes Encoded WebP data.
+    /// @return The image, or nothing when it is not a WebP libwebp reads.
     [[nodiscard]] static std::optional<Image> webp(const std::span<const std::byte> bytes) {
         int width = 0;
         int height = 0;

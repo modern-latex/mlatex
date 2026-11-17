@@ -77,9 +77,13 @@ namespace render::primitives::referencing {
         /// @param value Its new value.
         void set(std::string_view name, int value) const;
 
+        /// @param name The counter's name.
+        /// @return Its value, or 0.
         /// @brief A counter's value, or 0 for one that does not exist.
         [[nodiscard]] int value(std::string_view name) const;
 
+        /// @param name The counter's name.
+        /// @return Whether it exists.
         /// @brief Whether a counter by this name exists.
         [[nodiscard]] bool contains(std::string_view name) const;
 
@@ -91,6 +95,7 @@ namespace render::primitives::referencing {
 
         /// @brief Errors this module has recorded.
         ///
+        /// @return The errors, in the order they were found.
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes. A module

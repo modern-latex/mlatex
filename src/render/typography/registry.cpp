@@ -15,6 +15,10 @@
 
 namespace render::typography {
     /// @brief Hashes a family and cut, folding the cut into the family's hash.
+    /// @param family The family's name.
+    /// @param weight The cut's weight.
+    /// @param slant The cut's slant.
+    /// @return The hash.
     /// @complexity O(n) in the family name's length.
     static constexpr std::uint64_t digest(const std::string_view family, const int weight, const int slant) noexcept {
         // Sixty-four bits whatever a size_t is: WebAssembly's is thirty-two.
@@ -29,6 +33,8 @@ namespace render::typography {
     }
 
     /// @brief Hashes a whole request: a face's digest with the size folded in.
+    /// @param request The request.
+    /// @return The hash.
     /// @complexity O(n) in the family name's length.
     static constexpr std::size_t digest(const Registry::Request &request) noexcept {
         // The size is taken at hundredth-point resolution, which is finer

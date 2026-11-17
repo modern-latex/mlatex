@@ -30,6 +30,7 @@ namespace render::typography {
         return std::array{trie.nodes.size(), trie.edges.size(), trie.levels.size()};
     }();
 
+    /// @brief American English's patterns, compiled into a trie by the compiler from the pattern file.
     static constexpr auto american = [] {
         Hyphenator::Trie trie;
         trie.parse({english, sizeof english - 1});

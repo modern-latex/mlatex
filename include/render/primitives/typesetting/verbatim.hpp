@@ -54,6 +54,7 @@ namespace render::primitives::typesetting {
         /// @param context Engine services; the text is shaped with its fonts.
         void operator()(syntax::Parser &parser, Context &context) const;
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors this module has recorded.
         [[nodiscard]] const std::vector<syntax::Traceback> &traceback() const noexcept { return tracebacks; }
 

@@ -175,12 +175,13 @@ namespace render {
     private:
         /// @brief How far below a node's top its reference point sits.
         ///
+        ///
+        /// @param item Node to measure; null measures zero.
+        /// @return The distance, in points.
         /// Zero for a column and for pure space, whose reference point is
         /// their top edge already; the height above the baseline for anything
         /// that sits on one. Walking a column means adding this, drawing, then
         /// adding whatever is left of the node's extent.
-        ///
-        /// @param item Node to measure; null measures zero.
         /// @complexity O(1).
         [[nodiscard]] static float height(const layout::Node *item) noexcept;
 
@@ -223,13 +224,14 @@ namespace render {
 
         /// @brief One glyph's width, in thousandths of the em.
         ///
+        ///
+        /// @param font Font to measure in.
+        /// @param glyph  Glyph index.
+        /// @return The width, in thousandths of the em.
         /// Rounded, because that is the form the width reaches a reader in and
         /// the reader advances its pen by what it was given. Advancing the
         /// model by anything finer would drift a thousandth per glyph and end
         /// the line somewhere else.
-        ///
-        /// @param font Font to measure in.
-        /// @param glyph  Glyph index.
         /// @complexity O(1).
         [[nodiscard]] static float width(const typography::Font &font, std::uint32_t glyph) noexcept;
 
@@ -241,11 +243,15 @@ namespace render {
         /// @param baseline Its baseline, from the top.
         void slot(memory::Slice<layout::Node *> nodes, float left, float span, int place, float baseline);
 
+        /// @return The page's number, as text.
         /// @brief The page's number, written out as it is numbered now.
         [[nodiscard]] std::string folio() const;
 
         /// @brief The page's number, shaped in a face and drawn with its
         ///        start at a point.
+        /// @param font The face it is shaped in.
+        /// @param position Where it starts across the page, in points.
+        /// @param baseline The baseline it sits on, in points down the page.
         /// @return How far it reaches.
         float numeral(const typography::Font *font, float position, float baseline);
 

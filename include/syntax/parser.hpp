@@ -102,6 +102,7 @@ namespace syntax {
         /// @param handler Implementation.
         void bind(Symbol symbol, Handler handler);
 
+        /// @return The errors, in the order they were found.
         /// @brief Errors recorded so far; the expander keeps its own.
         [[nodiscard]] const std::vector<Traceback> &traceback() const noexcept { return tracebacks; }
 

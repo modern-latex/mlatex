@@ -84,6 +84,7 @@ namespace syntax::semantics {
         /// @brief Reads a slot.
         /// @param type Bank.
         /// @param slot Slot number, below #slots.
+        /// @return The slot's value.
         /// @complexity O(1).
         [[nodiscard]] std::int32_t get(const Type type, const std::size_t slot) const noexcept {
             return values[static_cast<std::size_t>(type)][slot];
@@ -105,11 +106,13 @@ namespace syntax::semantics {
 
         /// @brief The bank a name addresses, if it names one.
         /// @param symbol Interned name.
+        /// @return The bank, or nothing when the name addresses none.
         /// @complexity O(1).
         [[nodiscard]] std::optional<Type> bank(Symbol symbol) const noexcept;
 
         /// @brief The slot a name addresses, if it names one.
         /// @param symbol Interned name.
+        /// @return The bank and slot, or nothing when the name addresses none.
         /// @complexity O(1).
         [[nodiscard]] std::optional<Target> target(Symbol symbol) const noexcept;
 

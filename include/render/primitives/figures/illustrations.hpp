@@ -130,6 +130,7 @@ namespace render::primitives::figures {
 
         /// @brief Errors this module has recorded.
         ///
+        /// @return The errors, in the order they were found.
         /// Each module keeps its own list rather than sharing one, so nothing
         /// has to be constructed and threaded through them, and
         /// Wrapper::traceback() gathers them when a run finishes.
@@ -196,7 +197,9 @@ namespace render::primitives::figures {
         /// its declared room, grown to hold its drawing; a TikZ picture just
         /// its drawing -- and how much its TikZ coordinates are scaled by.
         mutable std::vector<graphics::Canvas::Room> rooms{};
+        /// @brief Where each named coordinate of the picture being drawn is.
         mutable std::vector<layout::Node::Point> anchors{};
+        /// @brief The scale each scope of the picture being drawn sets, innermost last.
         mutable std::vector<float> scales{};
         /// And the height each stands on the baseline at: TikZ's `baseline`
         /// option as written -- a length, or a node and its anchor, `([yshift=-.5ex]cd.center)`
@@ -223,6 +226,7 @@ namespace render::primitives::figures {
         /// Each page of another PDF drawn, kept as the images are, and found
         /// again the same way: by where the file's bytes lie, then its page.
         mutable std::deque<graphics::Drawing> drawings{};
+        /// @brief Each PDF read as a picture, by its bytes, with every page of it kept as a drawing.
         mutable std::unordered_map<const std::byte *, std::vector<std::pair<int, const graphics::Drawing *>>> sheets{};
     };
 }

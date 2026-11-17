@@ -32,8 +32,14 @@
 namespace protocols {
     namespace {
         // The C handle carries the address of the native session.
+        /// @brief The C++ session behind a C one.
+        /// @param session The C session.
+        /// @return The C++ session it is.
         mlatex::Session *native(Session *session) noexcept { return reinterpret_cast<mlatex::Session *>(session); }
 
+        /// @brief The C++ session behind a C one, read-only.
+        /// @param session The C session.
+        /// @return The C++ session it is.
         const mlatex::Session *native(const Session *session) noexcept {
             return reinterpret_cast<const mlatex::Session *>(session);
         }
@@ -44,6 +50,8 @@ namespace protocols {
         };
     }
 
+    /// @param assets The assets folder, or null to find it beside the library.
+    /// @return The session, or null when the assets could not be found.
     /// @brief Mlatex::compose: a session over the assets, or none.
     static Session *compose(const char *assets) {
         // The assets named from the C side, read as UTF-8 on every platform --
@@ -94,9 +102,14 @@ namespace protocols {
         return reinterpret_cast<Session *>(new (std::nothrow) mlatex::Session(std::move(root)));
     }
 
+    /// @param session The session; null does nothing.
     /// @brief Mlatex::dispose.
     static void dispose(const Session *session) { delete native(session); }
 
+    /// @param session The session.
+    /// @param name The value's name.
+    /// @param value Its text.
+    /// @return 1 when it was set, 0 otherwise.
     /// @brief Mlatex::set.
     static int set(Session *session, const char *name, const char *value) {
         if (!session || !name || !*name || !value) return 0;
@@ -104,6 +117,9 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param name The value's name.
+    /// @return 1 when it was taken back, 0 otherwise.
     /// @brief Mlatex::unset.
     static int unset(Session *session, const char *name) {
         if (!session || !name) return 0;
@@ -111,6 +127,12 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param name The command's name, with or without its backslash.
+    /// @param arity How many arguments it takes.
+    /// @param handler The C function that answers it.
+    /// @param data Handed back to the handler unchanged.
+    /// @return 1 when it was defined, 0 otherwise.
     /// @brief Mlatex::define: the C function behind the engine's own type of
     ///        handler, the arguments lent out as C strings for the length of
     ///        the call and whatever it wrote taken back as the command's text.
@@ -139,6 +161,9 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param name The command's name.
+    /// @return 1 when it was forgotten, 0 otherwise.
     /// @brief Mlatex::forget.
     static int forget(Session *session, const char *name) {
         if (!session || !name) return 0;
@@ -146,11 +171,19 @@ namespace protocols {
         return 1;
     }
 
+    /// @param output Where the handler's text is gathered.
+    /// @param text The text to add.
+    /// @param length How many bytes it has.
     /// @brief Mlatex::write.
     static void write(Output *output, const char *text, const size_t length) {
         if (output && text) reinterpret_cast<OutputBuffer *>(output)->text.append(text, length);
     }
 
+    /// @param session The session.
+    /// @param name The file's name, as the document reads it.
+    /// @param bytes Its contents.
+    /// @param length How many bytes they are.
+    /// @return 1 when it was handed in, 0 otherwise.
     /// @brief Mlatex::provide.
     static int provide(Session *session, const char *name, const void *bytes, const size_t length) {
         if (!session || !name || !*name || (!bytes && length > 0)) return 0;
@@ -158,6 +191,9 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param name The file's name.
+    /// @return 1 when it was taken back, 0 otherwise.
     /// @brief Mlatex::withdraw.
     static int withdraw(Session *session, const char *name) {
         if (!session || !name) return 0;
@@ -165,6 +201,12 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param document The document's text.
+    /// @param length How many bytes it has.
+    /// @param pdf Receives the PDF's bytes, owned by the session.
+    /// @param size Receives how many bytes the PDF has.
+    /// @return 1 when the document set cleanly, 0 otherwise.
     /// @brief Mlatex::typeset.
     static int typeset(Session *session, const char *document, const size_t length, const unsigned char **pdf,
                        size_t *size) {
@@ -180,9 +222,14 @@ namespace protocols {
         return made ? 1 : 0;
     }
 
+    /// @param session The session; null reads as no error.
+    /// @return The last run's errors, one a line.
     /// @brief Mlatex::error.
     static const char *error(const Session *session) { return session ? native(session)->error.c_str() : ""; }
 
+    /// @param session The session.
+    /// @param on Nonzero to refuse every network request.
+    /// @return 1 when it was set, 0 otherwise.
     /// @brief Mlatex::offline.
     static int offline(Session *session, const int on) {
         if (!session) return 0;
@@ -190,6 +237,12 @@ namespace protocols {
         return 1;
     }
 
+    /// @param session The session.
+    /// @param text The snippet's LaTeX.
+    /// @param length How many bytes it has.
+    /// @param pdf Receives the PDF's bytes, owned by the session.
+    /// @param size Receives how many bytes the PDF has.
+    /// @return 1 when the snippet set cleanly, 0 otherwise.
     /// @brief Mlatex::snippet.
     static int snippet(Session *session, const char *text, const size_t length, const unsigned char **pdf,
                        size_t *size) {
@@ -206,6 +259,8 @@ namespace protocols {
     }
 
     extern "C" {
+    /// @brief The C library's one export: the table of every operation.
+    /// @return The table, the same every call.
     const Mlatex *engine(void) {
         static constexpr Mlatex table{
                 .compose = compose,

@@ -336,6 +336,7 @@ namespace syntax {
         /// @brief One unit, as an exact rational number of scaled points.
         struct Measure {
             std::int64_t numerator; ///< sp
+            /// @brief What the numerator is divided by.
             std::int64_t denominator;
         };
 

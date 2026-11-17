@@ -13,6 +13,7 @@
 #include <format>
 #include <iostream>
 
+/// @brief The escape that ends a report's color.
 static constexpr std::string_view plain = "\x1b[0m";
 
 void Logger::compose(const int count, char **arguments) {
